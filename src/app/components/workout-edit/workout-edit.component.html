@@ -20,7 +20,10 @@
     <div class="flex gap-3 flex-wrap">
       <input [(ngModel)]="newExercise.nombre" placeholder="Nombre" class="p-2 border rounded w-1/4" />
       <input [(ngModel)]="newExercise.series" type="number" placeholder="Series" class="p-2 border rounded w-1/6" />
-      <input [(ngModel)]="newExercise.repeticiones" type="number" placeholder="Reps" class="p-2 border rounded w-1/6" />
+      <input [(ngModel)]="newExercise.repeticiones" type="number" placeholder="Reps" class="p-2 border rounded w-1/6"
+       />
+       <input [(ngModel)]="newExercise.pesokg" type="number" placeholder="Peso En Kg" class="p-2 border rounded w-1/6" />
+
       <label for="grupoMuscular" class="sr-only">Grupo Muscular</label>
       <select id="grupoMuscular" [(ngModel)]="newExercise.grupoMuscular" class="p-2 border rounded w-1/4">
         <option *ngFor="let grupo of grupoMuscularOpciones" [value]="grupo">

@@ -24,7 +24,8 @@ export class WorkoutEditComponent implements OnInit {
     tipo: 'compuesto',
     series: 0,
     repeticiones: 0,
-    descanso: '60s'
+    descanso: '3 a 5 min',
+    pesokg: 0,
   };
 
   grupoMuscularOpciones = [

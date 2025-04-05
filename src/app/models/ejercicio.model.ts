@@ -7,6 +7,6 @@ export interface Ejercicio {
     repeticiones: number;  
     descanso: string;
     metodo?: string;
-    peso?: number;
+    pesokg?: number;
   }
   

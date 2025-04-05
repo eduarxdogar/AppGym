@@ -17,8 +17,12 @@
       <div>
         <p class="font-semibold">{{ ejercicio.nombre }}</p>
         <p class="text-gray-300 text-sm">
-          <span class="font-bold text-green-400">{{ ejercicio.series }} series</span> - 
-          <span class="font-bold text-yellow-400">{{ ejercicio.repeticiones }} reps</span>
+          <span class="font-bold text-green-400">{{ ejercicio.series }} Series</span> - 
+          <span class="font-bold text-yellow-400">{{ ejercicio.repeticiones }} Reps</span> -
+          <span class="font-bold text-red-400">({{ ejercicio.grupoMuscular }}) GrupoMuscular</span> -
+          <span class="font-bold text-indigo-400">({{ ejercicio.descanso }}) Descanso en Mn</span> -
+          <span class="font-bold text-orange-700">({{ ejercicio.pesokg }})Peso Kg</span> -
+          <span class="font-bold text-purple-500">({{ ejercicio.tipo }}) Tipo</span>
         </p>
       </div>
     </li>
