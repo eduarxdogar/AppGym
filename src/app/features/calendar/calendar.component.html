@@ -1,0 +1,14 @@
+<!-- src/app/features/calendar/calendar.component.html -->
+<div class="p-4">
+    <h2 class="text-2xl font-bold mb-4">Calendario de Entrenamientos</h2>
+    <mat-form-field appearance="fill">
+      <mat-label>Selecciona una fecha</mat-label>
+      <input matInput [matDatepicker]="picker" [(ngModel)]="selectedDate">
+      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+    <div *ngIf="selectedDate" class="mt-4">
+      Entrenaste el día: {{ selectedDate | date:'fullDate' }}
+    </div>
+  </div>
+  

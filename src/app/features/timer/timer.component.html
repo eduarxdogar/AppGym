@@ -1,0 +1,9 @@
+<!-- src/app/features/timer/timer.component.html -->
+<div class="p-4">
+    <h2 class="text-2xl font-bold mb-4">Cronómetro de Descanso</h2>
+    <div class="text-4xl font-mono mb-4">{{ timeFormatted }}</div>
+    <button mat-raised-button color="primary" (click)="start()">Iniciar</button>
+    <button mat-raised-button color="accent" (click)="pause()">Pausar</button>
+    <button mat-raised-button color="warn" (click)="reset()">Reset</button>
+  </div>
+  

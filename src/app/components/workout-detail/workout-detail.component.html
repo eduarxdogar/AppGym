@@ -1,0 +1,37 @@
+<div *ngIf="workout; else noWorkout" class="p-6 bg-gray-900 text-white rounded-lg shadow-md">
+  <h2 class="text-3xl font-bold mb-4 text-center">🏋️‍♂️ {{ workout.nombre }}</h2>
+  
+  <!-- Músculos trabajados -->
+  <div class="flex flex-wrap gap-2 mb-4">
+    <span *ngFor="let musculo of workout.musculos" 
+          class="px-3 py-1 bg-blue-600 text-white rounded-full text-sm">
+      💪 {{ musculo }}
+    </span>
+  </div>
+
+  <!-- Lista de ejercicios -->
+  <ul class="space-y-2">
+    <li *ngFor="let ejercicio of workout.ejercicios" 
+        class="flex items-center gap-3 p-3 bg-gray-800 rounded-lg shadow-md">
+      <span class="text-lg">🔥</span> 
+      <div>
+        <p class="font-semibold">{{ ejercicio.nombre }}</p>
+        <p class="text-gray-300 text-sm">
+          <span class="font-bold text-green-400">{{ ejercicio.series }} series</span> - 
+          <span class="font-bold text-yellow-400">{{ ejercicio.repeticiones }} reps</span>
+        </p>
+      </div>
+    </li>
+  </ul>
+
+  <!-- Botón de edición -->
+  <a [routerLink]="['/workout', workout.id, 'edit']" 
+     class="mt-6 block text-center bg-yellow-500 hover:bg-yellow-700 text-white font-semibold px-6 py-3 rounded-lg transition">
+    ✏️ Editar Rutina
+  </a>
+</div>
+
+<!-- Mostrar mensaje si no se encuentra la rutina -->
+<ng-template #noWorkout>
+  <p class="text-gray-500 text-center mt-4">⚠️ No se encontró la rutina.</p>
+</ng-template>

@@ -1,0 +1,40 @@
+<div class="p-6">
+  <h2 class="text-2xl font-bold mb-4">Editar Rutina: {{ workout.nombre }}</h2>
+
+  <!-- Lista de ejercicios -->
+  <div class="mb-6">
+    <h3 class="text-xl font-semibold">Ejercicios</h3>
+    <ul class="space-y-3">
+      <li *ngFor="let ejercicio of workout?.ejercicios; let i = index" class="flex justify-between items-center p-3 bg-gray-800 text-white rounded shadow">
+        <span>{{ ejercicio.nombre }} - {{ ejercicio.series }} x {{ ejercicio.repeticiones }} ({{ ejercicio.grupoMuscular }})</span>
+        <button (click)="deleteExercise(i)" class="bg-red-500 hover:bg-red-700 text-white px-3 py-1 rounded">
+          Eliminar
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Formulario para agregar ejercicio -->
+  <div class="mb-6">
+    <h3 class="text-xl font-semibold">Agregar Ejercicio</h3>
+    <div class="flex gap-3 flex-wrap">
+      <input [(ngModel)]="newExercise.nombre" placeholder="Nombre" class="p-2 border rounded w-1/4" />
+      <input [(ngModel)]="newExercise.series" type="number" placeholder="Series" class="p-2 border rounded w-1/6" />
+      <input [(ngModel)]="newExercise.repeticiones" type="number" placeholder="Reps" class="p-2 border rounded w-1/6" />
+      <label for="grupoMuscular" class="sr-only">Grupo Muscular</label>
+      <select id="grupoMuscular" [(ngModel)]="newExercise.grupoMuscular" class="p-2 border rounded w-1/4">
+        <option *ngFor="let grupo of grupoMuscularOpciones" [value]="grupo">
+          {{ grupo | titlecase }}
+        </option>
+      </select>
+      <button (click)="addExercise()" class="bg-green-500 hover:bg-green-700 text-white px-3 py-1 rounded">
+        Agregar
+      </button>
+    </div>
+  </div>
+
+  <!-- Botón de guardar cambios -->
+  <button (click)="saveChanges()" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">
+    Guardar Cambios
+  </button>
+</div>

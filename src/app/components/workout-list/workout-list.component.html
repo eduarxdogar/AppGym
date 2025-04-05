@@ -1,0 +1,37 @@
+<div class="p-6">
+  <h2 class="text-2xl font-bold mb-4">🏋️‍♂️ Mis Rutinas</h2>
+
+  <!-- Verificar si hay rutinas -->
+  <div *ngIf="workouts.length > 0; else noWorkouts">
+    <ul class="space-y-4">
+      <li *ngFor="let workout of workouts" class="p-4 bg-gray-800 text-white rounded shadow flex justify-between items-center">
+        <div>
+          <h3 class="text-lg font-semibold">{{ workout.nombre }}</h3>
+          <p class="text-sm text-gray-400">Ejercicios: {{ workout.ejercicios.length }}</p>
+        </div>
+        
+        <div class="flex gap-3">
+          <a [routerLink]="['/workouts', workout.id]" class="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded">
+            👀 Ver
+          </a>
+          <a [routerLink]="['/workout', workout.id, 'edit']" class="bg-yellow-500 hover:bg-yellow-700 text-white px-3 py-1 rounded">
+            ✏️ Editar
+          </a>
+          <button (click)="deleteWorkout(workout.id)" class="bg-red-500 hover:bg-red-700 text-white px-3 py-1 rounded">
+            ❌ Eliminar
+          </button>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Mensaje si no hay rutinas -->
+  <ng-template #noWorkouts>
+    <p class="text-gray-500 text-center mt-4">No tienes rutinas aún. 📌</p>
+  </ng-template>
+
+  <!-- Botón para agregar nueva rutina -->
+  <button (click)="addWorkout()" class="mt-6 bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded">
+    ➕ Nueva Rutina
+  </button>
+</div>
