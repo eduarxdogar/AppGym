@@ -6,11 +6,13 @@ import { Workout } from '../../models/workout.model';
 import { Ejercicio } from '../../models/ejercicio.model';
 import { WorkoutService } from '../../core/services/workout.service';
 import { take } from 'rxjs/operators';
+import { MatIconModule } from '@angular/material/icon';
+
 
 @Component({
   selector: 'app-workout-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule , MatIconModule],
   templateUrl: './workout-edit.component.html',
 })
 export class WorkoutEditComponent implements OnInit {
@@ -203,5 +205,8 @@ export class WorkoutEditComponent implements OnInit {
       this.modalAction();
     }
     this.cancelModal();
+  }
+  getDelayClass(index: number): string {
+    return `delay-[${index * 100}ms]`;
   }
 }
