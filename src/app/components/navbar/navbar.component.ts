@@ -1,21 +1,36 @@
-import { Component, ViewChild } from '@angular/core';
-import { MatSidenav } from '@angular/material/sidenav';
-import { RouterLink } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSidenavModule } from '@angular/material/sidenav';
+import { RouterLink } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, MatToolbarModule, MatButtonModule, MatSidenavModule],
+  imports: [
+    CommonModule,
+    MatToolbarModule,
+    MatButtonModule,
+    RouterLink,
+    MatIconModule,
+    MatMenuModule
+  ],
   templateUrl: './navbar.component.html',
-  styleUrls: ['./navbar.component.scss'],
 })
 export class NavbarComponent {
-  @ViewChild('sidenav') sidenav!: MatSidenav;
+  isMobile = false;
 
-  toggleSidenav() {
-    this.sidenav.toggle();
+  // Inyectamos el servicio
+  private breakpointObserver = inject(BreakpointObserver);
+
+  constructor() {
+    // Observamos si el ancho es de tipo "Handset" (teléfono móvil)
+    this.breakpointObserver.observe([Breakpoints.Handset])
+      .subscribe(result => {
+        this.isMobile = result.matches;
+      });
   }
 }

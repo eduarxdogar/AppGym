@@ -43,4 +43,9 @@ export class WorkoutService {
   getWorkoutById(id: number): Workout | undefined {
     return this.workoutsSubject.value.find(w => w.id === id);
   }
+  getWorkoutsByGrupo(grupo: string): Workout[] {
+    return this.workoutsSubject.value.filter(w =>
+      w.nombre.toLowerCase().includes(grupo.toLowerCase())
+    );
+  }
 }

@@ -18,7 +18,7 @@ export class WorkoutListComponent implements OnInit {
   constructor(private workoutService: WorkoutService, private router: Router) {}
 
   ngOnInit(): void {
-    this.workouts = this.workoutService.getWorkouts(); // ✅ CORREGIDO
+    this.workouts = this.workoutService.getWorkouts(); 
   }
 
   editWorkout(id: number) {
@@ -27,7 +27,7 @@ export class WorkoutListComponent implements OnInit {
 
   deleteWorkout(id: number) {
     this.workoutService.deleteWorkout(id);
-    this.workouts = this.workoutService.getWorkouts(); // ✅ CORREGIDO
+    this.workouts = this.workoutService.getWorkouts(); 
   }
 
   addWorkout() {
@@ -37,6 +37,6 @@ export class WorkoutListComponent implements OnInit {
       ejercicios: []
     };
     this.workoutService.addWorkout(newWorkout);
-    this.workouts = this.workoutService.getWorkouts(); // ✅ CORREGIDO
+    this.workouts = this.workoutService.getWorkouts(); 
   }
 }

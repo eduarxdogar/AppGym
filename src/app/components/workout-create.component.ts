@@ -19,8 +19,8 @@ export class WorkoutCreateComponent {
 
   newExercise: Ejercicio = {
     id: 0,
-    nombre: '',
-    grupoMuscular: 'pecho', // ✅ Se agregó esta propiedad
+    nombre: 'pecho F1', 
+    grupoMuscular: 'pecho', 
     tipo: 'compuesto',
     series: 3,
     repeticiones: 10,
