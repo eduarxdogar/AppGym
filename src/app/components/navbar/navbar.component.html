@@ -1,28 +1,56 @@
-<mat-toolbar class="w-full bg-gray-900 text-white px-4 py-3 flex justify-between items-center flex-wrap shadow-md">
-
+<mat-toolbar class="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-white px-4 py-3 flex justify-between items-center flex-wrap shadow-md">
   <!-- LOGO + NOMBRE -->
   <div class="flex items-center gap-3 min-w-0">
-    <img src="data:image/jpeg;base64,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" alt="Logo" class="h-8 w-8" />
+    <img src="https://images.unsplash.com/photo-1637666062717-1c6bcfa4a4df?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTE5fHxneW18ZW58MHx8MHx8fDA%3D" 
+    alt="Logo de FitMaster" 
+    class="h-10 w-10 object-cover rounded-full shadow-md" />
+
+
     <span class="text-lg sm:text-xl font-bold tracking-wide truncate">FitMaster</span>
   </div>
 
-  <!-- Si es pantalla grande -->
+  <!-- Navegación para pantallas grandes -->
   <nav class="hidden md:flex gap-4 text-sm">
-    <a routerLink="/workouts" mat-button class="hover:text-yellow-400 transition-colors">🏋️ Rutinas</a>
-    <a routerLink="/calendar" mat-button class="hover:text-yellow-400 transition-colors">🗓️ Calendario</a>
-    <a routerLink="/timer" mat-button class="hover:text-yellow-400 transition-colors">⏱️ Cronómetro</a>
+    <a routerLink="/workouts" mat-button class="hover:text-yellow-400 transition-colors">
+      <mat-icon>fitness_center</mat-icon>
+      Rutinas
+    </a>
+    <a routerLink="/calendar" mat-button class="hover:text-yellow-400 transition-colors">
+      <mat-icon>event</mat-icon>
+      Calendario
+    </a>
+    <a routerLink="/timer" mat-button class="hover:text-yellow-400 transition-colors">
+      <mat-icon>timer</mat-icon>
+      Cronómetro
+    </a>
+    <a routerLink="/progress" mat-button class="hover:text-yellow-400 transition-colors">
+      <mat-icon>bar_chart</mat-icon>
+      Progreso
+    </a>
   </nav>
 
-  <!-- Si es pantalla móvil -->
+  <!-- Menú hamburguesa para pantallas móviles -->
   <div class="md:hidden">
-    <button mat-icon-button [matMenuTriggerFor]="menu">
+    <button mat-icon-button [matMenuTriggerFor]="mobileMenu">
       <mat-icon>menu</mat-icon>
     </button>
-    <mat-menu #menu="matMenu">
-      <button mat-menu-item [routerLink]="'/workouts'">🏋️ Rutinas</button>
-      <button mat-menu-item [routerLink]="'/calendar'">🗓️ Calendario</button>
-      <button mat-menu-item [routerLink]="'/timer'">⏱️ Cronómetro</button>
+    <mat-menu #mobileMenu="matMenu">
+      <button mat-menu-item [routerLink]="'/workouts'">
+        <mat-icon>fitness_center</mat-icon>
+        Rutinas
+      </button>
+      <button mat-menu-item [routerLink]="'/calendar'">
+        <mat-icon>event</mat-icon>
+        Calendario
+      </button>
+      <button mat-menu-item [routerLink]="'/timer'">
+        <mat-icon>timer</mat-icon>
+        Cronómetro
+      </button>
+      <button mat-menu-item [routerLink]="'/progress'">
+        <mat-icon>bar_chart</mat-icon>
+        Progreso
+      </button>
     </mat-menu>
   </div>
-
 </mat-toolbar>
