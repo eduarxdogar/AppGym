@@ -4,11 +4,13 @@ import { Workout } from '../../models/workout.model';
 import { WorkoutService } from '../../core/services/workout.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+
 
 @Component({
   selector: 'app-workout-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule , MatIconModule],
   templateUrl: './workout-list.component.html',
   styleUrls: ['./workout-list.component.scss'],
 })
