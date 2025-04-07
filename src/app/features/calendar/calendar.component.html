@@ -1,14 +1,21 @@
-<!-- src/app/features/calendar/calendar.component.html -->
-<div class="p-4">
-    <h2 class="text-2xl font-bold mb-4">Calendario de Entrenamientos</h2>
-    <mat-form-field appearance="fill">
-      <mat-label>Selecciona una fecha</mat-label>
-      <input matInput [matDatepicker]="picker" [(ngModel)]="selectedDate">
-      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-      <mat-datepicker #picker></mat-datepicker>
-    </mat-form-field>
-    <div *ngIf="selectedDate" class="mt-4">
-      Entrenaste el día: {{ selectedDate | date:'fullDate' }}
+<div class="p-6 bg-gray-900 text-white rounded-lg shadow-md">
+  <h2 class="text-3xl font-bold mb-6 text-center">Historial de Entrenamientos</h2>
+
+  <div *ngIf="sesiones.length > 0; else noSessions" class="space-y-4">
+    <div *ngFor="let session of sesiones" class="p-4 bg-gray-800 rounded-lg shadow flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <p class="text-xl font-semibold">{{ session.nombre }}</p>
+        <p class="text-sm">Inicio: {{ session.fechaInicio | date:'short' }}</p>
+        <p class="text-sm" *ngIf="session.fechaFin">Fin: {{ session.fechaFin | date:'short' }}</p>
+      </div>
+      <div>
+        <p class="text-lg font-bold">Duración: <span *ngIf="session.duracion">{{ session.duracion }}</span></p>
+        <p class="text-lg font-bold">Peso Total: <span *ngIf="session.pesoTotal">{{ session.pesoTotal }} kg</span></p>
+      </div>
     </div>
   </div>
-  
+
+  <ng-template #noSessions>
+    <p class="text-center text-gray-400">No hay sesiones registradas.</p>
+  </ng-template>
+</div>

@@ -9,6 +9,7 @@ export default {
         fadeIn: 'fadeIn 0.5s ease-in-out',
         slideUp: 'slideUp 0.5s ease-out',
         bounceIn: 'bounceIn 0.6s ease-in-out',
+        slideDown: 'slideDown 0.5s ease-out forwards',
       },
       keyframes: {
         fadeIn: {
@@ -24,8 +25,13 @@ export default {
           '60%': { transform: 'scale(1.05)', opacity: '1' },
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
+        slideDown: {
+          '0%': { maxHeight: '0', opacity: '0' },
+          '100%': { maxHeight: '500px', opacity: '1' },
+        
       },
     },
+  }
   },
   plugins: [],
 };

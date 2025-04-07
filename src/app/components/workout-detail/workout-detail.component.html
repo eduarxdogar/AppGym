@@ -1,41 +1,171 @@
-<div *ngIf="workout; else noWorkout" class="p-6 bg-gray-900 text-white rounded-lg shadow-md">
-  <h2 class="text-3xl font-bold mb-4 text-center">🏋️‍♂️ {{ workout.nombre }}</h2>
-  
-  <!-- Músculos trabajados -->
-  <div class="flex flex-wrap gap-2 mb-4">
-    <span *ngFor="let musculo of workout.musculos" 
-          class="px-3 py-1 bg-blue-600 text-white rounded-full text-sm">
-      💪 {{ musculo }}
-    </span>
+<!-- Fondo moderno y oscuro -->
+<div
+  class="min-h-screen bg-[url('https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=1950&q=80')] bg-cover bg-center bg-no-repeat backdrop-blur-xl bg-blend-multiply p-4 sm:p-8"
+>
+  <div *ngIf="workout; else noWorkout" class="p-6 animate-fadeIn relative">
+    <!-- Overlay -->
+    <div class="absolute inset-0 bg-black/40 rounded-lg z-0"></div>
+
+    <!-- Contenido principal -->
+    <div class="relative z-10 space-y-6 text-white">
+      <h2 class="text-4xl font-extrabold text-center drop-shadow-lg">
+        🏋️‍♂️ {{ workout.nombre }}
+      </h2>
+
+      <!-- Músculos trabajados -->
+      <div class="flex flex-wrap justify-center gap-2">
+        <span
+          *ngFor="let musculo of workout.musculos"
+          class="px-4 py-1 bg-indigo-600 hover:bg-indigo-700 transition rounded-full text-sm font-medium shadow-md"
+        >
+          💪 {{ musculo }}
+        </span>
+      </div>
+
+      <hr class="border-t border-gray-400/40" />
+
+      <!-- Lista de ejercicios -->
+      <!-- Lista de ejercicios con acordeón -->
+      <ul class="space-y-4">
+        <li
+          *ngFor="let ejercicio of workout.ejercicios; let i = index"
+          class="bg-gray-900/80 hover:bg-gray-800 transition rounded-xl p-4 shadow-lg backdrop-blur-sm border border-gray-700"
+        >
+          <!-- Cabecera del ejercicio -->
+          <div
+            (click)="toggleExpand(i)"
+            class="flex justify-between items-center cursor-pointer select-none"
+          >
+            <div class="flex items-center gap-3">
+              <mat-icon class="text-pink-400 text-3xl">fitness_center</mat-icon>
+              <p class="font-semibold text-xl text-white tracking-wide">
+                {{ ejercicio.nombre }}
+              </p>
+            </div>
+            <mat-icon
+              class="text-white transform transition-transform duration-300"
+              [ngClass]="{
+                'rotate-180': expandedIndex === i,
+                'rotate-0': expandedIndex !== i
+              }"
+            >
+              expand_more
+            </mat-icon>
+          </div>
+      
+          <!-- Contenido del acordeón animado -->
+          <div
+            *ngIf="expandedIndex === i"
+            class="transition-all duration-500 ease-in-out overflow-hidden mt-4 pl-12 text-gray-300 text-sm space-y-2"
+          >
+            <div>
+              <span class="text-indigo-400 font-bold">🔥 Calentamiento:</span>
+              {{ ejercicio.serieCalentamiento }} series, {{ ejercicio.repeticionesCalentamiento }} reps
+            </div>
+            <div>
+              <span class="text-green-400 font-bold">🎯 Series:</span>
+              {{ ejercicio.series }}
+            </div>
+            <div>
+              <span class="text-yellow-400 font-bold">🔁 Reps:</span>
+              {{ ejercicio.repeticiones }}
+            </div>
+            <div>
+              <span class="text-red-300 font-bold">🧠 Músculo:</span>
+              {{ ejercicio.grupoMuscular }}
+            </div>
+            <div>
+              <span class="text-indigo-300 font-bold">⏱️ Descanso:</span>
+              {{ ejercicio.descanso }}
+            </div>
+            <div>
+              <span class="text-orange-300 font-bold">🏋️ Peso:</span>
+              {{ ejercicio.pesokg }} kg
+            </div>
+            <div>
+              <span class="text-purple-400 font-bold">⚙️ Tipo:</span>
+              {{ ejercicio.tipo }}
+            </div>
+          </div>
+        </li>
+      </ul>
+
+      <hr class="border-t border-gray-400/40" />
+
+      <!-- Botones de acción -->
+      <div class="flex justify-center gap-4 flex-wrap">
+        <a
+          [routerLink]="['/workout', workout.id, 'edit']"
+          class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-6 py-2 rounded-md transition flex items-center gap-2 shadow-md"
+        >
+          <mat-icon>edit</mat-icon> Editar Rutina
+        </a>
+
+        <a
+          routerLink="/progress"
+          class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded-md transition flex items-center gap-2 shadow-md"
+        >
+          <mat-icon>bar_chart</mat-icon>
+          Progreso
+        </a>
+        <a
+          routerLink="/calendar"
+          class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-md transition flex items-center gap-2 shadow-md"
+        >
+          <mat-icon>event</mat-icon>
+          Calendario
+        </a>
+
+        <button
+          (click)="iniciarRutina()"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-md transition flex items-center gap-2 shadow-md"
+        >
+          <mat-icon>play_arrow</mat-icon> Iniciar Rutina
+        </button>
+      </div>
+    </div>
   </div>
 
-  <!-- Lista de ejercicios -->
-  <ul class="space-y-2">
-    <li *ngFor="let ejercicio of workout.ejercicios" 
-        class="flex items-center gap-3 p-3 bg-gray-800 rounded-lg shadow-md">
-      <span class="text-lg">🔥</span> 
-      <div>
-        <p class="font-semibold">{{ ejercicio.nombre }}</p>
-        <p class="text-gray-300 text-sm">
-          <span class="font-bold text-green-400">{{ ejercicio.series }} Series</span> - 
-          <span class="font-bold text-yellow-400">{{ ejercicio.repeticiones }} Reps</span> -
-          <span class="font-bold text-red-400">({{ ejercicio.grupoMuscular }}) GrupoMuscular</span> -
-          <span class="font-bold text-indigo-400">({{ ejercicio.descanso }}) Descanso en Mn</span> -
-          <span class="font-bold text-orange-700">({{ ejercicio.pesokg }})Peso Kg</span> -
-          <span class="font-bold text-purple-500">({{ ejercicio.tipo }}) Tipo</span>
-        </p>
-      </div>
-    </li>
-  </ul>
+  <!-- Timer y datos de sesión actual -->
+  <div
+    *ngIf="showTimer"
+    class="mt-8 text-center space-y-4 bg-black/30 p-4 rounded-lg shadow-lg"
+  >
+    <app-timer></app-timer>
+    <p class="text-lg font-semibold text-white">
+      💥 Peso Total: {{ pesoTotal }} kg
+    </p>
+    <button
+      (click)="finalizarRutina()"
+      class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-md transition flex items-center gap-2 justify-center mx-auto shadow-md"
+    >
+      <mat-icon>stop</mat-icon> Finalizar Rutina
+    </button>
+  </div>
 
-  <!-- Botón de edición -->
-  <a [routerLink]="['/workout', workout.id, 'edit']" 
-     class="mt-6 block text-center bg-yellow-500 hover:bg-yellow-700 text-white font-semibold px-6 py-3 rounded-lg transition">
-    ✏️ Editar Rutina
-  </a>
+  <!-- Información de sesión actual -->
+  <div
+    *ngIf="currentSession"
+    class="mt-4 p-4 bg-white/80 text-gray-800 rounded shadow-md space-y-1"
+  >
+    <p>
+      <strong>Inicio:</strong> {{ currentSession.fechaInicio | date : "short" }}
+    </p>
+    <p *ngIf="currentSession.fechaFin">
+      <strong>Fin:</strong> {{ currentSession.fechaFin | date : "short" }}
+    </p>
+    <p *ngIf="currentSession.duracion">
+      <strong>Duración:</strong> {{ currentSession.duracion }}
+    </p>
+    <p *ngIf="currentSession.pesoTotal">
+      <strong>Peso total levantado:</strong> {{ currentSession.pesoTotal }} kg
+    </p>
+  </div>
+
+  <!-- Mostrar mensaje si no hay rutina -->
+  <ng-template #noWorkout>
+    <div class="text-center text-gray-300 mt-8">
+      ⚠️ No se encontró la rutina.
+    </div>
+  </ng-template>
 </div>
-
-<!-- Mostrar mensaje si no se encuentra la rutina -->
-<ng-template #noWorkout>
-  <p class="text-gray-500 text-center mt-4">⚠️ No se encontró la rutina.</p>
-</ng-template>

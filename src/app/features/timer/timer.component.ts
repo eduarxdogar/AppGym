@@ -1,7 +1,8 @@
 // src/app/features/timer/timer.component.ts
-import { Component, OnDestroy } from '@angular/core';
+import { Component,EventEmitter, OnDestroy, Output  } from '@angular/core';
 import { interval, Subscription } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
+
 
 @Component({
   selector: 'app-timer',
@@ -11,6 +12,9 @@ import { MatButtonModule } from '@angular/material/button';
   styleUrls: ['./timer.component.scss']
 })
 export class TimerComponent implements OnDestroy {
+
+  @Output() finalizado = new EventEmitter<number>();
+
   time = 0;
   timeFormatted = '00:00';
   private subscription?: Subscription;
@@ -40,5 +44,9 @@ export class TimerComponent implements OnDestroy {
 
   ngOnDestroy() {
     this.subscription?.unsubscribe();
+  }
+  stopAndEmit() {
+    this.pause();
+    this.finalizado.emit(this.time);
   }
 }

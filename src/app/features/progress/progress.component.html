@@ -1,7 +1,28 @@
-<!-- src/app/features/progress/progress.component.html -->
-<div class="p-4">
-    <h2 class="text-2xl font-bold mb-4">Seguimiento Muscular</h2>
-    <!-- Ejemplo de SVG. Puedes reemplazarlo por un mapa corporal interactivo -->
-    <img src="assets/body-map.svg" alt="Mapa Muscular" class="w-full max-w-md mx-auto">
+<div class="p-6 bg-gray-900 text-white rounded-lg shadow-md">
+  <h2 class="text-3xl font-bold mb-6 text-center">Progreso de Entrenamientos</h2>
+
+  <div class="mb-6">
+    <p class="text-xl font-bold">
+      Total Peso Levantado:
+      <span class="text-green-400">{{ totalPesoLev }} kg</span>
+    </p>
   </div>
-  
+
+  <div *ngIf="sesiones.length > 0; else noProgress" class="space-y-4">
+    <div *ngFor="let session of sesiones" class="p-4 bg-gray-800 rounded-lg shadow flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <p class="text-xl font-semibold">{{ session.nombre }}</p>
+        <p class="text-sm">Inicio: {{ session.fechaInicio | date:'short' }}</p>
+        <p class="text-sm" *ngIf="session.fechaFin">Fin: {{ session.fechaFin | date:'short' }}</p>
+      </div>
+      <div>
+        <p class="text-lg font-bold">Duración: <span *ngIf="session.duracion">{{ session.duracion }}</span></p>
+        <p class="text-lg font-bold">Peso Total: <span *ngIf="session.pesoTotal">{{ session.pesoTotal }} kg</span></p>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noProgress>
+    <p class="text-center text-gray-400">No hay progresos registrados.</p>
+  </ng-template>
+</div>
