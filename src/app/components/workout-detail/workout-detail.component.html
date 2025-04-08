@@ -1,4 +1,4 @@
-<!-- Fondo moderno y oscuro -->
+<!-- src/app/components/workout-detail/workout-detail.component.html -->
 <div
   class="min-h-screen bg-[url('https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=1950&q=80')] bg-cover bg-center bg-no-repeat backdrop-blur-xl bg-blend-multiply p-4 sm:p-8"
 >
@@ -8,7 +8,7 @@
 
     <!-- Contenido principal -->
     <div class="relative z-10 space-y-6 text-white">
-      <h2 class="text-4xl font-extrabold text-center drop-shadow-lg">
+      <h2 class="text-3xl font-extrabold text-center drop-shadow-lg">
         🏋️‍♂️ {{ workout.nombre }}
       </h2>
 
@@ -24,7 +24,6 @@
 
       <hr class="border-t border-gray-400/40" />
 
-      <!-- Lista de ejercicios -->
       <!-- Lista de ejercicios con acordeón -->
       <ul class="space-y-4">
         <li
@@ -86,6 +85,8 @@
               <span class="text-purple-400 font-bold">⚙️ Tipo:</span>
               {{ ejercicio.tipo }}
             </div>
+            <!-- Cronómetro individual para este ejercicio (opcional) -->
+            <app-exercise-timer></app-exercise-timer>
           </div>
         </li>
       </ul>
@@ -105,15 +106,14 @@
           routerLink="/progress"
           class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded-md transition flex items-center gap-2 shadow-md"
         >
-          <mat-icon>bar_chart</mat-icon>
-          Progreso
+          <mat-icon>bar_chart</mat-icon> Progreso
         </a>
+
         <a
           routerLink="/calendar"
           class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-md transition flex items-center gap-2 shadow-md"
         >
-          <mat-icon>event</mat-icon>
-          Calendario
+          <mat-icon>event</mat-icon> Calendario
         </a>
 
         <button
@@ -149,10 +149,10 @@
     class="mt-4 p-4 bg-white/80 text-gray-800 rounded shadow-md space-y-1"
   >
     <p>
-      <strong>Inicio:</strong> {{ currentSession.fechaInicio | date : "short" }}
+      <strong>Inicio:</strong> {{ currentSession.fechaInicio | date:'short' }}
     </p>
     <p *ngIf="currentSession.fechaFin">
-      <strong>Fin:</strong> {{ currentSession.fechaFin | date : "short" }}
+      <strong>Fin:</strong> {{ currentSession.fechaFin | date:'short' }}
     </p>
     <p *ngIf="currentSession.duracion">
       <strong>Duración:</strong> {{ currentSession.duracion }}

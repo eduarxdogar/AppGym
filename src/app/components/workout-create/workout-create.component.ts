@@ -20,9 +20,10 @@ export class WorkoutCreateComponent {
   newExercise: Ejercicio = {
     id: 0,
     nombre: '',
+    grupoMuscular: 'pecho',
     tipo: 'compuesto',
     series: 3,
-    repeticiones: '10',
+    repeticiones: 0,
     descanso: '60s'
   };
 
@@ -34,9 +35,10 @@ export class WorkoutCreateComponent {
     this.newExercise = {
       id: 0,
       nombre: '',
+      grupoMuscular: 'pecho',
       tipo: 'compuesto',
       series: 3,
-      repeticiones: '10',
+      repeticiones: 0,
       descanso: '60s'
     };
   }

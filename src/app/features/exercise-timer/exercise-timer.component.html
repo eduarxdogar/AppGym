@@ -1,0 +1,28 @@
+<div class="p-4 space-y-4">
+    <h2 class="text-2xl font-bold mb-4 text-yellow-500">
+      Cronómetro de Descanso
+    </h2>
+  
+    <!-- Selector de tiempo de descanso personalizado -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Tiempo de Descanso (Minutos)</mat-label>
+      <mat-select [(ngModel)]="selectedRestTime" name="restTime" title="Tiempo de Descanso">
+        <mat-option *ngFor="let option of restTimeOptions" [value]="option">
+          {{ option }} Segundos
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  
+    <!-- Visualización del tiempo formateado -->
+    <div class="text-4xl font-mono text-yellow-500">
+      {{ timeFormatted }}
+    </div>
+  
+    <!-- Botones de acción -->
+    <div class="flex gap-2">
+      <button mat-raised-button color="primary" (click)="start()">Iniciar</button>
+      <button mat-raised-button color="accent" (click)="pause()">Pausar</button>
+      <button mat-raised-button color="warn" (click)="reset()">Reset</button>
+    </div>
+  </div>
+  

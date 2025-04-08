@@ -12,7 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
   styleUrls: ['./timer.component.scss']
 })
 export class TimerComponent implements OnDestroy {
-
+  
   @Output() finalizado = new EventEmitter<number>();
 
   time = 0;

@@ -7,7 +7,7 @@ export const EXERCISES_CATALOG: Ejercicio[] = [
     grupoMuscular: 'pecho',
     tipo: 'compuesto',
     series: 4,
-    repeticiones: '8-12',
+    repeticiones: 8-12,
     descanso: '60s',
   },
   {
@@ -16,7 +16,7 @@ export const EXERCISES_CATALOG: Ejercicio[] = [
     grupoMuscular: 'pecho',
     tipo: 'aislamiento',
     series: 3,
-    repeticiones: '12-15',
+    repeticiones: 12-15,
     descanso: '45s',
   },
   {
@@ -25,7 +25,7 @@ export const EXERCISES_CATALOG: Ejercicio[] = [
     grupoMuscular: 'espalda',
     tipo: 'compuesto',
     series: 4,
-    repeticiones: '6-10',
+    repeticiones: 6-10,
     descanso: '90s',
   },
   {
@@ -34,7 +34,7 @@ export const EXERCISES_CATALOG: Ejercicio[] = [
     grupoMuscular: 'bíceps',
     tipo: 'aislamiento',
     series: 3,
-    repeticiones: '10-12',
+    repeticiones: 10-12,
     descanso: '45s',
   },
   // Puedes seguir agregando más aquí

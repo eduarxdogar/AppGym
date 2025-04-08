@@ -1,28 +1,55 @@
-<div class="p-6 bg-gray-900 text-white rounded-lg shadow-md">
-  <h2 class="text-3xl font-bold mb-6 text-center">Progreso de Entrenamientos</h2>
+<div
+  class="min-h-screen text-white bg-[url('https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=1950&q=80')] bg-cover bg-center bg-no-repeat backdrop-blur-xl bg-blend-multiply p-4 sm:p-8"
+>  <h2 class="text-3xl font-extrabold mb-6 text-center drop-shadow-sm">
+    📊 Progreso de Entrenamientos
+  </h2>
 
-  <div class="mb-6">
-    <p class="text-xl font-bold">
-      Total Peso Levantado:
-      <span class="text-green-400">{{ totalPesoLev }} kg</span>
+  <!-- Total Peso -->
+  <div class="mb-6 text-center">
+    <p class="text-2xl font-bold text-green-400 bg-green-700/30 px-4 py-2 rounded-full inline-block shadow animate-bounceIn">
+      🏋️ Total Peso Levantado: {{ totalPesoLev }} kg
     </p>
   </div>
 
+  <!-- Lista de sesiones -->
   <div *ngIf="sesiones.length > 0; else noProgress" class="space-y-4">
-    <div *ngFor="let session of sesiones" class="p-4 bg-gray-800 rounded-lg shadow flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div
+      *ngFor="let session of sesiones"
+      class="p-5 bg-gray-800/80 hover:bg-gray-700 transition rounded-xl shadow-md animate-slideUp flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+    >
+      <!-- Información general -->
       <div>
-        <p class="text-xl font-semibold">{{ session.nombre }}</p>
-        <p class="text-sm">Inicio: {{ session.fechaInicio | date:'short' }}</p>
-        <p class="text-sm" *ngIf="session.fechaFin">Fin: {{ session.fechaFin | date:'short' }}</p>
+        <p class="text-xl font-bold text-blue-400">
+          📆 {{ session.nombre }}
+        </p>
+        <p class="text-sm text-gray-300 mt-1">
+          <span class="text-indigo-300 font-medium">Inicio:</span>
+          {{ session.fechaInicio | date:'short' }}
+        </p>
+        <p class="text-sm text-gray-300" *ngIf="session.fechaFin">
+          <span class="text-red-300 font-medium">Fin:</span>
+          {{ session.fechaFin | date:'short' }}
+        </p>
       </div>
-      <div>
-        <p class="text-lg font-bold">Duración: <span *ngIf="session.duracion">{{ session.duracion }}</span></p>
-        <p class="text-lg font-bold">Peso Total: <span *ngIf="session.pesoTotal">{{ session.pesoTotal }} kg</span></p>
+
+      <!-- Datos de progreso -->
+      <div class="space-y-1 text-sm text-right">
+        <p class="bg-blue-600/50 px-3 py-1 rounded-full text-blue-100 font-semibold shadow inline-block">
+          ⏱️ Duración:
+          <span *ngIf="session.duracion">{{ session.duracion }}</span>
+        </p>
+        <p class="bg-yellow-600/50 px-3 py-1 rounded-full text-yellow-100 font-semibold shadow inline-block">
+          🏋️ Peso Total:
+          <span *ngIf="session.pesoTotal">{{ session.pesoTotal }} kg</span>
+        </p>
       </div>
     </div>
   </div>
 
+  <!-- Sin progreso -->
   <ng-template #noProgress>
-    <p class="text-center text-gray-400">No hay progresos registrados.</p>
+    <p class="text-center text-gray-400 mt-6 animate-fadeIn">
+      ⚠️ No hay progresos registrados.
+    </p>
   </ng-template>
 </div>

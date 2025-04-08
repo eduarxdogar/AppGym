@@ -9,12 +9,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { TrainingSessionService } from '../../core/services/training-session.service';
 import { TrainingHistoryService } from '../../core/services/training-history.service';
 import { TimerComponent } from '../../features/timer/timer.component';
+import {ExerciseTimerComponent} from '../../features/exercise-timer/exercise-timer.component';
 import { TrainingSession } from '../../models/training-session.model';
 
 @Component({
   selector: 'app-workout-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, TimerComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, TimerComponent,ExerciseTimerComponent],
   templateUrl: './workout-detail.component.html',
 })
 export class WorkoutDetailComponent implements OnInit {

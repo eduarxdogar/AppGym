@@ -1,10 +1,36 @@
-<!-- src/app/features/timer/timer.component.html -->
-<div class="p-4">
-  <h2 class="text-2xl font-bold mb-4 text-yellow-500">
-    Cronómetro de Descanso
-  </h2>
-  <div class="text-4xl font-mono mb-4 text-yellow-500">{{ timeFormatted }}</div>
-  <button mat-raised-button color="primary" (click)="start()">Iniciar</button>
-  <button mat-raised-button color="accent" (click)="pause()">Pausar</button>
-  <button mat-raised-button color="warn" (click)="reset()">Reset</button>
+<div class="p-6 bg-gray-900 text-white rounded-lg shadow-md text-center">
+  <h2 class="text-2xl font-bold mb-6 text-yellow-400 animate-pulse">⏱️ Cronómetro de Descanso</h2>
+
+  <div class="text-6xl font-mono text-yellow-400 mb-6 animate-fadeIn">
+    {{ timeFormatted }}
+  </div>
+
+  <div class="flex justify-center gap-4">
+    <!-- Botón Iniciar -->
+    <button
+      (click)="start()"
+      class="bg-green-500 hover:bg-green-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-transform transform hover:scale-110"
+      matTooltip="Iniciar"
+    >
+      ▶️
+    </button>
+
+    <!-- Botón Pausar -->
+    <button
+      (click)="pause()"
+      class="bg-yellow-500 hover:bg-yellow-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-transform transform hover:scale-110"
+      matTooltip="Pausar"
+    >
+      ⏸️
+    </button>
+
+    <!-- Botón Reset -->
+    <button
+      (click)="reset()"
+      class="bg-red-500 hover:bg-red-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-transform transform hover:scale-110"
+      matTooltip="Reiniciar"
+    >
+      🔄
+    </button>
+  </div>
 </div>

@@ -35,8 +35,10 @@ export class WorkoutListComponent implements OnInit {
   addWorkout() {
     const newWorkout: Workout = {
       id: Date.now(),
+      fecha: new Date(), 
       nombre: 'Nueva Rutina',
-      ejercicios: []
+      ejercicios: [],
+      
     };
     this.workoutService.addWorkout(newWorkout);
     this.workouts = this.workoutService.getWorkouts(); 
