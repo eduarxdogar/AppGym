@@ -1,252 +1,240 @@
-<div 
-  class="min-h-screen  bg-[url('https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=1950&q=80')] 
-             bg-cover bg-center bg-no-repeat backdrop-blur-xl bg-blend-multiply 
-             p-4 sm:p-8"
+<!-- Contenedor principal con fondo, imagen, blur, etc. -->
+<div
+  class="min-h-screen bg-[url('https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=1950&q=80')] bg-cover bg-center bg-no-repeat backdrop-blur-xl bg-blend-multiply p-4 sm:p-8 relative"
 >
-<div class="p-6 animate-fadeIn">
-  <h2 class="text-3xl font-bold mb-6 text-blue-600 flex items-center gap-2">
-    <i class="fas fa-dumbbell text-blue-500"></i>
-    Editar Rutina: {{ workout.nombre }}
-  </h2>
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-black/40 rounded-lg z-0"></div>
 
-  <!-- Lista de ejercicios -->
-  <div class="mb-8 animate-slideUp ">
-    <h3 class="text-2xl font-semibold mb-4 text-blue-600">Ejercicios</h3>
+  <!-- Contenido principal -->
+  <div class="relative z-10 space-y-6 text-white">
+    <h2 class="text-4xl font-extrabold text-center drop-shadow-lg">
+      🏋️‍♂️ {{ workout.nombre }}
+    </h2>
+    <hr class="border-t border-gray-400/40" />
+
+    <!-- Lista de ejercicios en un acordeón -->
     <ul class="space-y-4">
-      <li
-      *ngFor="let ejercicio of workout.ejercicios; let i = index"
-      class="p-4 bg-gray-800 text-white rounded-lg shadow-md transition-transform hover:scale-[1.01] animate-fadeIn"
-      [ngClass]="getDelayClass(i)"
-    >
-        <div class="flex flex-col sm:flex-row justify-between gap-4">
-          <div class="flex flex-col text-sm">
-            <span class="font-semibold text-yellow-400">Calentamiento:</span>
-            <span>
-              {{ ejercicio.serieCalentamiento }} Sets x {{ ejercicio.repeticionesCalentamiento }} Repts
-            </span>
+      <li *ngFor="let ejercicio of workout.ejercicios; let i = index"
+          class="bg-gray-800/80 hover:bg-gray-700 transition rounded-xl p-4 shadow-lg backdrop-blur-sm border border-gray-700 animate-fadeIn"
+          [ngClass]="getDelayClass(i)">
+        <!-- Cabecera del acordeón -->
+        <div class="flex justify-between items-center cursor-pointer select-none" (click)="toggleExpand(i)">
+          <div class="flex items-center gap-3">
+            <mat-icon class="text-pink-400 text-3xl">fitness_center</mat-icon>
+            <p class="font-semibold text-xl text-white tracking-wide">{{ ejercicio.nombre }}</p>
           </div>
-          <div class="flex flex-col text-sm">
-            <span class="font-semibold text-green-400">Ejercicio:</span>
-            <span>
-              {{ ejercicio.nombre }} - {{ ejercicio.series }} Sets x {{ ejercicio.repeticiones }} Repts
-            </span>
-          </div>
-          <div class="flex flex-col text-sm text-right">
-            <span *ngIf="ejercicio.pesokg"  class="font-semibold text-green-400"> Peso:
-              <i class="fas fa-weight-hanging mr-1"></i> {{ ejercicio.pesokg }} kg
-            </span>
-            <span class="text-gray-400">
-              ({{ ejercicio.grupoMuscular }} - {{ ejercicio.tipo }})
-            </span>
-          </div>
+          <mat-icon class="text-white transform transition-transform duration-300"
+                    [ngClass]="{'rotate-180': expandedIndex === i, 'rotate-0': expandedIndex !== i}">
+            expand_more
+          </mat-icon>
         </div>
-        <div class="flex gap-2 mt-3 justify-end">
-          <button
-            (click)="editExercise(i)"
-            class="flex items-center gap-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded transition"
-          >
-            <i class="fas fa-edit"></i> Editar
-          </button>
-          <button
-            (click)="deleteExercise(i)"
-            class="flex items-center gap-1 bg-red-500 hover:bg-red-700 text-white px-3 py-1 rounded transition"
-          >
-            <i class="fas fa-trash"></i> Eliminar
-          </button>
+        <!-- Detalles del ejercicio (visible al expandir) -->
+        <div *ngIf="expandedIndex === i" class="transition-all duration-500 ease-in-out overflow-hidden mt-4 pl-12 text-gray-300 text-sm space-y-2">
+          <div><span class="text-indigo-400 font-bold">🔥 Calentamiento:</span> {{ ejercicio.serieCalentamiento }} series, {{ ejercicio.repeticionesCalentamiento }} reps</div>
+          <div><span class="text-green-400 font-bold">🎯 Series:</span> {{ ejercicio.series }}</div>
+          <div><span class="text-yellow-400 font-bold">🔁 Reps:</span> {{ ejercicio.repeticiones }}</div>
+          <div><span class="text-red-300 font-bold">🧠 Músculo:</span> {{ ejercicio.grupoMuscular }}</div>
+          <div><span class="text-indigo-300 font-bold">⏱️ Descanso:</span> {{ ejercicio.descanso }}</div>
+          <div><span class="text-orange-300 font-bold">🏋️ Peso:</span> {{ ejercicio.pesokg }} kg</div>
+          <div><span class="text-purple-400 font-bold">⚙️ Tipo:</span> {{  ejercicio.tipo }}</div>
+
+           <!-- Mostrar el drop set si existe -->
+            <!-- Dentro de la tarjeta de cada ejercicio, después de mostrar los datos básicos -->
+<div *ngIf="ejercicio.superSetEjercicio" class="relative mt-3 p-3 bg-gray-600 rounded">
+  <!-- Botón (pequeño) para eliminar la super serie, posicionado en la esquina -->
+  <button (click)="removerSuperSet(i)"
+          class="absolute top-1 right-1 text-white hover:text-red-500 focus:outline-none"
+          title="Eliminar Super Serie">
+    <mat-icon>close</mat-icon>
+  </button>
+  
+  <h4 class="font-semibold text-yellow-400">Super Serie:</h4>
+  <div>
+    <strong>Nombre:</strong> {{ ejercicio.superSetEjercicio.nombre }}
+  </div>
+  <div>
+    <strong class="text-red-300 font-bold" >Grupo muscular:</strong> {{ ejercicio.superSetEjercicio.grupoMuscular }}
+  </div>
+  <div>
+    <strong class="text-purple-400 font-bold">Tipo:</strong> {{ ejercicio.superSetEjercicio.tipo }}
+  </div>
+  <div>
+    <strong  class="text-green-400 font-bold" >Series:</strong> {{ ejercicio.superSetEjercicio.series }},
+    <strong class="text-yellow-400 font-bold">Reps:</strong> {{ ejercicio.superSetEjercicio.repeticiones }},
+    <strong class="text-purple-400 font-bold">Descanso:</strong> {{ ejercicio.superSetEjercicio.descanso }}
+  </div>
+  <!-- Botón para editar la super serie (opcional) -->
+  <button (click)="editarSuperSet(i)" class="mt-2 text-white bg-blue-500 px-2 py-1 rounded">
+    Editar Super Serie
+  </button>
+</div>
+
+          <div *ngIf="ejercicio.dropSet" class="mt-3 p-3 relative bg-gray-700 rounded">
+            <button (click)="removerDropSet(i)"
+            class="absolute top-1 right-1 text-white hover:text-red-500 focus:outline-none"
+            title="Eliminar Drop Set">
+                <mat-icon>close</mat-icon>
+              </button>
+            <h4 class="font-semibold text-yellow-400">Drop Set:</h4>
+            <ul class="ml-4 mt-2">
+              <li *ngFor="let ds of ejercicio.dropSet.sets; let idx = index">
+                
+                <!-- Ejemplo de mostrar repeticiones y cálculo de peso basado en porcentaje -->
+                <span class="text-white">
+                  
+                  Set {{ idx + 1 }}: 
+                  {{ ds.repeticiones }} reps 
+                  a {{ (ejercicio.pesokg! * ds.porcentaje) | number:'1.0-0' }} kg 
+                  ({{ ds.porcentaje * 100 | number:'1.0-0' }}%)
+                </span>
+              </li>
+            </ul>
+          </div>
+          <!-- Botones de edición y eliminación para cada ejercicio -->
+          <div class="flex flex-wrap gap-2 mt-2 sm:gap-4">
+            <button (click)="editExercise(i)" class="bg-blue-600 flex-1 min-w-[140px] hover:bg-blue-700 text-white px-3 py-1 rounded">
+              <mat-icon>edit</mat-icon> Editar
+            </button>
+            <button (click)="deleteExercise(i)" class="bg-red-600 flex-1 min-w-[140px] hover:bg-red-700 text-white px-3 py-1 rounded">
+              <mat-icon>delete</mat-icon> Eliminar
+            </button>
+            <!-- Botones adicionales -->
+            <button (click)="addSuperSet(i)" class="bg-purple-600 flex-1 min-w-[140px] hover:bg-purple-700 text-white px-3 py-1 rounded">
+              <mat-icon>link</mat-icon> Super Set
+            </button>
+            <button (click)="addDropsetAvanzado(i)" class="bg-yellow-600 flex-1 min-w-[140px] hover:bg-cyan-700 text-white px-3 py-1 rounded">
+              <mat-icon>bolt</mat-icon> Drop Set
+            </button>
+          </div>          
         </div>
       </li>
     </ul>
-  </div>
 
+    <hr class="border-t border-gray-400/40" />
 
-<!-- Formulario para agregar o editar ejercicio -->
-<div class="mb-10">
-  <h3 class="text-2xl font-semibold mb-4 text-green-500 flex items-center gap-2">
-    <mat-icon class="text-green-400">add_circle</mat-icon>
-    {{ editingExerciseIndex !== null ? "Editar Ejercicio" : "Agregar Ejercicio" }}
-  </h3>
-
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <!-- Nombre -->
-    <div>
-      <label for="exercise-name" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-        <mat-icon class="text-blue-500">fitness_center</mat-icon> Nombre
-      </label>
-      <input
-        id="exercise-name"
-        [(ngModel)]="newExercise.nombre"
-        placeholder="Ej: Press banca"
-        class="w-full p-3 rounded border border-gray-300 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
-      />
-    </div>
-
-    <!-- Series Calentamiento -->
-    <div>
-      <label for="exercise-seriescal" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-        <mat-icon class="text-orange-500">local_fire_department</mat-icon> Series Calentamiento
-      </label>
-      <input
-        id="exercise-seriescal"
-        type="number"
-        min="1"
-        [(ngModel)]="newExercise.serieCalentamiento"
-        class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400"
-      />
-    </div>
-
-    <!-- Series -->
-    <div>
-      <label for="exercise-series" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-        <mat-icon class="text-purple-500">layers</mat-icon> Series
-      </label>
-      <input
-        id="exercise-series"
-        type="number"
-        min="1"
-        [(ngModel)]="newExercise.series"
-        class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400"
-      />
-    </div>
-
-    <!-- Repeticiones Calentamiento -->
-    <div>
-      <label for="exercise-repscal" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-        <mat-icon class="text-orange-400">whatshot</mat-icon> Reps Calentamiento
-      </label>
-      <input
-        id="exercise-repscal"
-        type="number"
-        min="1"
-        [(ngModel)]="newExercise.repeticionesCalentamiento"
-        class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400"
-      />
-    </div>
-
-    <!-- Repeticiones -->
-    <div>
-      <label for="exercise-reps" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-        <mat-icon class="text-green-500">repeat</mat-icon> Repeticiones
-      </label>
-      <input
-        id="exercise-reps"
-        type="number"
-        min="1"
-        [(ngModel)]="newExercise.repeticiones"
-        class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
-      />
-    </div>
-
-    <!-- Peso -->
-    <div>
-      <label for="exercise-pesokg" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-        <mat-icon class="text-yellow-500">scale</mat-icon> Peso (Kg)
-      </label>
-      <input
-        id="exercise-pesokg"
-        type="number"
-        min="0"
-        [(ngModel)]="newExercise.pesokg"
-        class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-      />
-    </div>
-
-    <!-- Grupo Muscular -->
-    <div>
-      <label for="exercise-grupo" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-        <mat-icon class="text-pink-500">groups</mat-icon> Grupo Muscular
-      </label>
-      <select
-        id="exercise-grupo"
-        [(ngModel)]="newExercise.grupoMuscular"
-        (change)="actualizarNombreRutinaPorGrupo(newExercise.grupoMuscular)"
-        class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400"
-      >
-        <option *ngFor="let grupo of grupoMuscularOpciones" [value]="grupo">
-          {{ grupo | titlecase }}
-        </option>
-      </select>
-    </div>
-
-    <!-- Tipo de Ejercicio -->
-    <div>
-      <label for="exercise-tipo" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-        <mat-icon class="text-indigo-500">category</mat-icon> Tipo de Ejercicio
-      </label>
-      <select
-        id="exercise-tipo"
-        [(ngModel)]="newExercise.tipo"
-        class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-      >
-        <option *ngFor="let tipo of tiposEjercicio" [value]="tipo">
-          {{ tipo | titlecase }}
-        </option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Botones de acción -->
-  <div class="mt-6 flex gap-4">
-    <button
-      (click)="addExercise()"
-      class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded transition animate-bounceIn"
-    >
-      <mat-icon>check_circle</mat-icon>
-      {{ editingExerciseIndex !== null ? "Guardar Cambios" : "Agregar Ejercicio" }}
-    </button>
-
-    <button
-      *ngIf="editingExerciseIndex !== null"
-      (click)="cancelEdit()"
-      class="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded transition animate-bounceIn"
-    >
-      <mat-icon>cancel</mat-icon> Cancelar
-    </button>
-  </div>
-</div>
-
-
-  <!-- Botón de guardar rutina -->
-  <div class="text-right">
-    <button
-      (click)="saveChanges()"
-      class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition animate-bounceIn"
-    >
-      <i class="fas fa-save"></i> Guardar Rutina
-    </button>
-  </div>
-
-  <!-- Modal de Confirmación -->
-  <div
-    *ngIf="modalVisible"
-    class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-  >
-    <div
-      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full relative animate-fadeIn"
-    >
-      <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
-        {{ modalTitle }}
+    <!-- Formulario para agregar/editar ejercicio -->
+    <div class="mb-10">
+      <h3 class="text-2xl font-semibold mb-4 text-green-500 flex items-center gap-2">
+        <mat-icon class="text-green-400">add_circle</mat-icon>
+        {{ editingExerciseIndex !== null ? "Editar Ejercicio" : "Agregar Ejercicio" }}
       </h3>
-      <p class="mb-6 text-gray-600 dark:text-gray-300">{{ modalMessage }}</p>
-      <div class="flex justify-end gap-4">
-        <button
-          (click)="cancelModal()"
-          class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded animate-bounceIn"
-        >
-          Cancelar
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Nombre del ejercicio -->
+        <div>
+          <label for="exercise-name" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
+            <mat-icon class="text-blue-500">fitness_center</mat-icon> Nombre
+          </label>
+          <input id="exercise-name" [(ngModel)]="newExercise.nombre" placeholder="Ej: Press banca" class="w-full p-3 rounded border border-gray-300 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+        </div>
+        <!-- Series de calentamiento -->
+        <div>
+          <label for="exercise-seriescal" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
+            <mat-icon class="text-orange-500">local_fire_department</mat-icon> Series Calentamiento
+          </label>
+          <input id="exercise-seriescal" type="number" min="1" [(ngModel)]="newExercise.serieCalentamiento" class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400"/>
+        </div>
+        <!-- Series -->
+        <div>
+          <label for="exercise-series" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
+            <mat-icon class="text-purple-500">layers</mat-icon> Series
+          </label>
+          <input id="exercise-series" type="number" min="1" [(ngModel)]="newExercise.series" class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400"/>
+        </div>
+        <!-- Repeticiones de calentamiento -->
+        <div>
+          <label for="exercise-repscal" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
+            <mat-icon class="text-orange-400">whatshot</mat-icon> Reps Calentamiento
+          </label>
+          <input id="exercise-repscal" type="number" min="1" [(ngModel)]="newExercise.repeticionesCalentamiento" class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400"/>
+        </div>
+        <!-- Repeticiones -->
+        <div>
+          <label for="exercise-reps" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
+            <mat-icon class="text-green-500">repeat</mat-icon> Repeticiones
+          </label>
+          <input id="exercise-reps" type="number" min="1" [(ngModel)]="newExercise.repeticiones" class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"/>
+        </div>
+        <!-- Peso -->
+        <div>
+          <label for="exercise-pesokg" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
+            <mat-icon class="text-yellow-500">scale</mat-icon> Peso (Kg)
+          </label>
+          <input id="exercise-pesokg" type="number" min="0" [(ngModel)]="newExercise.pesokg" class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400"/>
+        </div>
+        <!-- Grupo muscular -->
+        <div>
+          <label for="exercise-grupo" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
+            <mat-icon class="text-pink-500">groups</mat-icon> Grupo Muscular
+          </label>
+          <select id="exercise-grupo" [(ngModel)]="newExercise.grupoMuscular" (change)="actualizarNombreRutinaPorGrupo(newExercise.grupoMuscular)" class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400">
+            <option *ngFor="let grupo of grupoMuscularOpciones" [value]="grupo">
+              {{ grupo | titlecase }}
+            </option>
+          </select>
+        </div>
+        <!-- Tipo de ejercicio -->
+        <div>
+          <label for="exercise-tipo" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
+            <mat-icon class="text-indigo-500">category</mat-icon> Tipo de Ejercicio
+          </label>
+          <select id="exercise-tipo" [(ngModel)]="newExercise.tipo" class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <option *ngFor="let tipo of tiposEjercicio" [value]="tipo">{{ tipo | titlecase }}</option>
+          </select>
+        </div>
+        <!-- Selector de nivel de dificultad -->
+        <div>
+          <label for="nivelDificultad" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
+            <mat-icon class="text-indigo-500">category</mat-icon> Nivel de Dificultad:
+          </label>
+          <select id="nivelDificultad" [(ngModel)]="workout.nivelDificultad" class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <option *ngFor="let nivel of nivelesDisponibles" [value]="nivel">{{ nivel | titlecase }}</option>
+          </select>
+        </div>
+      </div>
+      <!-- Botones de acción del formulario -->
+      <div class="mt-6 flex gap-4">
+        <button (click)="addExercise()" class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded transition animate-bounceIn">
+          <mat-icon>check_circle</mat-icon>
+          {{ editingExerciseIndex !== null ? "Guardar Cambios" : "Agregar Ejercicio" }}
         </button>
-        <button
-          (click)="confirmModal()"
-          class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded animate-bounceIn"
-        >
-          Confirmar
+        <button *ngIf="editingExerciseIndex !== null" (click)="cancelEdit()" class="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded transition animate-bounceIn">
+          <mat-icon>cancel</mat-icon> Cancelar
         </button>
       </div>
-      <button
-        (click)="cancelModal()"
-        class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 animate-bounceIn"
-      >
-        <i class="fas fa-times"></i>
+    </div>
+
+    <!-- Botón de guardar rutina -->
+    <div class="text-right">
+      <button (click)="saveChanges()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition animate-bounceIn">
+        <i class="fas fa-save"></i> Guardar Rutina
       </button>
     </div>
+
+    <!-- Modal de confirmación -->
+    <div *ngIf="modalVisible" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full relative animate-fadeIn">
+        <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">{{ modalTitle }}</h3>
+        <p class="mb-6 text-gray-600 dark:text-gray-300">{{ modalMessage }}</p>
+        <div class="flex justify-end gap-4">
+          <button (click)="cancelModal()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded animate-bounceIn">
+            Cancelar
+          </button>
+          <button (click)="confirmModal()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded animate-bounceIn">
+            Confirmar
+          </button>
+        </div>
+        <button (click)="cancelModal()" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 animate-bounceIn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
   </div>
+
+  <!-- Si no se encuentra la rutina -->
+  <ng-template #noWorkout>
+    <div class="text-center text-white">
+      <h2 class="text-2xl font-bold">No hay ninguna rutina seleccionada</h2>
+      <p class="mt-2">Por favor, selecciona o crea una nueva rutina para comenzar.</p>
+    </div>
+  </ng-template>
 </div>

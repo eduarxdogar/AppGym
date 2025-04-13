@@ -1,4 +1,3 @@
-// src/app/components/workout-detail/workout-detail.component.ts
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Workout } from '../../models/workout.model';

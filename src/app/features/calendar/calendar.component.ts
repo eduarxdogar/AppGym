@@ -1,4 +1,3 @@
-// src/app/features/calendar/calendar.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TrainingHistoryService } from '../../core/services/training-history.service';

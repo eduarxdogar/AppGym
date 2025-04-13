@@ -1,4 +1,3 @@
-// src/app/app.routes.ts
 import { Routes } from '@angular/router';
 import { WorkoutListComponent } from './components/workout-list/workout-list.component';
 import { WorkoutDetailComponent } from './components/workout-detail/workout-detail.component';
@@ -16,8 +15,5 @@ export const routes: Routes = [
   { path: 'workout/:id/edit', component: WorkoutEditComponent }, // Nueva ruta de edición
   { path: 'progress', component: ProgressComponent },
   { path: '**', redirectTo: '/' }, // Redirección para rutas inválidas
-  {
-    path: 'workouts/create',
-    loadComponent: () => import('./components/workout-create.component').then(m => m.WorkoutCreateComponent)
-  }
+
 ];

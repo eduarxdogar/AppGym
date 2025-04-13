@@ -5,7 +5,9 @@ export interface Workout {
   fecha?:Date;
   nombre: string;
   ejercicios: Ejercicio[]; 
+  nivelDificultad: 'principiante' | 'intermedio' | 'avanzado'; 
   musculos?: string[];
+  frequency?: number;
 }
 
 export type { Ejercicio };

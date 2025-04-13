@@ -147,3 +147,18 @@ Si todo está bien, se debería ejecutar lint-staged y luego permitir el commit.
 
 - Husky genera por defecto varios hooks. No es necesario modificarlos manualmente.
 - Si ves el error `No such file or directory`, probablemente editaste incorrectamente la ruta del `husky.sh`.
+
+## Husky Hooks Configurados
+
+### pre-commit
+Corre `npx lint-staged` antes de cada commit, para formatear y hacer lint de archivos modificados.
+
+### pre-push (pendiente de configurar)
+Podríamos usarlo para correr `npm test` y asegurar que no se sube código roto.
+
+### Otros hooks disponibles en `.husky/`
+- `commit-msg`
+- `post-merge`
+- `prepare-commit-msg`
+- Todos vacíos por ahora, se pueden personalizar según necesidades.
+

@@ -166,13 +166,20 @@ export class WorkoutService {
   addSuperSetToExercise(workoutId: number, ejercicioIndex: number, ejercicioVinculado: Ejercicio): void {
     const workouts = this.workoutsSubject.value;
     const workout = workouts.find(w => w.id === workoutId);
-  
+    
     if (workout && workout.ejercicios[ejercicioIndex]) {
       const ejercicio = workout.ejercicios[ejercicioIndex];
+      // Aquí forzamos que el ejercicio se marque como de tipo "super-serie"
       ejercicio.tipos = 'super-serie';
+      // Se asigna el ejercicio vinculado al campo superSetEjercicio.
       ejercicio.superSetEjercicio = ejercicioVinculado;
       this.updateWorkout(workout);
     }
   }
-    
+  
+  // Método para verificar si un ejercicio es avanzado
+  checkIfAdvanced(workout: Workout): boolean {
+    return workout.nivelDificultad === 'avanzado';
+  }
+  
 }

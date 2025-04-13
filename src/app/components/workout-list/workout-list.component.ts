@@ -38,7 +38,7 @@ export class WorkoutListComponent implements OnInit {
       fecha: new Date(), 
       nombre: 'Nueva Rutina',
       ejercicios: [],
-      
+      nivelDificultad: 'principiante', 
     };
     this.workoutService.addWorkout(newWorkout);
     this.workouts = this.workoutService.getWorkouts(); 

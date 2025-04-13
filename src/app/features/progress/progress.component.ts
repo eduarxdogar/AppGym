@@ -1,4 +1,3 @@
-// src/app/features/progress/progress.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TrainingHistoryService } from '../../core/services/training-history.service';
@@ -10,7 +9,6 @@ import { MatIconModule } from '@angular/material/icon';
   standalone: true,
   imports: [CommonModule, MatIconModule],
   templateUrl: './progress.component.html',
- // styleUrls: ['./progress.component.scss']
 })
 export class ProgressComponent implements OnInit {
   sesiones: TrainingSession[] = [];
