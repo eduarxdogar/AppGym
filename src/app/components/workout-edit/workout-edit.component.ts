@@ -9,10 +9,12 @@ import { take } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatOptionModule } from '@angular/material/core';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatMenuModule } from '@angular/material/menu';
 import { EditarSuperSetModalComponent } from '../modals/editar-super-set-modal/editar-super-set-modal.component';
-import { ButtonComponent } from '../../shared/ui/button/button.component';
-import { InputComponent } from '../../shared/ui/input';
+import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
+import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
+import { UiInputComponent } from '../../shared/ui/ui-input/ui-input.component';
 
 
 
@@ -20,7 +22,7 @@ import { InputComponent } from '../../shared/ui/input';
 @Component({
   selector: 'app-workout-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatFormFieldModule, MatOptionModule, ButtonComponent, InputComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, MatMenuModule, UiButtonComponent, UiCardComponent, UiInputComponent, MatDialogModule],
   templateUrl: './workout-edit.component.html',
 })
 export class WorkoutEditComponent implements OnInit {
@@ -146,6 +148,10 @@ export class WorkoutEditComponent implements OnInit {
     this.editingExerciseIndex = null;
     this.newExercise = this.createEmptyExercise();
     this.cdr.detectChanges();
+  }
+
+  cancel(): void {
+    this.router.navigate(['/workouts']);
   }
 
   saveChanges(): void {
