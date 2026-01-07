@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>Editar Super Serie</h2>
 <mat-dialog-content class="space-y-4">
   <div>
-    <app-input label="Nombre del ejercicio" [(ngModel)]="ejercicio.nombre" containerClass="mb-0"></app-input>
+    <app-ui-input label="Nombre del ejercicio" [(ngModel)]="ejercicio.nombre" containerClass="mb-0"></app-ui-input>
   </div>
 
   <mat-form-field appearance="fill" class="w-full">
@@ -25,34 +25,25 @@
   </mat-form-field>
 
   <div>
-    <app-input label="Series" type="number" [(ngModel)]="ejercicio.series" containerClass="mb-0"></app-input>
+    <app-ui-input label="Series" type="number" [(ngModel)]="ejercicio.series" containerClass="mb-0"></app-ui-input>
   </div>
 
   <div>
-    <app-input label="Repeticiones" type="number" [(ngModel)]="ejercicio.repeticiones" containerClass="mb-0"></app-input>
+    <app-ui-input label="Repeticiones" type="number" [(ngModel)]="ejercicio.repeticiones" containerClass="mb-0"></app-ui-input>
   </div>
 
   <div>
-    <app-input label="Peso (kg)" type="number" [(ngModel)]="ejercicio.pesokg" containerClass="mb-0"></app-input>
+    <app-ui-input label="Peso (kg)" type="number" [(ngModel)]="ejercicio.pesokg" containerClass="mb-0"></app-ui-input>
   </div>
 
   <div>
-    <app-input label="Tiempo de descanso (segundos)" [(ngModel)]="ejercicio.descanso" containerClass="mb-0"></app-input>
+    <app-ui-input label="Tiempo de descanso (segundos)" [(ngModel)]="ejercicio.descanso" containerClass="mb-0"></app-ui-input>
   </div>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end" class="mt-6 flex gap-4">
-  <app-button 
-    (clicked)="cancelar()" 
-    variant="outline"
-    customClass="border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black">
-    Cancelar
-  </app-button>
-
-  <app-button 
-    (clicked)="guardar()" 
-    variant="primary"
-    customClass="bg-yellow-500 text-black hover:bg-yellow-600 font-semibold shadow-md">
-    Guardar
-  </app-button>
+<mat-dialog-actions align="end">
+  <div class="flex justify-end gap-3 mt-6">
+    <app-ui-button (clicked)="cancelar()" variant="ghost">Cancelar</app-ui-button>
+    <app-ui-button (clicked)="guardar()" variant="primary">Guardar</app-ui-button>
+  </div>
 </mat-dialog-actions>
