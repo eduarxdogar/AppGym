@@ -1,189 +1,244 @@
 <div class="min-h-screen bg-background text-foreground p-4 sm:p-8 font-sans">
   
-  <div class="max-w-7xl mx-auto space-y-8 animate-fadeIn" *ngIf="workout">
+  <!-- Loading State -->
+  <div *ngIf="!workoutForm()" class="flex justify-center items-center h-64">
+    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+  </div>
+
+  <div class="max-w-7xl mx-auto space-y-8 animate-fadeIn" *ngIf="workoutForm()">
     
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-zinc-800 pb-6">
+    <!-- Header with Sticky Save Button Context -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-zinc-800 pb-6 sticky top-0 bg-background/95 backdrop-blur-md z-20 py-4">
       <div>
         <h1 class="text-4xl font-extrabold tracking-tight text-white font-sans">
           Diseñar Rutina
         </h1>
-        <p class="text-zinc-400 mt-2">Personaliza cada detalle de tu entrenamiento</p>
+        <p class="text-zinc-400 mt-2">Edita tu rutina: <span class="text-primary font-bold">{{ workoutForm()?.nombre }}</span></p>
       </div>
       
       <div class="flex gap-3">
         <app-ui-button 
             (clicked)="cancel()" 
             variant="ghost" 
-            customClass="text-zinc-400 hover:text-white">
+            customClass="text-zinc-400 hover:text-white border border-zinc-800">
             Cancelar
         </app-ui-button>
         <app-ui-button 
             (clicked)="saveChanges()" 
             variant="primary" 
-            customClass="px-8 shadow-[0_0_20px_rgba(204,252,126,0.3)]">
-            Guardar Cambios
+            customClass="px-8 shadow-[0_0_20px_rgba(204,252,126,0.5)] bg-[#CCFC7E] text-black hover:scale-105 transition-transform font-bold">
+            <mat-icon class="mr-2">save</mat-icon> Guardar Cambios
         </app-ui-button>
       </div>
     </div>
 
     <!-- Main Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       
-      <!-- Left Column: Settings -->
+      <!-- Left Column: Settings & Data -->
       <div class="space-y-6">
-        <app-ui-card title="Configuración General" customClass="bg-secondary/50 border-zinc-800 backdrop-blur-sm h-full">
-           <div class="grid grid-cols-1 gap-6">
-              <app-ui-input 
-                  label="Nombre de la Rutina" 
-                  [(ngModel)]="workout.nombre" 
-                  placeholder="Ej: Push Day A"
-                  containerClass="border-zinc-800 focus-within:border-primary/50 bg-black/50">
-              </app-ui-input>
+        <app-ui-card title="Configuración General" customClass="bg-zinc-900 border-zinc-800 backdrop-blur-sm shadow-xl">
+           <div class="grid grid-cols-1 gap-6 p-2">
+               <!-- Nombre Routine -->
+              <div>
+                 <label class="block text-sm font-medium text-zinc-400 mb-2">Nombre de la Rutina</label>
+                 <!-- Utilizar directly [(ngModel)] on workoutForm() requires checking reactivity, 
+                      since workoutForm() returns value. 
+                      Ideally we bind to a property of the object returned by the signal if we want mutability 
+                      BUT signal gives readonly by default unless we update whole object or use nested signals.
+                      However, 'workoutForm()' returns a reference to the Object.
+                      Modifying properties of that object WORKS for the view if change detection runs,
+                      but signals usually prefer immutability.
+                      For THIS refactor step User asked specifically to fix mutability.
+                      We will assume the object inside signal IS mutable for NgModel as long as we trigger updates?
+                      Actually, better to use the specific properties in the template or updated setter.
+                      Here we leverage that the signal holds an object reference, and NgModel mutates that object.
+                  -->
+                  <input type="text" 
+                         [ngModel]="workoutForm()?.nombre" 
+                         (ngModelChange)="workoutForm()!.nombre = $event"
+                         class="w-full bg-black/50 border border-zinc-800 text-white rounded-lg p-3 focus:border-primary/50 outline-none transition-all placeholder-zinc-600 focus:ring-1 focus:ring-primary/50"
+                         placeholder="Ej: Push Day A">
+              </div>
 
-              <div class="flex flex-col gap-2">
-                  <label class="text-sm font-medium text-zinc-300">Dificultad</label>
-                  <select [(ngModel)]="workout.nivelDificultad" (change)="actualizarConfiguracionPorNivel()" class="bg-black/50 border border-zinc-800 text-white rounded-md p-2 focus:border-primary/50 outline-none transition-colors">
+              <!-- Dificultad -->
+              <div>
+                  <label class="block text-sm font-medium text-zinc-400 mb-2">Nivel de Dificultad</label>
+                  <select [ngModel]="workoutForm()?.nivelDificultad" 
+                          (ngModelChange)="workoutForm()!.nivelDificultad = $event"
+                          class="w-full bg-black/50 border border-zinc-800 text-white rounded-lg p-3 focus:border-primary/50 outline-none transition-colors appearance-none">
                       <option *ngFor="let nivel of nivelesDisponibles" [value]="nivel">{{ nivel | titlecase }}</option>
                   </select>
               </div>
            </div>
         </app-ui-card>
+
+        <!-- Current Exercise List -->
+        <div class="space-y-4">
+             <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                <mat-icon class="text-primary">list</mat-icon> Ejercicios ({{ workoutForm()?.ejercicios?.length }})
+             </h3>
+             
+             <div *ngFor="let ejercicio of workoutForm()?.ejercicios; let i = index" 
+                  class="group relative overflow-hidden rounded-xl bg-zinc-900/50 border border-zinc-800 hover:border-primary/50 transition-all p-4">
+                  
+                  <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                      <!-- Info -->
+                      <div class="flex items-center gap-4 flex-1 w-full">
+                          <div class="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center text-primary font-bold border border-zinc-700">
+                             {{ i + 1 }}
+                          </div>
+                          <div>
+                              <h4 class="font-bold text-white text-lg">{{ ejercicio.nombre }}</h4>
+                              <div class="flex gap-3 text-xs text-zinc-400 mt-1">
+                                  <span class="bg-black/40 px-2 py-1 rounded border border-zinc-800">{{ ejercicio.grupoMuscular | uppercase }}</span>
+                                  <span class="bg-black/40 px-2 py-1 rounded border border-zinc-800">{{ ejercicio.tipo | titlecase }}</span>
+                              </div>
+                          </div>
+                      </div>
+
+                      <!-- Quick Stats (Visual only) -->
+                      <div class="flex items-center gap-4 bg-black/20 p-2 rounded-lg border border-zinc-800/50">
+                          <div class="text-center">
+                              <span class="block text-xs text-zinc-500 uppercase">Series</span>
+                              <span class="font-bold text-white">{{ ejercicio.series }}</span>
+                          </div>
+                          <div class="w-px h-6 bg-zinc-800"></div>
+                          <div class="text-center">
+                              <span class="block text-xs text-zinc-500 uppercase">Reps</span>
+                              <span class="font-bold text-white">{{ ejercicio.repeticiones }}</span>
+                          </div>
+                          <div class="w-px h-6 bg-zinc-800"></div>
+                           <div class="text-center">
+                              <span class="block text-xs text-zinc-500 uppercase">Peso</span>
+                              <span class="font-bold text-white">{{ ejercicio.pesokg }}kg</span>
+                          </div>
+                      </div>
+                      
+                      <!-- Actions -->
+                      <div class="flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button (click)="editExercise(i)" class="p-2 text-zinc-400 hover:text-primary hover:bg-zinc-800 rounded-full transition-colors" title="Editar">
+                              <mat-icon>edit</mat-icon>
+                          </button>
+                          <button (click)="deleteExercise(i)" class="p-2 text-zinc-400 hover:text-red-500 hover:bg-zinc-800 rounded-full transition-colors" title="Eliminar">
+                              <mat-icon>delete</mat-icon>
+                          </button>
+                      </div>
+                  </div>
+             </div>
+
+             <div *ngIf="workoutForm()?.ejercicios?.length === 0" class="text-center py-12 border-2 border-dashed border-zinc-800 rounded-xl bg-zinc-900/30">
+                <mat-icon class="text-zinc-600 text-4xl mb-2">fitness_center</mat-icon>
+                <p class="text-zinc-500">Tu rutina está vacía. ¡Agrega ejercicios a la derecha!</p>
+            </div>
+        </div>
       </div>
 
-      <!-- Right Column: Exercises Editor -->
-      <div class="lg:col-span-2 space-y-6">
-        
-        <!-- Add Exercise Form -->
-        <app-ui-card customClass="bg-zinc-900/30 border-zinc-800 border-dashed">
-            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <mat-icon class="text-primary">add_circle_outline</mat-icon> 
-                {{ editingExerciseIndex !== null ? 'Editar Ejercicio' : 'Agregar Ejercicio' }}
-            </h3>
+      <!-- Right Column: Editor Form -->
+      <div class="lg:sticky lg:top-32 h-fit">
+        <app-ui-card [title]="editingExerciseIndex() !== null ? 'Editar Ejercicio' : 'Nuevo Ejercicio'" 
+                     customClass="bg-zinc-900 border border-zinc-700 shadow-2xl relative overflow-hidden">
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <app-ui-input 
-                    label="Nombre" 
-                    [(ngModel)]="newExercise.nombre" 
-                    placeholder="Ej: Press Banca"
-                    containerClass="bg-black/50 border-zinc-800">
-                </app-ui-input>
+            <!-- Neon glow visual -->
+            <div class="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[50px] pointer-events-none"></div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 relative z-10">
+                <!-- Inputs using Custom UiInput or Native for simplicity in Grid? 
+                     User requested app-ui-input/app-ui-button/app-ui-card. 
+                     We are in app-ui-card. For inputs, let's use app-ui-input if possible 
+                     or styled native inputs to ensure NgModel works perfectly with Signals without ControlValueAccessor issues if not fully implemented.
+                     Given the previous instructions, I will use styled native inputs OR app-ui-input if I trust it.
+                     I'll use STYLED NATIVE INPUTS for maximum safety on 'ngModel' binding with our Signal Object approach, 
+                     styled to match GRAVL perfectly.
+                -->
+
+                <div class="md:col-span-2">
+                    <label class="text-xs font-bold text-zinc-500 uppercase ml-1 mb-1 block">Nombre del Ejercicio</label>
+                    <input type="text" 
+                           [ngModel]="newExercise().nombre" 
+                           (ngModelChange)="newExercise().nombre = $event"
+                           placeholder="Ej: Press Banca" 
+                           class="w-full bg-black border border-zinc-700 focus:border-primary text-white rounded-lg h-12 px-4 transition-colors outline-none placeholder-zinc-700">
+                </div>
                 
-                <div class="flex flex-col gap-1">
-                     <label class="text-xs text-zinc-400 ml-1">Grupo Muscular</label>
-                     <select [(ngModel)]="newExercise.grupoMuscular" class="bg-black/50 border border-zinc-800 text-white rounded-md h-9 px-3 text-sm focus:border-primary/50 outline-none w-full">
+                <div>
+                     <label class="text-xs font-bold text-zinc-500 uppercase ml-1 mb-1 block">Grupo Muscular</label>
+                     <select [ngModel]="newExercise().grupoMuscular"
+                             (ngModelChange)="newExercise().grupoMuscular = $event" 
+                             class="w-full bg-black border border-zinc-700 focus:border-primary text-white rounded-lg h-12 px-4 transition-colors outline-none appearance-none">
                         <option *ngFor="let grupo of grupoMuscularOpciones" [value]="grupo">{{ grupo | titlecase }}</option>
                      </select>
                 </div>
 
-                <div class="flex gap-4">
-                     <app-ui-input 
-                        label="Series" 
-                        type="number" 
-                        [(ngModel)]="newExercise.series" 
-                        containerClass="bg-black/50 border-zinc-800">
-                    </app-ui-input>
-                    <app-ui-input 
-                        label="Reps" 
-                        type="number" 
-                        [(ngModel)]="newExercise.repeticiones" 
-                        containerClass="bg-black/50 border-zinc-800">
-                    </app-ui-input>
+                <div>
+                     <label class="text-xs font-bold text-zinc-500 uppercase ml-1 mb-1 block">Tipo</label>
+                     <select [ngModel]="newExercise().tipo"
+                             (ngModelChange)="newExercise().tipo = $event" 
+                             class="w-full bg-black border border-zinc-700 focus:border-primary text-white rounded-lg h-12 px-4 transition-colors outline-none appearance-none">
+                        <option value="compuesto">Compuesto</option>
+                        <option value="aislado">Aislado</option>
+                     </select>
                 </div>
 
-                <div class="flex gap-4">
-                     <app-ui-input 
-                        label="Peso (kg)" 
-                        type="number" 
-                        [(ngModel)]="newExercise.pesokg" 
-                        containerClass="bg-black/50 border-zinc-800">
-                    </app-ui-input>
-                    <!-- Descanso as simple input for now, ideally a selector or formatted input -->
-                    <app-ui-input 
-                        label="Descanso" 
-                        [(ngModel)]="newExercise.descanso" 
-                        placeholder="Ej: 90s"
-                        containerClass="bg-black/50 border-zinc-800">
-                    </app-ui-input>
+                <div>
+                    <label class="text-xs font-bold text-zinc-500 uppercase ml-1 mb-1 block">Series</label>
+                    <input type="number" 
+                           [ngModel]="newExercise().series"
+                           (ngModelChange)="newExercise().series = $event" 
+                           class="w-full bg-black border border-zinc-700 focus:border-primary text-white rounded-lg h-12 px-4 transition-colors outline-none">
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-zinc-500 uppercase ml-1 mb-1 block">Reps</label>
+                    <input type="number" 
+                           [ngModel]="newExercise().repeticiones"
+                           (ngModelChange)="newExercise().repeticiones = $event" 
+                           class="w-full bg-black border border-zinc-700 focus:border-primary text-white rounded-lg h-12 px-4 transition-colors outline-none">
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-zinc-500 uppercase ml-1 mb-1 block">Peso (Kg)</label>
+                    <input type="number" 
+                           [ngModel]="newExercise().pesokg"
+                           (ngModelChange)="newExercise().pesokg = $event" 
+                           class="w-full bg-black border border-zinc-700 focus:border-primary text-white rounded-lg h-12 px-4 transition-colors outline-none">
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-zinc-500 uppercase ml-1 mb-1 block">Descanso</label>
+                    <input type="text" 
+                           [ngModel]="newExercise().descanso"
+                           (ngModelChange)="newExercise().descanso = $event" 
+                           placeholder="90s"
+                           class="w-full bg-black border border-zinc-700 focus:border-primary text-white rounded-lg h-12 px-4 transition-colors outline-none">
                 </div>
             </div>
 
-            <div class="flex justify-end gap-3 transition-all">
+            <div class="flex justify-end gap-3 pt-4 border-t border-zinc-800">
                 <app-ui-button 
-                    *ngIf="editingExerciseIndex !== null"
+                    *ngIf="editingExerciseIndex() !== null"
                     (clicked)="cancelEdit()" 
-                    variant="ghost">
-                    Cancelar Edición
+                    variant="ghost"
+                    customClass="text-zinc-500 hover:text-white">
+                    Cancelar
                 </app-ui-button>
 
                 <app-ui-button 
                     (clicked)="addExercise()" 
                     variant="secondary"
-                    [disabled]="!newExercise.nombre"
-                    customClass="hover:bg-primary hover:text-black transition-colors">
-                    {{ editingExerciseIndex !== null ? 'Actualizar' : 'Agregar a la Lista' }}
+                    [disabled]="!newExercise().nombre"
+                    customClass="bg-white text-black hover:bg-zinc-200 font-bold px-6">
+                    {{ editingExerciseIndex() !== null ? 'Actualizar Ejercicio' : 'Agregar a la Rutina' }}
                 </app-ui-button>
             </div>
         </app-ui-card>
 
-        <!-- Exercises List -->
-        <div class="space-y-3">
-            <div *ngFor="let ejercicio of workout.ejercicios; let i = index" 
-                 class="group relative overflow-hidden rounded-xl bg-secondary/40 border border-zinc-800 p-4 transition-all hover:border-primary/30 hover:bg-secondary/60">
-                
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div class="flex items-center gap-4 flex-1">
-                        <span class="text-2xl font-bold text-zinc-700 group-hover:text-primary/50 pointer-events-none select-none">
-                            {{ i + 1 < 10 ? '0'+(i+1) : i+1 }}
-                        </span>
-                        <div>
-                            <h4 class="font-bold text-white text-lg">{{ ejercicio.nombre }}</h4>
-                            <p class="text-xs text-zinc-400">
-                                {{ ejercicio.grupoMuscular | titlecase }} • {{ ejercicio.series }} x {{ ejercicio.repeticiones }} • {{ ejercicio.pesokg }}kg
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="flex gap-2">
-                        <app-ui-button 
-                            (clicked)="editExercise(i)" 
-                            variant="ghost" 
-                            size="sm"
-                            customClass="h-8 w-8 p-0 text-zinc-400 hover:text-white">
-                            <mat-icon class="text-sm">edit</mat-icon>
-                        </app-ui-button>
-                        
-                        <app-ui-button 
-                            (clicked)="deleteExercise(i)" 
-                            variant="ghost" 
-                            size="sm"
-                            customClass="h-8 w-8 p-0 text-zinc-400 hover:text-destructive">
-                            <mat-icon class="text-sm">delete</mat-icon>
-                        </app-ui-button>
-                        
-                         <button [matMenuTriggerFor]="menu" class="ml-2 h-8 w-8 flex items-center justify-center rounded-md hover:bg-white/5 text-zinc-500 hover:text-white transition-colors">
-                            <mat-icon>more_vert</mat-icon>
-                         </button>
-                          <mat-menu #menu="matMenu" class="custom-menu">
-                            <button mat-menu-item (click)="addSuperSet(i)">
-                                <mat-icon>link</mat-icon> Crear Super Set
-                            </button>
-                            <button mat-menu-item (click)="addDropsetAvanzado(i)">
-                                <mat-icon>trending_down</mat-icon> Crear Drop Set
-                            </button>
-                         </mat-menu>
-                    </div>
-                </div>
-                
-                <!-- SuperSet / DropSet Logic Visuals -->
-                 <!-- (Keeping simple for now, can expand based on existing logic if needed) -->
-
-            </div>
-            
-            <div *ngIf="workout.ejercicios.length === 0" class="text-center py-12 border border-dashed border-zinc-800 rounded-xl bg-black/20">
-                <p class="text-zinc-500">No hay ejercicios en esta rutina aún.</p>
-            </div>
+        
+        <div class="mt-6 p-4 rounded-xl bg-orange-500/10 border border-orange-500/20" *ngIf="editingExerciseIndex() !== null">
+            <p class="text-orange-400 text-sm flex items-center gap-2">
+                <mat-icon class="text-sm">edit</mat-icon>
+                Estás editando un ejercicio existente.
+            </p>
         </div>
 
       </div>
