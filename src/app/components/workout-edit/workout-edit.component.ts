@@ -68,6 +68,7 @@ export class WorkoutEditComponent {
       pesokg: 0,
       serieCalentamiento: 0,
       repeticionesCalentamiento: 0,
+      videoUrl: '',
     };
   }
 
@@ -137,12 +138,76 @@ export class WorkoutEditComponent {
   // Note: Complex logic like specific DropSet arrays might need more UI work, 
   // keeping basic structure for now.
 
+  // Helper to check if advanced features should be enabled
+  isAdvancedOrIntermediate(): boolean {
+    const difficulty = this.workoutForm()?.nivelDificultad;
+    return difficulty === 'intermedio' || difficulty === 'avanzado';
+  }
+
   addSuperSet(index: number): void {
-     // Placeholder for now or re-implement if user asks for specific modal
-     console.log('Add SuperSet at index', index);
+    const workout = this.workoutForm();
+    if (!workout) return;
+    
+    // Create new empty exercise for the Super Set
+    const superSetExercise = this.createEmptyExercise();
+    superSetExercise.nombre = `Super Set de ${workout.ejercicios[index].nombre}`;
+
+    const dialogRef = this.dialog.open(EditarSuperSetModalComponent, {
+      width: '500px',
+      data: superSetExercise,
+      panelClass: 'gravl-dialog-panel',
+      backdropClass: 'backdrop-blur-sm'
+    });
+
+    dialogRef.afterClosed().subscribe((result: Ejercicio | undefined) => {
+      if (result) {
+        const updatedWorkout = { ...workout };
+        if (!updatedWorkout.ejercicios[index].superSetEjercicio) {
+            // Assign the new super set exercise
+            updatedWorkout.ejercicios[index].superSetEjercicio = result;
+        } else {
+            // If exists, simple update (though logic might vary if you want list)
+            updatedWorkout.ejercicios[index].superSetEjercicio = result; 
+        }
+        // Mark as super-serie type to ensure consistency
+        updatedWorkout.ejercicios[index].superSetEjercicio!.tipos = 'super-serie';
+        
+        this.workoutForm.set(updatedWorkout);
+      }
+    });
   }
 
   addDropsetAvanzado(index: number): void {
-     console.log('Add DropSet at index', index);
+    const workout = this.workoutForm();
+    if (!workout) return;
+
+    // Use current exercise as base for Drop Set config
+    const currentExercise = workout.ejercicios[index];
+    
+    // Pass current exercise (or a specific structure) to modal
+    // For now reusing the modal to edit technical details
+    const dialogRef = this.dialog.open(EditarSuperSetModalComponent, {
+      width: '500px',
+      data: { ...currentExercise, nombre: 'Configurar Drop Set' },
+      panelClass: 'gravl-dialog-panel',
+      backdropClass: 'backdrop-blur-sm'
+    });
+
+    dialogRef.afterClosed().subscribe((result: Ejercicio | undefined) => {
+      if (result) {
+        const updatedWorkout = { ...workout };
+        // Logic: Create a Drop Set structure based on the result
+        // For simple MVP: we just create one drop set entry based on the result
+        updatedWorkout.ejercicios[index].dropSet = {
+            sets: [
+                { porcentaje: 80, repeticiones: result.repeticiones, peso: result.pesokg }, // Example logic
+                { porcentaje: 60, repeticiones: result.repeticiones, peso: (result.pesokg || 0) * 0.8 } 
+            ]
+        };
+        updatedWorkout.ejercicios[index].tipos = 'drop-set';
+
+        this.workoutForm.set(updatedWorkout);
+      }
+    });
   }
 }

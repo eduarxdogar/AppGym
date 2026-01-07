@@ -13,11 +13,12 @@ import { TrainingSession } from '../../models/training-session.model';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
 import { ProgressChartComponent } from '../../shared/ui/progress-chart/progress-chart.component';
+import { SafeUrlPipe } from '../../shared/pipes/safe-url.pipe';
 
 @Component({
   selector: 'app-workout-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, TimerComponent, ExerciseTimerComponent, UiButtonComponent, UiCardComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, TimerComponent, ExerciseTimerComponent, UiButtonComponent, UiCardComponent, SafeUrlPipe],
   templateUrl: './workout-detail.component.html',
 })
 export class WorkoutDetailComponent implements OnInit {
@@ -146,5 +147,24 @@ export class WorkoutDetailComponent implements OnInit {
   // Getter para la sesión actual (para binding en el template)
   get currentSession(): TrainingSession | null {
     return this.trainingSessionService.getCurrentSession();
+  }
+
+  getVideoEmbedUrl(videoUrl: string | undefined): string {
+    if (!videoUrl) return '';
+    
+    // Extract ID from youtube.com/watch?v= or youtu.be/
+    let videoId = '';
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = videoUrl.match(regex);
+    
+    if (match && match[1]) {
+        videoId = match[1];
+    }
+    
+    if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    return ''; // Return empty if invalid to handle in template
   }
 }

@@ -1,49 +1,55 @@
-<h2 mat-dialog-title>Editar Super Serie</h2>
-<mat-dialog-content class="space-y-4">
-  <div>
-    <app-ui-input label="Nombre del ejercicio" [(ngModel)]="ejercicio.nombre" containerClass="mb-0"></app-ui-input>
+<div class="p-6 bg-zinc-900 text-white rounded-xl space-y-6">
+  
+  <!-- Header -->
+  <div class="flex items-center gap-3 border-b border-zinc-800 pb-4">
+    <div class="bg-primary/10 p-2 rounded-lg text-primary">
+      <mat-icon>fitness_center</mat-icon>
+    </div>
+    <div>
+      <h2 class="text-xl font-bold tracking-tight text-white mb-0">Configurar Ejercicio</h2>
+      <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wider">Avanzado</p>
+    </div>
   </div>
 
-  <mat-form-field appearance="fill" class="w-full">
-    <mat-label>Grupo muscular</mat-label>
-    <mat-select [(ngModel)]="ejercicio.grupoMuscular">
-      <mat-option value="pecho">Pecho</mat-option>
-      <mat-option value="espalda">Espalda</mat-option>
-      <mat-option value="pierna">Pierna</mat-option>
-      <mat-option value="hombro">Hombro</mat-option>
-      <mat-option value="brazos">Brazos</mat-option>
-      <mat-option value="abdominales">Abdominales</mat-option>
-    </mat-select>
-  </mat-form-field>
+  <!-- Body Grid -->
+  <div class="grid grid-cols-2 gap-4">
+      
+      <!-- Nombre (Full Width) -->
+      <div class="col-span-2">
+         <app-ui-input label="Nombre del Ejercicio" [(value)]="ejercicio.nombre" placeholder="Ej. Press Banca"></app-ui-input>
+      </div>
 
-  <mat-form-field appearance="fill" class="w-full">
-    <mat-label>Tipo</mat-label>
-    <mat-select [(ngModel)]="ejercicio.tipo">
-      <mat-option value="compuesto">Compuesto</mat-option>
-      <mat-option value="aislado">Aislado</mat-option>
-    </mat-select>
-  </mat-form-field>
+      <!-- Reps -->
+      <div>
+         <app-ui-input label="Repeticiones" type="number" [(value)]="ejercicio.repeticiones" placeholder="12"></app-ui-input>
+      </div>
 
-  <div>
-    <app-ui-input label="Series" type="number" [(ngModel)]="ejercicio.series" containerClass="mb-0"></app-ui-input>
+      <!-- Peso -->
+      <div>
+         <app-ui-input label="Peso (kg)" type="number" [(value)]="ejercicio.pesokg" placeholder="0"></app-ui-input>
+      </div>
+
+      <!-- Series -->
+      <div>
+        <app-ui-input label="Series" type="number" [(value)]="ejercicio.series" placeholder="3"></app-ui-input>
+      </div>
+     
+      <!-- Descanso -->
+      <div>
+         <app-ui-input label="Descanso" [(value)]="ejercicio.descanso" placeholder="60s"></app-ui-input>
+      </div>
+
   </div>
 
-  <div>
-    <app-ui-input label="Repeticiones" type="number" [(ngModel)]="ejercicio.repeticiones" containerClass="mb-0"></app-ui-input>
+  <!-- Footer Actions -->
+  <div class="flex justify-end gap-3 pt-4 border-t border-zinc-800">
+      <app-ui-button (clicked)="cancelar()" variant="ghost" size="sm">
+        Cancelar
+      </app-ui-button>
+      
+      <app-ui-button (clicked)="guardar()" variant="primary" size="sm">
+        Guardar Configuración
+      </app-ui-button>
   </div>
 
-  <div>
-    <app-ui-input label="Peso (kg)" type="number" [(ngModel)]="ejercicio.pesokg" containerClass="mb-0"></app-ui-input>
-  </div>
-
-  <div>
-    <app-ui-input label="Tiempo de descanso (segundos)" [(ngModel)]="ejercicio.descanso" containerClass="mb-0"></app-ui-input>
-  </div>
-</mat-dialog-content>
-
-<mat-dialog-actions align="end">
-  <div class="flex justify-end gap-3 mt-6">
-    <app-ui-button (clicked)="cancelar()" variant="ghost">Cancelar</app-ui-button>
-    <app-ui-button (clicked)="guardar()" variant="primary">Guardar</app-ui-button>
-  </div>
-</mat-dialog-actions>
+</div>

@@ -1,32 +1,89 @@
-<div class="p-6 bg-gray-900 text-white rounded-lg shadow-md text-center">
-  <h2 class="text-2xl font-bold mb-6 text-yellow-400 animate-pulse">⏱️ Cronómetro de Descanso</h2>
+<div class="flex flex-col items-center">
+  
+  <!-- Circular Timer Container -->
+  <div class="relative w-48 h-48">
+    
+    <!-- SVG Ring -->
+    <svg class="w-full h-full transform -rotate-90">
+      <!-- Background Circle -->
+      <circle
+        cx="50%"
+        cy="50%"
+        [attr.r]="radius"
+        stroke="#27272a" 
+        stroke-width="8"
+        fill="transparent"
+      ></circle>
+      
+      <!-- Progress Circle -->
+      <circle
+        cx="50%"
+        cy="50%"
+        [attr.r]="radius"
+        [attr.stroke]="strokeColor"
+        stroke-width="8"
+        fill="transparent"
+        stroke-linecap="round"
+        [style.stroke-dasharray]="circumference"
+        [style.stroke-dashoffset]="dashOffset"
+        class="transition-all duration-1000 ease-linear"
+      ></circle>
+    </svg>
 
-  <div class="text-6xl font-mono text-yellow-400 mb-6 animate-fadeIn">
-    {{ timeFormatted }}
+    <!-- Digital Time Display (Centered) -->
+    <div class="absolute inset-0 flex items-center justify-center">
+      <span class="text-4xl font-mono font-bold text-white tracking-wider drop-shadow-lg">
+        {{ timeFormatted }}
+      </span>
+    </div>
+
   </div>
 
-  <div class="flex justify-center gap-4">
-    <app-ui-button
-      (clicked)="start()"
-      variant="primary"
-      customClass="w-full flex items-center justify-center gap-2">
-      <mat-icon>play_arrow</mat-icon>
-      Iniciar
-    </app-ui-button>
+  <!-- Minimal Controls -->
+  <div class="flex flex-col items-center mt-4 gap-3">
+    
+    <!-- Main Controls -->
+    <div class="flex items-center gap-6" *ngIf="!isFinished; else finishedControls">
+        <button 
+        (click)="start()" 
+        [disabled]="isRunning"
+        class="p-4 rounded-full bg-zinc-800 text-primary hover:bg-zinc-700 hover:scale-110 transition-all disabled:opacity-50 disabled:hover:scale-100 shadow-lg">
+        <mat-icon class="scale-125">play_arrow</mat-icon>
+        </button>
 
-    <app-ui-button
-      (clicked)="pause()"
-    >
-      ⏸️
-    </app-ui-button>
+        <button 
+        (click)="pause()" 
+        [disabled]="!isRunning"
+        class="p-4 rounded-full bg-zinc-800 text-yellow-500 hover:bg-zinc-700 hover:scale-110 transition-all disabled:opacity-50 disabled:hover:scale-100 shadow-lg">
+        <mat-icon class="scale-125">pause</mat-icon>
+        </button>
 
-    <!-- Botón Reset -->
-    <app-ui-button
-      (clicked)="reset()"
-      customClass="bg-red-500 hover:bg-red-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-transform transform hover:scale-110 !p-0"
-      matTooltip="Reiniciar"
-    >
-      🔄
-    </app-ui-button>
+        <button 
+        (click)="reset()" 
+        class="p-4 rounded-full bg-zinc-800 text-red-500 hover:bg-zinc-700 hover:scale-110 transition-all shadow-lg">
+        <mat-icon class="scale-125">refresh</mat-icon>
+        </button>
+    </div>
+
+    <!-- Finished Controls -->
+    <ng-template #finishedControls>
+        <button 
+        (click)="reset()" 
+        class="px-8 py-3 rounded-full bg-primary text-black font-bold hover:scale-105 transition-all shadow-[0_0_20px_rgba(204,252,126,0.3)] animate-pulse">
+        REINICIAR SERIE
+        </button>
+    </ng-template>
+
+
+    <!-- Adjustments (Quick Add/Sub) -->
+    <div class="flex gap-4 mt-2" *ngIf="!isFinished">
+         <button (click)="adjustTime(-10)" class="text-xs px-3 py-1 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors">
+            - 10s
+         </button>
+         <button (click)="adjustTime(30)" class="text-xs px-3 py-1 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors">
+            + 30s
+         </button>
+    </div>
+
   </div>
 </div>

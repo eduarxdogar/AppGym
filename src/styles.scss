@@ -12,3 +12,13 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
   @apply bg-background text-text-main;
 }
+
+.gravl-dialog-panel .mat-mdc-dialog-container {
+  --mdc-dialog-container-color: #18181b;
+  /* Zinc 900 */
+  color: #fff;
+  border: 1px solid #27272a;
+  /* Zinc 800 */
+  border-radius: 1rem;
+  /* Rounded XL */
+}

@@ -31,7 +31,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class UiInputComponent {
   // Model signal for two-way binding (Angular 17.2+)
-  value = model<string | number>('');
+  value = model<string | number | undefined | null>('');
 
   label = input<string>('');
   type = input<string>('text');

@@ -17,7 +17,63 @@ export class WorkoutService {
   readonly workouts = computed(() => this.workoutsSignal());
 
   private loadFromLocalStorage(): Workout[] {
-    return this.storageService.getItem<Workout[]>(this.STORAGE_KEY) || [];
+    const stored = this.storageService.getItem<Workout[]>(this.STORAGE_KEY);
+    return (stored && stored.length > 0) ? stored : this.getMockWorkouts();
+  }
+
+  private getMockWorkouts(): Workout[] {
+    return [
+      {
+        id: 1,
+        nombre: 'Push Day - Pecho y Tríceps',
+        musculos: ['pecho', 'tríceps', 'hombros'],
+        nivelDificultad: 'intermedio',
+        ejercicios: [
+          {
+            id: 101,
+            nombre: 'Press Banca Plano',
+            grupoMuscular: 'pecho',
+            series: 4,
+            repeticiones: 10,
+            pesokg: 60,
+            descanso: '90s',
+            tipo: 'compuesto',
+            videoUrl: 'https://www.youtube.com/watch?v=rT7DgCr-3pg'
+          },
+          {
+            id: 102,
+            nombre: 'Press Inclinado con Mancuernas',
+            grupoMuscular: 'pecho',
+            series: 3,
+            repeticiones: 12,
+            pesokg: 24,
+            descanso: '90s',
+            tipo: 'compuesto',
+            videoUrl: 'https://www.youtube.com/watch?v=0G2_kH0p9xQ' 
+          },
+          {
+            id: 103,
+            nombre: 'Extensiones de Tríceps en Polea',
+            grupoMuscular: 'tríceps',
+            series: 3,
+            repeticiones: 15,
+            pesokg: 20,
+            descanso: '60s',
+            tipo: 'aislado'
+          }
+        ]
+      },
+      {
+        id: 2,
+        nombre: 'Pull Day - Espalda y Bíceps',
+        musculos: ['espalda', 'bíceps'],
+        nivelDificultad: 'avanzado',
+        ejercicios: [
+            { id: 201, nombre: 'Dominadas', grupoMuscular: 'espalda', series: 4, repeticiones: 10, descanso: '120s', tipo: 'compuesto', videoUrl: 'https://www.youtube.com/watch?v=Xe_HNE8d7sY' },
+            { id: 202, nombre: 'Remo con Barra', grupoMuscular: 'espalda', series: 4, repeticiones: 12, pesokg: 60, descanso: '90s', tipo: 'compuesto' }
+        ]
+      }
+    ];
   }
 
   private saveToLocalStorage() {
