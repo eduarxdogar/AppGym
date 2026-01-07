@@ -12,15 +12,15 @@ import { MatOptionModule } from '@angular/material/core';
 import { MatDialog } from '@angular/material/dialog';
 import { EditarSuperSetModalComponent } from '../modals/editar-super-set-modal/editar-super-set-modal.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
-import { InputComponent } from '../../shared/ui/input/input.component';
-import { CardComponent } from '../../shared/ui/card/card.component';
+import { InputComponent } from '../../shared/ui/input';
+
 
 
 
 @Component({
   selector: 'app-workout-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatFormFieldModule, MatOptionModule, ButtonComponent, InputComponent, CardComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, MatFormFieldModule, MatOptionModule, ButtonComponent, InputComponent],
   templateUrl: './workout-edit.component.html',
 })
 export class WorkoutEditComponent implements OnInit {
@@ -75,19 +75,17 @@ export class WorkoutEditComponent implements OnInit {
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.workoutId = id;
-    this.workoutService.workouts$.pipe(take(1)).subscribe((workouts) => {
-      const found = workouts.find((w) => w.id === id);
-      if (found) {
-        this.workout = found;
-      } else {
-        console.error('Rutina no encontrada para ID:', id);
-      }
-      // Si la rutina no tiene nombre (nueva), lo genera automáticamente
-      if (!this.workout.nombre) {
-        this.actualizarNombreRutinaPorGrupo(this.newExercise.grupoMuscular);
-      }
-      this.cdr.detectChanges();
-    });
+    const found = this.workoutService.getWorkoutById(id);
+    if (found) {
+      this.workout = found;
+    } else {
+      console.error('Rutina no encontrada para ID:', id);
+    }
+    // Si la rutina no tiene nombre (nueva), lo genera automáticamente
+    if (this.workout && !this.workout.nombre) {
+      this.actualizarNombreRutinaPorGrupo(this.newExercise.grupoMuscular);
+    }
+    this.cdr.detectChanges();
   }
 
   // Crea un objeto Ejercicio vacío (reset)

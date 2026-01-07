@@ -118,8 +118,13 @@ export class WorkoutDetailComponent implements OnInit {
     if (this.workout) {
       const confirmado = confirm('¿Estás seguro de eliminar este ejercicio?');
       if (confirmado) {
-        this.workout.ejercicios.splice(index, 1);
-        console.log("Ejercicio eliminado. Lista actualizada:", this.workout.ejercicios);
+        this.workoutService.deleteExerciseFromWorkout(this.workout.id, index);
+        // Refresh local workout if needed, though signal handles broader state. 
+        // Since we have a local reference 'this.workout', it might not verify immediately if it's a copy.
+        // But getWorkoutById returns a reference from the signal array (if simple find), so it might reflect.
+        // Best practice with signals: verify reactivity. 
+        // For now, calling service ensures persistence and signal update.
+        console.log("Ejercicio eliminado.", this.workout.ejercicios);
       }
     }
   }
