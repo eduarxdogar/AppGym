@@ -19,7 +19,7 @@ import { FormsModule } from '@angular/forms';
         [placeholder]="placeholder()"
         [(ngModel)]="value"
         [disabled]="disabled()"
-        class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 border-white/20 bg-black/20 text-white focus:border-green-400 focus:ring-green-400/50"
+        class="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 border-white/20 bg-black/20 text-white focus:border-green-400 focus:ring-green-400/50"
         [class.border-red-500]="error()"
       />
       @if (error()) {

@@ -10,12 +10,14 @@ import { TrainingHistoryService } from '../../core/services/training-history.ser
 import { TimerComponent } from '../../features/timer/timer.component';
 import {ExerciseTimerComponent} from '../../features/exercise-timer/exercise-timer.component';
 import { TrainingSession } from '../../models/training-session.model';
-import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
+import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
+import { ProgressChartComponent } from '../../shared/ui/progress-chart/progress-chart.component';
 
 @Component({
   selector: 'app-workout-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, TimerComponent, ExerciseTimerComponent, ButtonComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, TimerComponent, ExerciseTimerComponent, UiButtonComponent, UiCardComponent, ProgressChartComponent],
   templateUrl: './workout-detail.component.html',
 })
 export class WorkoutDetailComponent implements OnInit {
