@@ -4,3 +4,11 @@
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+.mat-icon {
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .mat-icon:hover {
+    transform: scale(1.1);
+  }

@@ -6,7 +6,7 @@
   <div class="absolute inset-0 bg-black/40 rounded-lg z-0"></div>
 
   <!-- Contenido principal -->
-  <div class="relative z-10 space-y-6 text-white">
+  <div class="relative z-10 space-y-6 text-yellow-500">
     <h2 class="text-4xl font-extrabold text-center drop-shadow-lg">
       🏋️‍♂️ {{ workout.nombre }}
     </h2>
@@ -20,24 +20,77 @@
         <!-- Cabecera del acordeón -->
         <div class="flex justify-between items-center cursor-pointer select-none" (click)="toggleExpand(i)">
           <div class="flex items-center gap-3">
-            <mat-icon class="text-pink-400 text-3xl">fitness_center</mat-icon>
+            <mat-icon class="text-black text-3xl">fitness_center</mat-icon>
             <p class="font-semibold text-xl text-white tracking-wide">{{ ejercicio.nombre }}</p>
+            <a href="http://"></a>
           </div>
           <mat-icon class="text-white transform transition-transform duration-300"
                     [ngClass]="{'rotate-180': expandedIndex === i, 'rotate-0': expandedIndex !== i}">
             expand_more
           </mat-icon>
         </div>
-        <!-- Detalles del ejercicio (visible al expandir) -->
-        <div *ngIf="expandedIndex === i" class="transition-all duration-500 ease-in-out overflow-hidden mt-4 pl-12 text-gray-300 text-sm space-y-2">
-          <div><span class="text-indigo-400 font-bold">🔥 Calentamiento:</span> {{ ejercicio.serieCalentamiento }} series, {{ ejercicio.repeticionesCalentamiento }} reps</div>
-          <div><span class="text-green-400 font-bold">🎯 Series:</span> {{ ejercicio.series }}</div>
-          <div><span class="text-yellow-400 font-bold">🔁 Reps:</span> {{ ejercicio.repeticiones }}</div>
-          <div><span class="text-red-300 font-bold">🧠 Músculo:</span> {{ ejercicio.grupoMuscular }}</div>
-          <div><span class="text-indigo-300 font-bold">⏱️ Descanso:</span> {{ ejercicio.descanso }}</div>
-          <div><span class="text-orange-300 font-bold">🏋️ Peso:</span> {{ ejercicio.pesokg }} kg</div>
-          <div><span class="text-purple-400 font-bold">⚙️ Tipo:</span> {{  ejercicio.tipo }}</div>
+     <!-- Detalles del ejercicio (visible al expandir) -->
+<div *ngIf="expandedIndex === i" class="transition-all duration-500 ease-in-out overflow-hidden mt-4 pl-12 text-gray-300 space-y-3 ">
+  <!-- Fila de detalles con iconos Material y mejor disposición -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pr-4">
 
+
+  <div class="flex items-center gap-3 w-full">
+    <mat-icon class="text-indigo-400 flex-shrink-0">local_fire_department</mat-icon>
+    <div>
+      <span class="font-medium text-indigo-400">Calentamiento:</span>
+      {{ ejercicio.serieCalentamiento }} series, {{ ejercicio.repeticionesCalentamiento }} reps
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <mat-icon class="text-green-400 drop-shadow-sm material-icons-round">speed</mat-icon>
+    <div>
+      <span class="font-medium text-green-400">Series:</span>
+      {{ ejercicio.series }}
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <mat-icon class="text-yellow-400 drop-shadow-sm">repeat</mat-icon>
+    <div>
+      <span class="font-medium text-yellow-400">Reps:</span>
+      {{ ejercicio.repeticiones }}
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <mat-icon class="text-red-300 drop-shadow-sm">fitness_center</mat-icon>
+    <div>
+      <span class="font-medium text-red-300">Músculo:</span>
+      {{ ejercicio.grupoMuscular }}
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <mat-icon class="text-indigo-300 drop-shadow-sm">timer</mat-icon>
+    <div>
+      <span class="font-medium text-indigo-300">Descanso:</span>
+      {{ ejercicio.descanso }}
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <mat-icon class="text-orange-300 drop-shadow-sm">balance</mat-icon>
+    <div>
+      <span class="font-medium text-orange-300">Peso:</span>
+      {{ ejercicio.pesokg }} kg
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3 drop-shadow-sm">
+    <mat-icon class="text-purple-400">tune</mat-icon>
+    <div>
+      <span class="font-medium text-purple-400">Tipo:</span>
+      {{ ejercicio.tipo }}
+  </div>
+</div>
+  </div>
            <!-- Mostrar el drop set si existe -->
             <!-- Dentro de la tarjeta de cada ejercicio, después de mostrar los datos básicos -->
 <div *ngIf="ejercicio.superSetEjercicio" class="relative mt-3 p-3 bg-gray-600 rounded">
@@ -80,7 +133,7 @@
               <li *ngFor="let ds of ejercicio.dropSet.sets; let idx = index">
                 
                 <!-- Ejemplo de mostrar repeticiones y cálculo de peso basado en porcentaje -->
-                <span class="text-white">
+                <span class="text-green-400  font-bold">
                   
                   Set {{ idx + 1 }}: 
                   {{ ds.repeticiones }} reps 
@@ -273,3 +326,4 @@
     </div>
   </ng-template>
 </div>
+
