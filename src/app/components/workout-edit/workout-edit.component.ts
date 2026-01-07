@@ -16,7 +16,7 @@ import { UiInputComponent } from '../../shared/ui/ui-input/ui-input.component';
 @Component({
   selector: 'app-workout-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatMenuModule, UiButtonComponent, UiCardComponent, UiInputComponent, MatDialogModule],
+  imports: [CommonModule, FormsModule, MatIconModule, MatMenuModule, UiButtonComponent, UiCardComponent, MatDialogModule],
   templateUrl: './workout-edit.component.html',
 })
 export class WorkoutEditComponent {

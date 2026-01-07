@@ -32,13 +32,11 @@ import { CommonModule } from '@angular/common';
 export class UiCardComponent {
   title = input<string>('');
   description = input<string>('');
-  customClass = input<string>('');
+  customClass = input<string>('bg-surface border border-secondary rounded-xl');
   hasFooter = input<boolean>(false);
 
   classes = computed(() => {
     return `rounded-xl border border-white/10 bg-black/40 text-card-foreground shadow-sm backdrop-blur-md ${this.customClass()}`;
   });
+
 }
-
-
-  

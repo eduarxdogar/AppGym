@@ -39,7 +39,7 @@ export class UiButtonComponent {
     const baseClasses = 'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 transition-all duration-200';
     
     const variants: Record<UiButtonVariant, string> = {
-      primary: 'bg-primary text-primary-foreground shadow hover:bg-primary/90 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] border border-primary/20', // Neon effect hint
+      primary: 'bg-primary text-black font-bold hover:opacity-90 shadow-[0_0_15px_rgba(204,252,126,0.3)] hover:bg-primary/90 border border-primary/20', // Neon effect hint
       secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
       ghost: 'hover:bg-accent hover:text-accent-foreground text-foreground',
       outline: 'border border-input bg-background/50 backdrop-blur-sm shadow-sm hover:bg-accent hover:text-accent-foreground hover:border-accent',
