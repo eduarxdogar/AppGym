@@ -1,0 +1,109 @@
+<div class="container mx-auto p-6 max-w-6xl">
+  
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+    
+    <!-- Columna Izquierda: Estado -->
+    <div class="space-y-6">
+        <app-ui-card>
+            <div class="p-4 space-y-4">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="bg-zinc-800 p-2 rounded-lg text-primary">
+                        <mat-icon>monitor_heart</mat-icon>
+                    </div>
+                    <h2 class="text-xl font-bold text-white mb-0">Estado Actual</h2>
+                </div>
+                
+                <app-muscle-fatigue-map [muscleFatigue]="currentFatigue()"></app-muscle-fatigue-map>
+
+                <div class="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800 mt-4">
+                    <p class="text-xs text-zinc-500 uppercase font-bold tracking-wider mb-1">Músculos Frescos</p>
+                    <p class="text-lg text-green-400 font-medium">{{ readyToTrain }}</p>
+                </div>
+            </div>
+        </app-ui-card>
+    </div>
+
+    <!-- Columna Derecha: AI Generator -->
+    <div class="space-y-6">
+        
+        <!-- Header Section -->
+        <div>
+            <h1 class="text-4xl font-extrabold text-white tracking-tight mb-2">
+                Diseñador <span class="text-primary">IA</span>
+            </h1>
+            <p class="text-zinc-400">
+                Describe qué quieres entrenar hoy. El Coach analizará tu fatiga y optimizará la rutina.
+            </p>
+        </div>
+
+        <!-- Prompt Area -->
+        <div class="relative" *ngIf="!generatedWorkout()">
+            <textarea 
+                [(ngModel)]="userPrompt"
+                rows="4" 
+                class="w-full bg-zinc-900 text-white rounded-xl border border-zinc-800 p-4 focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none text-lg placeholder:text-zinc-600 mb-4"
+                placeholder="Ej: Tengo 45 mins, quiero enfocarme en glúteo e isquios..."
+                [disabled]="isLoading()">
+            </textarea>
+            
+            <app-ui-button 
+                (clicked)="generateRoutine()" 
+                variant="primary" 
+                customClass="w-full py-4 text-lg shadow-[0_0_20px_rgba(204,252,126,0.2)]"
+                [disabled]="isLoading() || !userPrompt()">
+                <div class="flex items-center justify-center gap-2">
+                    <mat-icon *ngIf="!isLoading()">auto_awesome</mat-icon>
+                    <mat-icon *ngIf="isLoading()" class="animate-spin">sync</mat-icon>
+                    {{ isLoading() ? 'Analizando Biomecánica...' : 'Generar Rutina con IA' }}
+                </div>
+            </app-ui-button>
+        </div>
+
+        <!-- Result Card -->
+        <div *ngIf="generatedWorkout()" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <app-ui-card>
+                <div class="p-6 space-y-6">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-bold mb-2">
+                                <mat-icon class="text-[14px] w-[14px] h-[14px]">auto_awesome</mat-icon> GENERADO POR IA
+                            </span>
+                            <h3 class="text-2xl font-bold text-white">{{ generatedWorkout()?.nombre }}</h3>
+                            <p class="text-zinc-400 text-sm mt-1">
+                                {{ generatedWorkout()?.ejercicios?.length }} Ejercicios • Dificultad {{ generatedWorkout()?.nivelDificultad | titlecase }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Compact Exercise List Preview -->
+                    <div class="space-y-2 border-t border-zinc-800 pt-4">
+                        <div *ngFor="let ex of generatedWorkout()?.ejercicios" class="flex items-center gap-3 p-3 bg-zinc-900/50 rounded-lg border border-zinc-800/50">
+                            <div class="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 text-xs font-bold">
+                                {{ ex.id }}
+                            </div>
+                            <div>
+                                <p class="text-white font-medium text-sm">{{ ex.nombre }}</p>
+                                <p class="text-xs text-zinc-500">{{ ex.series }} x {{ ex.repeticiones }}</p>
+                            </div>
+                            <div class="ml-auto" *ngIf="ex.tipos">
+                                <span class="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-400 font-bold uppercase tracking-wider">
+                                    {{ ex.tipos }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <app-ui-button (clicked)="saveAndStart()" variant="primary" customClass="w-full">
+                        Guardar y Empezar
+                    </app-ui-button>
+                </div>
+            </app-ui-card>
+            
+            <button (click)="generatedWorkout.set(null)" class="w-full mt-4 text-zinc-500 hover:text-white text-sm underline">
+                Descartar y probar otro prompt
+            </button>
+        </div>
+
+    </div>
+  </div>
+</div>

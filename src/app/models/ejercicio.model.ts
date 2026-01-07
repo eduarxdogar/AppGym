@@ -14,6 +14,7 @@ export interface Ejercicio {
   rir?: number;
   parciales?: boolean;
   videoUrl?: string;
+  notas?: string;
 
   // NUEVO PARA DROP SET
   dropSet?: {
