@@ -10,15 +10,13 @@
 
     <!-- Lista de rutinas -->
     <div *ngIf="workouts.length > 0; else noWorkouts" class="grid gap-6">
-      <app-card
+      <app-ui-card
         *ngFor="let workout of workouts"
         [title]="workout.nombre"
+        [description]="'Ejercicios: ' + workout.ejercicios.length"
         customClass="bg-white/5 backdrop-blur-sm border-none shadow-md hover:shadow-xl transition duration-300"
+        [hasFooter]="true"
       >
-        <!-- Header Content (Exercise Count) -->
-        <div header class="text-sm text-gray-400">
-          Ejercicios: {{ workout.ejercicios.length }}
-        </div>
 
         <!-- Body Content (Description or details could go here) -->
         <div class="text-gray-300">
@@ -28,7 +26,7 @@
 
         <!-- Footer Actions -->
         <div footer class="flex flex-wrap gap-3 justify-end">
-          <app-button
+          <app-ui-button
             variant="primary"
             customClass="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
             (clicked)="editWorkout(workout.id)"
@@ -44,50 +42,50 @@
                   For now I'll use the click handler integration. 
              -->
             <mat-icon>visibility</mat-icon> Ver
-          </app-button>
+          </app-ui-button>
 
-          <app-button
+          <app-ui-button
             variant="secondary"
             customClass="flex items-center gap-1 bg-yellow-500 hover:bg-yellow-600"
             (clicked)="router.navigate(['/workout', workout.id, 'edit'])"
           >
             <mat-icon>edit</mat-icon> Editar
-          </app-button>
+          </app-ui-button>
 
-          <app-button
+          <app-ui-button
             variant="danger"
             customClass="flex items-center gap-1 bg-red-600 hover:bg-red-700"
             (clicked)="deleteWorkout(workout.id)"
           >
             <mat-icon>delete</mat-icon> Eliminar
-          </app-button>
+          </app-ui-button>
         </div>
-      </app-card>
+      </app-ui-card>
     </div>
 
     <!-- Si no hay rutinas -->
     <ng-template #noWorkouts>
       <div class="text-center mt-10">
-        <app-card customClass="bg-white/5 backdrop-blur-sm">
+        <app-ui-card customClass="bg-white/5 backdrop-blur-sm">
           <p
             class="text-gray-400 text-lg flex items-center justify-center gap-2"
           >
             <mat-icon class="text-yellow-400">info</mat-icon>
             No tienes rutinas aún.
           </p>
-        </app-card>
+        </app-ui-card>
       </div>
     </ng-template>
 
     <!-- Botón agregar rutina -->
     <div class="mt-10 text-center">
-      <app-button
+      <app-ui-button
         variant="primary"
         customClass="bg-green-600 hover:bg-green-700 rounded-full px-6 py-3 text-lg"
         (clicked)="addWorkout()"
       >
         <mat-icon>add_circle</mat-icon> Nueva Rutina
-      </app-button>
+      </app-ui-button>
     </div>
   </div>
 </div>

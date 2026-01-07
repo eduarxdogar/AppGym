@@ -2,7 +2,7 @@ import { Ejercicio } from './ejercicio.model';
 
 export interface Workout {
   id: number;
-  fecha?:Date;
+  fecha?: string; // Stored as string in JSON
   nombre: string;
   ejercicios: Ejercicio[]; 
   nivelDificultad: 'principiante' | 'intermedio' | 'avanzado'; 

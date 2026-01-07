@@ -5,13 +5,13 @@ import { WorkoutService } from '../../core/services/workout.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { CardComponent } from '../../shared/ui/card/card.component';
-import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
+import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 
 @Component({
   selector: 'app-workout-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, CardComponent, ButtonComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, UiCardComponent, UiButtonComponent],
   templateUrl: './workout-list.component.html',
   styleUrls: ['./workout-list.component.scss'],
 })
@@ -36,7 +36,7 @@ export class WorkoutListComponent implements OnInit {
   addWorkout() {
     const newWorkout: Workout = {
       id: Date.now(),
-      fecha: new Date(), 
+      fecha: new Date().toISOString(), 
       nombre: 'Nueva Rutina',
       ejercicios: [],
       nivelDificultad: 'principiante', 
