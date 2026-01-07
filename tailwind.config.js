@@ -16,16 +16,12 @@ export default {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        background: "#000000", // User requested Black
-        foreground: "#fafafa",
-        primary: {
-          DEFAULT: "#CCFC7E", // User requested Neon Green
-          foreground: "#000000",
-        },
-        secondary: {
-          DEFAULT: "#121212", // User requested Surface
-          foreground: "#fafafa",
-        },
+        background: '#09090b', // Zinc 950
+        surface: '#18181b',    // Zinc 900
+        primary: '#CCFC7E',    // Lime 300 (Neon)
+        secondary: '#27272a',  // Zinc 800
+        'text-main': '#FAFAFA', // Zinc 50
+        'text-muted': '#A1A1AA', // Zinc 400
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",

@@ -1,12 +1,14 @@
 import { Component,EventEmitter, OnDestroy, Output  } from '@angular/core';
 import { interval, Subscription } from 'rxjs';
-import { MatButtonModule } from '@angular/material/button';
-import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { CommonModule } from '@angular/common';
+import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-timer',
   standalone: true,
-  imports: [MatButtonModule, ButtonComponent],
+  imports: [CommonModule, MatIconModule, UiButtonComponent, MatTooltipModule],
   templateUrl: './timer.component.html',
   styleUrls: ['./timer.component.scss']
 })

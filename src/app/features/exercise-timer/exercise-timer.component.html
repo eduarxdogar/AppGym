@@ -20,24 +20,27 @@
   
     <!-- Botones de acción -->
     <div class="flex gap-2">
-      <app-button 
+      <app-ui-button 
         (clicked)="start()" 
         variant="primary" 
-        customClass="bg-blue-600 hover:bg-blue-700">
-        Iniciar
-      </app-button>
-      <app-button 
+        [disabled]="isRunning"
+        customClass="flex items-center gap-2">
+        <mat-icon>play_arrow</mat-icon> Iniciar
+      </app-ui-button>
+
+      <app-ui-button 
         (clicked)="pause()" 
         variant="secondary" 
-        customClass="bg-yellow-500 hover:bg-yellow-600">
-        Pausar
-      </app-button>
-      <app-button 
+        [disabled]="!isRunning"
+        customClass="flex items-center gap-2">
+        <mat-icon>pause</mat-icon> Pausar
+      </app-ui-button>
+
+      <app-ui-button 
         (clicked)="reset()" 
-        variant="danger" 
-        customClass="bg-red-600 hover:bg-red-700">
-        Reset
-      </app-button>
+        variant="ghost" 
+        customClass="flex items-center gap-2 text-zinc-400 hover:text-white">
+        <mat-icon>refresh</mat-icon> Reset
+      </app-ui-button>
     </div>
   </div>
-  

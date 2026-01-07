@@ -2,13 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+html,
+body {
+  height: 100%;
+}
 
-.mat-icon {
-    transition: transform 0.2s ease-in-out;
-  }
-  
-  .mat-icon:hover {
-    transform: scale(1.1);
-  }
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  @apply bg-background text-text-main;
+}
