@@ -10,11 +10,12 @@ import { TrainingHistoryService } from '../../core/services/training-history.ser
 import { TimerComponent } from '../../features/timer/timer.component';
 import {ExerciseTimerComponent} from '../../features/exercise-timer/exercise-timer.component';
 import { TrainingSession } from '../../models/training-session.model';
+import { ButtonComponent } from '../../shared/ui/button/button.component';
 
 @Component({
   selector: 'app-workout-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, TimerComponent,ExerciseTimerComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, TimerComponent, ExerciseTimerComponent, ButtonComponent],
   templateUrl: './workout-detail.component.html',
 })
 export class WorkoutDetailComponent implements OnInit {
@@ -28,7 +29,7 @@ export class WorkoutDetailComponent implements OnInit {
 
 
   constructor(
-    private router: Router,
+    public router: Router,
     private route: ActivatedRoute,
     private workoutService: WorkoutService,
     private trainingSessionService: TrainingSessionService,

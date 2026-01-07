@@ -1,9 +1,8 @@
 <h2 mat-dialog-title>Editar Super Serie</h2>
 <mat-dialog-content class="space-y-4">
-  <mat-form-field appearance="fill" class="w-full">
-    <mat-label>Nombre del ejercicio</mat-label>
-    <input matInput [(ngModel)]="ejercicio.nombre">
-  </mat-form-field>
+  <div>
+    <app-input label="Nombre del ejercicio" [(ngModel)]="ejercicio.nombre" containerClass="mb-0"></app-input>
+  </div>
 
   <mat-form-field appearance="fill" class="w-full">
     <mat-label>Grupo muscular</mat-label>
@@ -25,37 +24,35 @@
     </mat-select>
   </mat-form-field>
 
-  <mat-form-field appearance="fill" class="w-full">
-    <mat-label>Series</mat-label>
-    <input matInput type="number" [(ngModel)]="ejercicio.series">
-  </mat-form-field>
+  <div>
+    <app-input label="Series" type="number" [(ngModel)]="ejercicio.series" containerClass="mb-0"></app-input>
+  </div>
 
-  <mat-form-field appearance="fill" class="w-full">
-    <mat-label>Repeticiones</mat-label>
-    <input matInput type="number" [(ngModel)]="ejercicio.repeticiones">
-  </mat-form-field>
+  <div>
+    <app-input label="Repeticiones" type="number" [(ngModel)]="ejercicio.repeticiones" containerClass="mb-0"></app-input>
+  </div>
 
-  <mat-form-field appearance="fill" class="w-full">
-    <mat-label>Peso (kg)</mat-label>
-    <input matInput type="number" [(ngModel)]="ejercicio.pesokg">
-  </mat-form-field>
+  <div>
+    <app-input label="Peso (kg)" type="number" [(ngModel)]="ejercicio.pesokg" containerClass="mb-0"></app-input>
+  </div>
 
-  <mat-form-field appearance="fill" class="w-full">
-    <mat-label>Tiempo de descanso (segundos)</mat-label>
-    <input matInput type="number" [(ngModel)]="ejercicio.descanso">
-  </mat-form-field>
+  <div>
+    <app-input label="Tiempo de descanso (segundos)" [(ngModel)]="ejercicio.descanso" containerClass="mb-0"></app-input>
+  </div>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end" class="mt-6 flex gap-4">
-  <button mat-button
-          (click)="cancelar()"
-          class="bg-transparent border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black px-4 py-2 rounded-lg transition duration-200">
+  <app-button 
+    (clicked)="cancelar()" 
+    variant="outline"
+    customClass="border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black">
     Cancelar
-  </button>
+  </app-button>
 
-  <button mat-raised-button
-          (click)="guardar()"
-          class="bg-yellow-500 text-black hover:bg-yellow-600 px-4 py-2 rounded-lg shadow-md font-semibold transition duration-200">
+  <app-button 
+    (clicked)="guardar()" 
+    variant="primary"
+    customClass="bg-yellow-500 text-black hover:bg-yellow-600 font-semibold shadow-md">
     Guardar
-  </button>
+  </app-button>
 </mat-dialog-actions>

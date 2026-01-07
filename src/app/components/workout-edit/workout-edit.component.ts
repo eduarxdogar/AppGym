@@ -11,13 +11,16 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatOptionModule } from '@angular/material/core';
 import { MatDialog } from '@angular/material/dialog';
 import { EditarSuperSetModalComponent } from '../modals/editar-super-set-modal/editar-super-set-modal.component';
+import { ButtonComponent } from '../../shared/ui/button/button.component';
+import { InputComponent } from '../../shared/ui/input/input.component';
+import { CardComponent } from '../../shared/ui/card/card.component';
 
 
 
 @Component({
   selector: 'app-workout-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatFormFieldModule, MatOptionModule],
+  imports: [CommonModule, FormsModule, MatIconModule, MatFormFieldModule, MatOptionModule, ButtonComponent, InputComponent, CardComponent],
   templateUrl: './workout-edit.component.html',
 })
 export class WorkoutEditComponent implements OnInit {

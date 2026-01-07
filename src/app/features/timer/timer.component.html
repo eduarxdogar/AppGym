@@ -7,30 +7,30 @@
 
   <div class="flex justify-center gap-4">
     <!-- Botón Iniciar -->
-    <button
-      (click)="start()"
-      class="bg-green-500 hover:bg-green-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-transform transform hover:scale-110"
+    <app-button
+      (clicked)="start()"
+      customClass="bg-green-500 hover:bg-green-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-transform transform hover:scale-110 !p-0"
       matTooltip="Iniciar"
     >
       ▶️
-    </button>
+    </app-button>
 
     <!-- Botón Pausar -->
-    <button
-      (click)="pause()"
-      class="bg-yellow-500 hover:bg-yellow-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-transform transform hover:scale-110"
+    <app-button
+      (clicked)="pause()"
+      customClass="bg-yellow-500 hover:bg-yellow-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-transform transform hover:scale-110 !p-0"
       matTooltip="Pausar"
     >
       ⏸️
-    </button>
+    </app-button>
 
     <!-- Botón Reset -->
-    <button
-      (click)="reset()"
-      class="bg-red-500 hover:bg-red-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-transform transform hover:scale-110"
+    <app-button
+      (clicked)="reset()"
+      customClass="bg-red-500 hover:bg-red-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-transform transform hover:scale-110 !p-0"
       matTooltip="Reiniciar"
     >
       🔄
-    </button>
+    </app-button>
   </div>
 </div>

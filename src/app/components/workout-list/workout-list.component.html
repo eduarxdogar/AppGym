@@ -9,66 +9,85 @@
     </h2>
 
     <!-- Lista de rutinas -->
-    <div *ngIf="workouts.length > 0; else noWorkouts">
-      <ul class="space-y-6">
-        <li
-          *ngFor="let workout of workouts"
-          class="p-6 bg-white bg-opacity-5 backdrop-blur-sm rounded-xl shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:shadow-xl transition duration-300"
-        >
-          <div>
-            <h3 class="text-xl font-semibold text-green-300">
-              {{ workout.nombre }}
-            </h3>
-            <p class="text-sm text-gray-400">
-              Ejercicios: {{ workout.ejercicios.length }}
-            </p>
-          </div>
+    <div *ngIf="workouts.length > 0; else noWorkouts" class="grid gap-6">
+      <app-card
+        *ngFor="let workout of workouts"
+        [title]="workout.nombre"
+        customClass="bg-white/5 backdrop-blur-sm border-none shadow-md hover:shadow-xl transition duration-300"
+      >
+        <!-- Header Content (Exercise Count) -->
+        <div header class="text-sm text-gray-400">
+          Ejercicios: {{ workout.ejercicios.length }}
+        </div>
 
-          <div class="flex flex-wrap gap-3">
-            <!-- Ver -->
-            <a
-              [routerLink]="['/workouts', workout.id]"
-              class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white shadow transition"
-            >
-              <mat-icon>visibility</mat-icon> Ver
-            </a>
+        <!-- Body Content (Description or details could go here) -->
+        <div class="text-gray-300">
+          <!-- Placeholder for more details if needed -->
+          <p>Nivel: {{ workout.nivelDificultad }}</p>
+        </div>
 
-            <!-- Editar -->
-            <a
-              [routerLink]="['/workout', workout.id, 'edit']"
-              class="flex items-center gap-1 bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded text-white shadow transition"
-            >
-              <mat-icon>edit</mat-icon> Editar
-            </a>
+        <!-- Footer Actions -->
+        <div footer class="flex flex-wrap gap-3 justify-end">
+          <app-button
+            variant="primary"
+            customClass="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
+            (clicked)="editWorkout(workout.id)"
+          >
+            <!-- Reusing editWorkout as navigation wrapper? Or separate -->
+            <!-- The original used routerLink directly. app-button emits click. 
+                  I need to handle navigation in component or pass routerLink if supported. 
+                  My app-button doesn't support routerLink. 
+                  I will use (clicked) and methods in TS or keep <a> for links and style them like buttons?
+                  The user wants reusable components. 
+                  I will wrap the <a> with the button style classes from the shared component or use the click handler.
+                  Ideally a ButtonComponent should support "as link". 
+                  For now I'll use the click handler integration. 
+             -->
+            <mat-icon>visibility</mat-icon> Ver
+          </app-button>
 
-            <!-- Eliminar -->
-            <button
-              (click)="deleteWorkout(workout.id)"
-              class="flex items-center gap-1 bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-white shadow transition"
-            >
-              <mat-icon>delete</mat-icon> Eliminar
-            </button>
-          </div>
-        </li>
-      </ul>
+          <app-button
+            variant="secondary"
+            customClass="flex items-center gap-1 bg-yellow-500 hover:bg-yellow-600"
+            (clicked)="router.navigate(['/workout', workout.id, 'edit'])"
+          >
+            <mat-icon>edit</mat-icon> Editar
+          </app-button>
+
+          <app-button
+            variant="danger"
+            customClass="flex items-center gap-1 bg-red-600 hover:bg-red-700"
+            (clicked)="deleteWorkout(workout.id)"
+          >
+            <mat-icon>delete</mat-icon> Eliminar
+          </app-button>
+        </div>
+      </app-card>
     </div>
 
     <!-- Si no hay rutinas -->
     <ng-template #noWorkouts>
-      <p class="text-gray-400 text-center mt-10 text-lg">
-        <mat-icon class="text-yellow-400 mr-1">info</mat-icon>
-        No tienes rutinas aún.
-      </p>
+      <div class="text-center mt-10">
+        <app-card customClass="bg-white/5 backdrop-blur-sm">
+          <p
+            class="text-gray-400 text-lg flex items-center justify-center gap-2"
+          >
+            <mat-icon class="text-yellow-400">info</mat-icon>
+            No tienes rutinas aún.
+          </p>
+        </app-card>
+      </div>
     </ng-template>
 
     <!-- Botón agregar rutina -->
     <div class="mt-10 text-center">
-      <button
-        (click)="addWorkout()"
-        class="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 px-6 py-3 rounded-full text-white text-lg shadow-lg transition"
+      <app-button
+        variant="primary"
+        customClass="bg-green-600 hover:bg-green-700 rounded-full px-6 py-3 text-lg"
+        (clicked)="addWorkout()"
       >
         <mat-icon>add_circle</mat-icon> Nueva Rutina
-      </button>
+      </app-button>
     </div>
   </div>
 </div>

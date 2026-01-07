@@ -20,9 +20,24 @@
   
     <!-- Botones de acción -->
     <div class="flex gap-2">
-      <button mat-raised-button color="primary" (click)="start()">Iniciar</button>
-      <button mat-raised-button color="accent" (click)="pause()">Pausar</button>
-      <button mat-raised-button color="warn" (click)="reset()">Reset</button>
+      <app-button 
+        (clicked)="start()" 
+        variant="primary" 
+        customClass="bg-blue-600 hover:bg-blue-700">
+        Iniciar
+      </app-button>
+      <app-button 
+        (clicked)="pause()" 
+        variant="secondary" 
+        customClass="bg-yellow-500 hover:bg-yellow-600">
+        Pausar
+      </app-button>
+      <app-button 
+        (clicked)="reset()" 
+        variant="danger" 
+        customClass="bg-red-600 hover:bg-red-700">
+        Reset
+      </app-button>
     </div>
   </div>
   

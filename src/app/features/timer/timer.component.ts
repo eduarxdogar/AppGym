@@ -1,13 +1,12 @@
-// src/app/features/timer/timer.component.ts
 import { Component,EventEmitter, OnDestroy, Output  } from '@angular/core';
 import { interval, Subscription } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
-
+import { ButtonComponent } from '../../shared/ui/button/button.component';
 
 @Component({
   selector: 'app-timer',
   standalone: true,
-  imports: [MatButtonModule],
+  imports: [MatButtonModule, ButtonComponent],
   templateUrl: './timer.component.html',
   styleUrls: ['./timer.component.scss']
 })

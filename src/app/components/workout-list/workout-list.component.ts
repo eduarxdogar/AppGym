@@ -5,19 +5,20 @@ import { WorkoutService } from '../../core/services/workout.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-
+import { CardComponent } from '../../shared/ui/card/card.component';
+import { ButtonComponent } from '../../shared/ui/button/button.component';
 
 @Component({
   selector: 'app-workout-list',
   standalone: true,
-  imports: [CommonModule, RouterModule , MatIconModule],
+  imports: [CommonModule, RouterModule, MatIconModule, CardComponent, ButtonComponent],
   templateUrl: './workout-list.component.html',
   styleUrls: ['./workout-list.component.scss'],
 })
 export class WorkoutListComponent implements OnInit {
   workouts: Workout[] = [];
 
-  constructor(private workoutService: WorkoutService, private router: Router) {}
+  constructor(private workoutService: WorkoutService, public router: Router) {}
 
   ngOnInit(): void {
     this.workouts = this.workoutService.getWorkouts(); 
