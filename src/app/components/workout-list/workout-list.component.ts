@@ -43,28 +43,7 @@ export class WorkoutListComponent implements OnInit {
   }
 
   generateAiRoutine() {
-    this.isGenerating = true;
-    
-    const mockProfile: UserProfile = {
-      weight: 75,
-      height: 180,
-      fatigueLevels: this.currentFatigue,
-      availableDays: ['Hoy'],
-      equipment: ['Gym Completo']
-    };
-
-    this.aiCoachService.generateRoutine(mockProfile).subscribe({
-      next: (routine) => {
-        this.workoutService.addWorkout(routine);
-        this.workouts = this.workoutService.getWorkouts();
-        this.isGenerating = false;
-        // Opcional: navegar a la nueva rutina o mostrar notificación
-      },
-      error: (err) => {
-        console.error('Error generating routine', err);
-        this.isGenerating = false;
-      }
-    });
+    this.router.navigate(['/generator']);
   }
 
   editWorkout(id: number) {

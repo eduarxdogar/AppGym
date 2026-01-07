@@ -13,6 +13,7 @@ export const routes: Routes = [
   { path: 'calendar', component: CalendarComponent },
   { path: 'timer', component: TimerComponent },
   { path: 'workout/:id/edit', component: WorkoutEditComponent }, // Nueva ruta de edición
+  { path: 'generator', loadComponent: () => import('./features/generator/generator.component').then(m => m.GeneratorComponent) },
   { path: 'progress', component: ProgressComponent },
   { path: '**', redirectTo: '/' }, // Redirección para rutas inválidas
 

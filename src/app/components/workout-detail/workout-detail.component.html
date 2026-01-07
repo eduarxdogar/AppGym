@@ -114,13 +114,24 @@
                     </mat-icon>
                 </div>
 
-                <!-- Expanded Content -->
-                <div *ngIf="expandedIndex === i" class="mt-6 pl-4 border-l-2 border-white/10 space-y-4 animate-fadeIn">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="bg-black/40 p-3 rounded-md">
-                            <p class="text-[10px] text-muted-foreground uppercase">Series</p>
-                            <p class="text-xl font-mono">{{ ejercicio.series }}</p>
-                        </div>
+                <!-- Detalles expandibles -->
+            <div *ngIf="expandedIndex === i" class="mt-4 pt-4 border-t border-zinc-800 animate-fadeIn space-y-4">
+                
+                <!-- Video Demo -->
+                <div *ngIf="getVideoEmbedUrl(ejercicio.videoUrl) as embedUrl" class="rounded-xl overflow-hidden shadow-lg border border-zinc-800 aspect-video w-full bg-black">
+                     <iframe [src]="embedUrl | safeUrl" 
+                             class="w-full h-full" 
+                             frameborder="0" 
+                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                             allowfullscreen>
+                     </iframe>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div class="bg-black/30 p-3 rounded-lg border border-zinc-800">
+                        <span class="text-zinc-500 block mb-1">Descanso</span>
+                        <span class="text-white font-bold">{{ ejercicio.descanso || '60s' }}</span>
+                    </div>
                         <div class="bg-black/40 p-3 rounded-md">
                             <p class="text-[10px] text-muted-foreground uppercase">Reps</p>
                             <p class="text-xl font-mono">{{ ejercicio.repeticiones }}</p>
@@ -148,7 +159,7 @@
                         </app-ui-button>
                     </div>
                     
-                    <app-exercise-timer></app-exercise-timer>
+                    <app-exercise-timer [restTime]="ejercicio.descanso"></app-exercise-timer>
                 </div>
             </app-ui-card>
         </div>
