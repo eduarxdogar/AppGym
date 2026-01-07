@@ -25,7 +25,7 @@ export class WorkoutListComponent implements OnInit {
   }
 
   editWorkout(id: number) {
-    this.router.navigate(['/workout', id]);
+    this.router.navigate(['/workouts', id]);
   }
 
   deleteWorkout(id: number) {

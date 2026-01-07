@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, input, effect, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Workout } from '../../models/workout.model';
 import { WorkoutService } from '../../core/services/workout.service';
@@ -21,6 +21,10 @@ import { ProgressChartComponent } from '../../shared/ui/progress-chart/progress-
   templateUrl: './workout-detail.component.html',
 })
 export class WorkoutDetailComponent implements OnInit {
+  // Input signal automatically bound to route param ':id'
+  // Angular Casts to string by default, we can transform it
+  id = input<string>(''); 
+
   workout?: Workout;
   showTimer = false;
   pesoTotal = 0;
@@ -28,25 +32,33 @@ export class WorkoutDetailComponent implements OnInit {
   fechaFin?: Date;
   @ViewChild(TimerComponent) timerComponent!: TimerComponent;
   expandedIndex: number | null = null;
+  
+  private workoutService = inject(WorkoutService);
+  public router = inject(Router);
+  private trainingSessionService = inject(TrainingSessionService);
+  private trainingHistoryService = inject(TrainingHistoryService);
 
-
-  constructor(
-    public router: Router,
-    private route: ActivatedRoute,
-    private workoutService: WorkoutService,
-    private trainingSessionService: TrainingSessionService,
-    private trainingHistoryService: TrainingHistoryService
-  ) {}
+  constructor() {
+    // Effect to react when input changes (though usually handled in ngOnInit or computed if synchronous)
+    effect(() => {
+      const workoutId = Number(this.id());
+      if (workoutId) {
+        console.log("ID recibido via Signal:", workoutId);
+        this.workout = this.workoutService.getWorkoutById(workoutId);
+        console.log("Rutina obtenida:", this.workout);
+        
+        if (!this.workout) {
+          console.error("Rutina no encontrada para ID:", workoutId);
+        }
+      }
+    });
+  }
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    console.log("ID recibido:", id);
-    this.workout = this.workoutService.getWorkoutById(id);
-    console.log("Rutina obtenida:", this.workout);
-
-    if (!this.workout) {
-      console.error("Rutina no encontrada para ID:", id);
-    }
+    // Logic moved to effect for reactivity, or keep here if we trust id is available.
+    // With component binding, id input is available in ngOnInit.
+    // We keep the effect for robustness or just relying on checking it here.
+    // For now, let's allow the effect to handle data loading to be properly "Signal-based".
   }
   
   toggleExpand(index: number) {
