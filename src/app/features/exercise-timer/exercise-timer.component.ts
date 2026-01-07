@@ -5,11 +5,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Subscription, interval } from 'rxjs';
+import { ButtonComponent } from '../../shared/ui/button/button.component';
 
 @Component({
   selector: 'app-exercise-timer',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatSelectModule, MatFormFieldModule, MatInputModule],
+  imports: [CommonModule, FormsModule, MatSelectModule, MatFormFieldModule, MatInputModule, ButtonComponent],
   templateUrl: './exercise-timer.component.html',
 })
 export class ExerciseTimerComponent implements OnDestroy {

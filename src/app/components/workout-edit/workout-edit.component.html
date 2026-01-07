@@ -92,12 +92,18 @@
           </div>
           <!-- Botones de edición y eliminación para cada ejercicio -->
           <div class="flex flex-wrap gap-2 mt-2 sm:gap-4">
-            <button (click)="editExercise(i)" class="bg-blue-600 flex-1 min-w-[140px] hover:bg-blue-700 text-white px-3 py-1 rounded">
+            <app-button 
+                (clicked)="editExercise(i)" 
+                variant="primary"
+                customClass="bg-blue-600 hover:bg-blue-700 flex-1 min-w-[140px] flex items-center justify-center gap-1">
               <mat-icon>edit</mat-icon> Editar
-            </button>
-            <button (click)="deleteExercise(i)" class="bg-red-600 flex-1 min-w-[140px] hover:bg-red-700 text-white px-3 py-1 rounded">
+            </app-button>
+            <app-button 
+                (clicked)="deleteExercise(i)" 
+                variant="danger"
+                customClass="bg-red-600 hover:bg-red-700 flex-1 min-w-[140px] flex items-center justify-center gap-1">
               <mat-icon>delete</mat-icon> Eliminar
-            </button>
+            </app-button>
             <!-- Botones adicionales -->
             <button (click)="addSuperSet(i)" class="bg-purple-600 flex-1 min-w-[140px] hover:bg-purple-700 text-white px-3 py-1 rounded">
               <mat-icon>link</mat-icon> Super Set
@@ -121,45 +127,63 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Nombre del ejercicio -->
         <div>
-          <label for="exercise-name" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-            <mat-icon class="text-blue-500">fitness_center</mat-icon> Nombre
-          </label>
-          <input id="exercise-name" [(ngModel)]="newExercise.nombre" placeholder="Ej: Press banca" class="w-full p-3 rounded border border-gray-300 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+          <app-input
+            label="Nombre"
+            id="exercise-name"
+            [(ngModel)]="newExercise.nombre"
+            placeholder="Ej: Press banca"
+            containerClass="mb-0"
+          ></app-input>
         </div>
         <!-- Series de calentamiento -->
         <div>
-          <label for="exercise-seriescal" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-            <mat-icon class="text-orange-500">local_fire_department</mat-icon> Series Calentamiento
-          </label>
-          <input id="exercise-seriescal" type="number" min="1" [(ngModel)]="newExercise.serieCalentamiento" class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400"/>
+          <app-input
+            label="Series Calentamiento"
+            id="exercise-seriescal"
+            type="number"
+            [(ngModel)]="newExercise.serieCalentamiento"
+            containerClass="mb-0"
+          ></app-input>
         </div>
         <!-- Series -->
         <div>
-          <label for="exercise-series" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-            <mat-icon class="text-purple-500">layers</mat-icon> Series
-          </label>
-          <input id="exercise-series" type="number" min="1" [(ngModel)]="newExercise.series" class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400"/>
+          <app-input
+            label="Series"
+            id="exercise-series"
+            type="number"
+            [(ngModel)]="newExercise.series"
+            containerClass="mb-0"
+          ></app-input>
         </div>
         <!-- Repeticiones de calentamiento -->
         <div>
-          <label for="exercise-repscal" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-            <mat-icon class="text-orange-400">whatshot</mat-icon> Reps Calentamiento
-          </label>
-          <input id="exercise-repscal" type="number" min="1" [(ngModel)]="newExercise.repeticionesCalentamiento" class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400"/>
+          <app-input
+            label="Reps Calentamiento"
+            id="exercise-repscal"
+            type="number"
+            [(ngModel)]="newExercise.repeticionesCalentamiento"
+            containerClass="mb-0"
+          ></app-input>
         </div>
         <!-- Repeticiones -->
         <div>
-          <label for="exercise-reps" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-            <mat-icon class="text-green-500">repeat</mat-icon> Repeticiones
-          </label>
-          <input id="exercise-reps" type="number" min="1" [(ngModel)]="newExercise.repeticiones" class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"/>
+          <app-input
+            label="Repeticiones"
+            id="exercise-reps"
+            type="number"
+            [(ngModel)]="newExercise.repeticiones"
+            containerClass="mb-0"
+          ></app-input>
         </div>
         <!-- Peso -->
         <div>
-          <label for="exercise-pesokg" class="mb-2 text-sm font-medium text-yellow-500 flex items-center gap-2">
-            <mat-icon class="text-yellow-500">scale</mat-icon> Peso (Kg)
-          </label>
-          <input id="exercise-pesokg" type="number" min="0" [(ngModel)]="newExercise.pesokg" class="w-full p-3 rounded border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400"/>
+          <app-input
+            label="Peso (Kg)"
+            id="exercise-pesokg"
+            type="number"
+            [(ngModel)]="newExercise.pesokg"
+            containerClass="mb-0"
+          ></app-input>
         </div>
         <!-- Grupo muscular -->
         <div>
@@ -193,21 +217,32 @@
       </div>
       <!-- Botones de acción del formulario -->
       <div class="mt-6 flex gap-4">
-        <button (click)="addExercise()" class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded transition animate-bounceIn">
-          <mat-icon>check_circle</mat-icon>
+        <app-button 
+          (clicked)="addExercise()" 
+          variant="primary"
+          customClass="bg-green-600 hover:bg-green-700 animate-bounceIn flex items-center gap-2">
+          <mat-icon>check_circle</mat-icon> 
           {{ editingExerciseIndex !== null ? "Guardar Cambios" : "Agregar Ejercicio" }}
-        </button>
-        <button *ngIf="editingExerciseIndex !== null" (click)="cancelEdit()" class="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded transition animate-bounceIn">
+        </app-button>
+
+        <app-button 
+          *ngIf="editingExerciseIndex !== null" 
+          (clicked)="cancelEdit()" 
+          variant="secondary"
+          customClass="bg-gray-500 hover:bg-gray-600 animate-bounceIn flex items-center gap-2">
           <mat-icon>cancel</mat-icon> Cancelar
-        </button>
+        </app-button>
       </div>
     </div>
 
     <!-- Botón de guardar rutina -->
     <div class="text-right">
-      <button (click)="saveChanges()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition animate-bounceIn">
-        <i class="fas fa-save"></i> Guardar Rutina
-      </button>
+      <app-button 
+        (clicked)="saveChanges()" 
+        variant="primary"
+        customClass="bg-blue-600 hover:bg-blue-700 animate-bounceIn flex items-center gap-2">
+        <i class="fas fa-save"></i> Guardar Rutina <!-- Keeping i for fontawesome if it was working before, though mat-icon is preferred -->
+      </app-button>
     </div>
 
     <!-- Modal de confirmación -->

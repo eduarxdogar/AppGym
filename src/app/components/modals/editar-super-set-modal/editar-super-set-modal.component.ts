@@ -6,6 +6,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
+import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { InputComponent } from '../../../shared/ui/input/input.component';
 
 @Component({
   selector: 'app-editar-super-set-modal',
@@ -13,7 +15,7 @@ import { FormsModule } from '@angular/forms';
   imports: [  CommonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,MatDialogModule,FormsModule
+    MatSelectModule,MatDialogModule,FormsModule, ButtonComponent, InputComponent
   ], 
   templateUrl: './editar-super-set-modal.component.html',
 })
