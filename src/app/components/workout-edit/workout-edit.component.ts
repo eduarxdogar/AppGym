@@ -154,7 +154,9 @@ export class WorkoutEditComponent {
 
     const dialogRef = this.dialog.open(EditarSuperSetModalComponent, {
       width: '500px',
-      data: superSetExercise
+      data: superSetExercise,
+      panelClass: 'gravl-dialog-panel',
+      backdropClass: 'backdrop-blur-sm'
     });
 
     dialogRef.afterClosed().subscribe((result: Ejercicio | undefined) => {
@@ -186,7 +188,9 @@ export class WorkoutEditComponent {
     // For now reusing the modal to edit technical details
     const dialogRef = this.dialog.open(EditarSuperSetModalComponent, {
       width: '500px',
-      data: { ...currentExercise, nombre: 'Configurar Drop Set' }
+      data: { ...currentExercise, nombre: 'Configurar Drop Set' },
+      panelClass: 'gravl-dialog-panel',
+      backdropClass: 'backdrop-blur-sm'
     });
 
     dialogRef.afterClosed().subscribe((result: Ejercicio | undefined) => {
