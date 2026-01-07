@@ -17,7 +17,7 @@ import { ProgressChartComponent } from '../../shared/ui/progress-chart/progress-
 @Component({
   selector: 'app-workout-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, TimerComponent, ExerciseTimerComponent, UiButtonComponent, UiCardComponent, ProgressChartComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, TimerComponent, ExerciseTimerComponent, UiButtonComponent, UiCardComponent],
   templateUrl: './workout-detail.component.html',
 })
 export class WorkoutDetailComponent implements OnInit {

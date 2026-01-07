@@ -16,14 +16,14 @@ export default {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        background: "#09090b", // Zinc-950
-        foreground: "#fafafa", // Zinc-50
+        background: "#000000", // User requested Black
+        foreground: "#fafafa",
         primary: {
-          DEFAULT: "#e11d48", // Rose-600
-          foreground: "#ffffff",
+          DEFAULT: "#CCFC7E", // User requested Neon Green
+          foreground: "#000000",
         },
         secondary: {
-          DEFAULT: "#27272a", // Zinc-800
+          DEFAULT: "#121212", // User requested Surface
           foreground: "#fafafa",
         },
         destructive: {
