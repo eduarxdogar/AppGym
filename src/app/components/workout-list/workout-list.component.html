@@ -8,6 +8,33 @@
       <mat-icon class="text-green-400">fitness_center</mat-icon> Mis Rutinas
     </h2>
 
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <!-- Sección AI Coach / Mapa de Fatiga -->
+      <div class="md:col-span-1">
+         <app-muscle-fatigue-map [fatigueLevels]="currentFatigue"></app-muscle-fatigue-map>
+      </div>
+
+      <!-- Call to Action AI -->
+      <div class="md:col-span-2 bg-gradient-to-br from-zinc-900 to-black border border-zinc-800 rounded-xl p-6 flex flex-col justify-center items-start shadow-xl relative overflow-hidden">
+         <!-- Deco BG -->
+         <div class="absolute right-0 top-0 bottom-0 w-1/3 bg-primary/5 skew-x-12 transform translate-x-10 pointer-events-none"></div>
+
+         <h3 class="text-2xl font-extrabold text-white mb-2 relative z-10">GRAVL <span class="text-primary">AI Coach</span></h3>
+         <p class="text-zinc-400 mb-6 max-w-md relative z-10">
+           Tu entrenador personal basado en inteligencia artificial. Analizamos tu fatiga muscular actual para generar la rutina perfecta para hoy.
+         </p>
+         
+         <app-ui-button 
+            (clicked)="generateAiRoutine()" 
+            variant="primary" 
+            customClass="shadow-[0_0_20px_rgba(204,252,126,0.4)] animate-pulse hover:animate-none"
+            [disabled]="isGenerating">
+            <mat-icon class="mr-2">{{ isGenerating ? 'hourglass_empty' : 'auto_awesome' }}</mat-icon> 
+            {{ isGenerating ? 'Diseñando Rutina...' : 'Generar Rutina Inteligente' }}
+         </app-ui-button>
+      </div>
+    </div>
+
     <!-- Lista de rutinas -->
     <div *ngIf="workouts.length > 0; else noWorkouts" class="grid gap-6">
       <app-ui-card
