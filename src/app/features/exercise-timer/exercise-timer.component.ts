@@ -1,112 +1,116 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, computed, effect, input, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
-import { Subscription, interval } from 'rxjs';
-import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { UiButtonComponent } from "../../shared/ui/ui-button/ui-button.component";
 
 @Component({
   selector: 'app-exercise-timer',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatIconModule, UiButtonComponent],
+  imports: [
+    CommonModule, 
+    FormsModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    UiButtonComponent
+  ],
   templateUrl: './exercise-timer.component.html',
 })
-export class ExerciseTimerComponent implements OnDestroy {
-  // Duración total seleccionada para el descanso (en segundos)
-  selectedDuration: number = 300;
-  // La cuenta regresiva se inicia en el valor seleccionado
-  remainingTime: number = this.selectedDuration;
-  timeFormatted: string = this.formatTime(this.remainingTime);
+export class ExerciseTimerComponent implements OnInit, OnDestroy {
+  
+  // Input flexible: puede ser number (segundos) o string ("90s", "2 min")
+  restTime = input<string | number | undefined>('90s');
 
-  // Variable para almacenar la suscripción al intervalo
-  private subscription?: Subscription;
-  // Bandera para saber si el cronómetro está corriendo
+  // Opciones para el selector
+  restTimeOptions: number[] = [30, 45, 60, 90, 120, 180, 240, 300];
+  
+  // Estado del timer
+  selectedRestTime: number = 90;
+  timeLeft: number = 90;
   isRunning: boolean = false;
+  private intervalId: any;
 
-  // Opciones disponibles para el selector (segundos)
-  restTimeOptions: number[] = [5,60, 180,300];
-  // Tiempo de descanso seleccionado (valor por defecto 60)
-  selectedRestTime: number = 300;
+  // Parseo a segundos para el Timer
+  restSeconds = computed(() => {
+    const val = this.restTime();
+    if (typeof val === 'number') return val;
+    
+    if (!val) return 90; // Default fallback
 
-  /**
-   * Inicia el cronómetro de cuenta regresiva.
-   * Cada segundo actualiza el tiempo restante y el formato.
-   * Cuando llega a cero, detiene el cronómetro y reproduce un beep.
-   */
-  start() {
-    // Usamos el valor seleccionado tanto para duración total como para la cuenta inicial
-    this.selectedDuration = this.selectedRestTime;
-    this.remainingTime = this.selectedDuration;
-    this.timeFormatted = this.formatTime(this.remainingTime);
-    this.isRunning = true;
+    const str = val.toString().toLowerCase().trim();
+    const num = parseFloat(str);
 
-    // Cancelamos cualquier suscripción previa
-    if (this.subscription) {
-      this.subscription.unsubscribe();
+    if (isNaN(num)) return 90;
+
+    if (str.includes('min')) {
+      return Math.round(num * 60);
     }
-    // Usamos un intervalo de 1 segundo para actualizar la cuenta regresiva
-    this.subscription = interval(1000).subscribe(() => {
-      if (this.remainingTime > 0) {
-        this.remainingTime--;
-        this.timeFormatted = this.formatTime(this.remainingTime);
-      } else {
-        // Cuando se termina la cuenta, se pausa y se reproduce el beep
-        this.pause();
-        this.playBeep();
+    
+    // Asumimos segundos si no dice min, o si dice 's'
+    return Math.round(num);
+  });
+
+  constructor() {
+    // Sincronizar input con selector si cambia externamente
+    effect(() => {
+      const seconds = this.restSeconds();
+      this.selectedRestTime = seconds;
+      if (!this.isRunning) {
+        this.timeLeft = seconds;
       }
     });
-    console.log('Cronómetro iniciado. Duración:', this.selectedDuration, 'segundos');
   }
 
-  /**
-   * Pausa el cronómetro cancelando la suscripción.
-   */
+  ngOnInit(): void {
+    // Inicialización explícita si es necesario
+  }
+
+  ngOnDestroy(): void {
+    this.clearTimer();
+  }
+
+  get timeFormatted(): string {
+    const minutes = Math.floor(this.timeLeft / 60);
+    const seconds = this.timeLeft % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  start() {
+    if (this.isRunning) return;
+    
+    this.isRunning = true;
+    this.intervalId = setInterval(() => {
+      if (this.timeLeft > 0) {
+        this.timeLeft--;
+      } else {
+        this.onTimerComplete();
+        this.pause(); // O reset(), según preferencia
+      }
+    }, 1000);
+  }
+
   pause() {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-      this.subscription = undefined;
-    }
     this.isRunning = false;
-    console.log('Cronómetro pausado.');
+    this.clearTimer();
   }
 
-  /**
-   * Reinicia el cronómetro a la duración seleccionada.
-   */
   reset() {
     this.pause();
-    this.remainingTime = this.selectedDuration;
-    this.timeFormatted = this.formatTime(this.remainingTime);
-    console.log('Cronómetro reseteado.');
+    this.timeLeft = this.selectedRestTime;
   }
 
-  /**
-   * Reproduce un sonido beep desde el asset 'assets/beep.mp3'.
-   */
-  playBeep() {
-    const audio = new Audio('assets/beep.mp3');
-    audio.play().catch(error => {
-      console.error('Error al reproducir beep:', error);
-    });
-  }
-
-  /**
-   * Formatea el tiempo en formato MM:SS.
-   * @param seconds Número de segundos.
-   * @returns Cadena formateada.
-   */
-  private formatTime(seconds: number): string {
-    const min = Math.floor(seconds / 60);
-    const sec = seconds % 60;
-    return `${min < 10 ? '0' + min : min}:${sec < 10 ? '0' + sec : sec}`;
-  }
-
-  ngOnDestroy() {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
+  private clearTimer() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
     }
+  }
+
+  onTimerComplete() {
+      console.log('Descanso finalizado para este ejercicio');
+      // Reproducir sonido o notificar
   }
 }

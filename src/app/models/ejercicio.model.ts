@@ -13,6 +13,7 @@ export interface Ejercicio {
   dificultad?: 'baja' | 'media' | 'alta';
   rir?: number;
   parciales?: boolean;
+  videoUrl?: string;
 
   // NUEVO PARA DROP SET
   dropSet?: {

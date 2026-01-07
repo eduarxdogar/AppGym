@@ -116,13 +116,37 @@
                       </div>
                       
                       <!-- Actions -->
-                      <div class="flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button (click)="editExercise(i)" class="p-2 text-zinc-400 hover:text-primary hover:bg-zinc-800 rounded-full transition-colors" title="Editar">
-                              <mat-icon>edit</mat-icon>
-                          </button>
-                          <button (click)="deleteExercise(i)" class="p-2 text-zinc-400 hover:text-red-500 hover:bg-zinc-800 rounded-full transition-colors" title="Eliminar">
-                              <mat-icon>delete</mat-icon>
-                          </button>
+                      <div class="flex flex-col gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div class="flex gap-1 justify-end">
+                            <button (click)="editExercise(i)" class="p-2 text-zinc-400 hover:text-primary hover:bg-zinc-800 rounded-full transition-colors" title="Editar">
+                                <mat-icon>edit</mat-icon>
+                            </button>
+                            <button (click)="deleteExercise(i)" class="p-2 text-zinc-400 hover:text-red-500 hover:bg-zinc-800 rounded-full transition-colors" title="Eliminar">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                          </div>
+                          
+                          <!-- Advanced Actions (Condicionales) -->
+                          <div *ngIf="isAdvancedOrIntermediate()" class="flex flex-col gap-1">
+                              <button (click)="addSuperSet(i)" class="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-1 rounded hover:bg-purple-500/20 transition-colors text-right">
+                                  + Super Set
+                              </button>
+                              <button (click)="addDropsetAvanzado(i)" class="text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-1 rounded hover:bg-orange-500/20 transition-colors text-right">
+                                  + Drop Set
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- Badges / Indicators (Debajo del contenido principal) -->
+                  <div class="mt-3 flex gap-2" *ngIf="ejercicio.superSetEjercicio || ejercicio.dropSet">
+                      <div *ngIf="ejercicio.superSetEjercicio" class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-900/30 border border-purple-500/30 text-xs text-purple-300">
+                          <mat-icon class="text-xs h-4 w-4 leading-4">layers</mat-icon>
+                          Super Set: {{ ejercicio.superSetEjercicio.nombre }}
+                      </div>
+                      <div *ngIf="ejercicio.dropSet" class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-orange-900/30 border border-orange-500/30 text-xs text-orange-300">
+                          <mat-icon class="text-xs h-4 w-4 leading-4">trending_down</mat-icon>
+                          Drop Set Activado
                       </div>
                   </div>
              </div>
@@ -210,7 +234,17 @@
                            [ngModel]="newExercise().descanso"
                            (ngModelChange)="newExercise().descanso = $event" 
                            placeholder="90s"
-                           class="w-full bg-black border border-zinc-700 focus:border-primary text-white rounded-lg h-12 px-4 transition-colors outline-none">
+                     class="w-full bg-black border border-zinc-700 focus:border-primary text-white rounded-lg h-12 px-4 transition-colors outline-none">
+                </div>
+
+                <!-- Video URL Input -->
+                <div class="md:col-span-2">
+                    <label class="text-xs font-bold text-zinc-500 uppercase ml-1 mb-1 block">URL de YouTube (Video Demo)</label>
+                    <input type="text" 
+                           [ngModel]="newExercise().videoUrl"
+                           (ngModelChange)="newExercise().videoUrl = $event" 
+                           placeholder="https://www.youtube.com/watch?v=..."
+                           class="w-full bg-black border border-zinc-700 focus:border-primary text-white rounded-lg h-12 px-4 transition-colors outline-none placeholder-zinc-700">
                 </div>
             </div>
 
