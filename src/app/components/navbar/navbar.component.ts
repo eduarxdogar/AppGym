@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -25,6 +26,10 @@ export class NavbarComponent {
 
   // Inyectamos el servicio
   private breakpointObserver = inject(BreakpointObserver);
+  private authService = inject(AuthService);
+
+  // Expose user signal
+  user = this.authService.currentUser;
 
   constructor() {
     // Observamos si el ancho es de tipo "Handset" (teléfono móvil)
@@ -32,5 +37,9 @@ export class NavbarComponent {
       .subscribe(result => {
         this.isMobile = result.matches;
       });
+  }
+
+  logout() {
+    this.authService.logout();
   }
 }
