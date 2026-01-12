@@ -1,4 +1,4 @@
-import { Component, inject, effect } from '@angular/core'; // Added effect
+import { Component, inject, effect, NgZone } from '@angular/core'; // Added effect, NgZone
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
@@ -19,7 +19,7 @@ import { Router } from '@angular/router'; // Added Router
                 <!-- Logo GRAVL -->
                 <div class="space-y-2">
                     <h1 class="text-6xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]">
-                        GRAVL
+                        TRÍADA
                     </h1>
                     <p class="text-gray-400 text-sm font-medium tracking-widest uppercase">
                         Tu Entrenador Personal con IA
@@ -65,18 +65,27 @@ import { Router } from '@angular/router'; // Added Router
 export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private ngZone = inject(NgZone);
 
   constructor() {
       // Auto-redirect if user is already logged in
       effect(() => {
           const user = this.authService.currentUser();
           if (user) {
-              this.router.navigate(['/dashboard']);
+             this.ngZone.run(() => {
+                 this.router.navigate(['/dashboard']);
+             });
           }
       });
   }
 
   login() {
-    this.authService.loginWithGoogle();
+    this.authService.loginWithGoogle()
+      .then(() => {
+        this.ngZone.run(() => {
+           this.router.navigate(['/dashboard']);
+        });
+      })
+      .catch(error => console.error('Error en login:', error));
   }
 }
