@@ -8,17 +8,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { TrainingSessionService } from '../../core/services/training-session.service';
 import { TrainingHistoryService } from '../../core/services/training-history.service';
 import { TimerComponent } from '../../features/timer/timer.component';
-import {ExerciseTimerComponent} from '../../features/exercise-timer/exercise-timer.component';
 import { TrainingSession } from '../../models/training-session.model';
-import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
-import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
-import { ProgressChartComponent } from '../../shared/ui/progress-chart/progress-chart.component';
-import { SafeUrlPipe } from '../../shared/pipes/safe-url.pipe';
 
 @Component({
   selector: 'app-workout-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, TimerComponent, ExerciseTimerComponent, UiButtonComponent, UiCardComponent, SafeUrlPipe],
+  imports: [CommonModule, RouterModule, MatIconModule],
   templateUrl: './workout-detail.component.html',
 })
 export class WorkoutDetailComponent implements OnInit {
@@ -167,6 +162,24 @@ export class WorkoutDetailComponent implements OnInit {
         return `https://www.youtube.com/embed/${videoId}`;
     }
     
-    return ''; // Return empty if invalid to handle in template
+    return ''; 
+  }
+
+  goBack(): void {
+    this.router.navigate(['/dashboard']); 
+  }
+
+  getLocationPercentage(muscle: string): number {
+    const map: Record<string, number> = {
+        'Pectorales': 94,
+        'Deltoides': 83,
+        'Tríceps': 78,
+        'Espalda': 88,
+        'Bíceps': 91,
+        'Cuádriceps': 65,
+        'Isquios': 70
+    };
+    return map[muscle] || Math.floor(Math.random() * (99 - 70 + 1)) + 70;
   }
 }
+
