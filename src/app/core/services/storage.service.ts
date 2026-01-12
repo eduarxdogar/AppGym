@@ -13,33 +13,26 @@ export class StorageService {
   private authService = inject(AuthService);
   private injector = inject(Injector);
   
-  // Create an observable from the currentUser signal to react to login/logout
   private user$ = toObservable(this.authService.currentUser);
 
   constructor() { }
 
-  /**
-   * Obtiene los workouts de Firestore filtrados por el usuario autenticado.
-   * Retorna un Observable que se actualiza si cambia el usuario.
-   */
   getWorkouts(): Observable<any[]> {
     return this.user$.pipe(
       switchMap(user => {
         if (!user) {
-          // Si no hay usuario, retornamos array vacío
           return of([]);
         }
-        const workoutsCol = collection(this.firestore, 'workouts');
-        const q = query(workoutsCol, where('userId', '==', user.uid));
-        return runInInjectionContext(this.injector, () => collectionData(q, { idField: 'id' }));
+        // Use runInInjectionContext safely
+        return runInInjectionContext(this.injector, () => {
+             const workoutsCol = collection(this.firestore, 'workouts');
+             const q = query(workoutsCol, where('userId', '==', user.uid));
+             return collectionData(q, { idField: 'id' });
+        });
       })
     );
   }
 
-  /**
-   * Guarda o actualiza un workout.
-   * Usa el ID del workout como ID del documento e incluye el userId real.
-   */
   async saveWorkout(workout: any): Promise<void> {
     const user = this.authService.currentUser();
     if (!user) {
@@ -49,7 +42,6 @@ export class StorageService {
     try {
       const workoutsCol = collection(this.firestore, 'workouts');
       const docRef = doc(workoutsCol, String(workout.id));
-      // Guardamos con el userId actual
       await setDoc(docRef, { ...workout, userId: user.uid }, { merge: true });
     } catch (error) {
       console.error('Error saving workout:', error);
@@ -57,9 +49,6 @@ export class StorageService {
     }
   }
 
-  /**
-   * Elimina un workout por ID.
-   */
   async deleteWorkout(id: string | number): Promise<void> {
     try {
       const workoutsCol = collection(this.firestore, 'workouts');
@@ -71,18 +60,41 @@ export class StorageService {
     }
   }
 
-  // --- Métodos Legacy (LocalStorage) ---
-  // Se mantienen vacíos para evitar errores de compilación
+  // --- HISTORY MANAGEMENT ---
   
-  /** @deprecated */
+  getHistory(): Observable<any[]> {
+    return this.user$.pipe(
+      switchMap(user => {
+        if (!user) return of([]);
+        return runInInjectionContext(this.injector, () => {
+             const historyCol = collection(this.firestore, 'workout_history');
+             const q = query(historyCol, where('userId', '==', user.uid));
+             return collectionData(q, { idField: 'id' });
+        });
+      })
+    );
+  }
+
+  async saveHistory(session: any): Promise<void> {
+    const user = this.authService.currentUser();
+    if (!user) throw new Error('User must be authenticated');
+
+    try {
+      const historyCol = collection(this.firestore, 'workout_history');
+      // If session doesn't have ID, create one
+      const docId = session.id ? String(session.id) : doc(historyCol).id;
+      const docRef = doc(historyCol, docId);
+      
+      await setDoc(docRef, { ...session, id: docId, userId: user.uid }, { merge: true });
+    } catch (error) {
+      console.error('Error saving history:', error);
+      throw error;
+    }
+  }
+
+  // --- Legacy Methods (Empty) ---
   getItem<T>(key: string): T | null { return null; }
-
-  /** @deprecated */
   setItem<T>(key: string, value: T): void {}
-
-  /** @deprecated */
   removeItem(key: string): void {}
-
-  /** @deprecated */
   clear(): void {}
 }
