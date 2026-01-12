@@ -224,10 +224,15 @@
         <mat-icon>bar_chart</mat-icon>
         <span class="text-[9px] font-bold">STATS</span>
      </button>
-     <button class="flex flex-col items-center gap-1 p-2 text-zinc-500 hover:text-white transition">
-        <mat-icon>person</mat-icon>
-        <span class="text-[9px] font-bold">PROFILE</span>
-     </button>
+      <button [routerLink]="['/profile']" class="flex flex-col items-center gap-1 p-2 text-zinc-500 hover:text-white transition">
+         <div *ngIf="currentUser()?.photoURL; else defaultIcon" class="h-6 w-6 rounded-full overflow-hidden border border-[#CCFF00] mb-0.5">
+            <img [src]="currentUser()?.photoURL" alt="Profile" class="h-full w-full object-cover">
+         </div>
+         <ng-template #defaultIcon>
+            <mat-icon>person</mat-icon>
+         </ng-template>
+         <span class="text-[9px] font-bold">PROFILE</span>
+      </button>
   </div>
 
 </div>

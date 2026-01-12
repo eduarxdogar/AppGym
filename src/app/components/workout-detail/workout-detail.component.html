@@ -1,229 +1,147 @@
-<div class="min-h-screen bg-background text-foreground p-4 sm:p-6 pb-20">
-  <!-- Header / Navigation Back? if needed, or just let breadcrumbs handle it -->
+<div class="min-h-screen bg-[#0B0E14] text-white font-sans animate-fadeIn pb-24 relative">
+  <!-- Top Background Ambient -->
+  <div class="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-blue-900/10 to-[#0B0E14] pointer-events-none"></div>
 
-  <div
-    *ngIf="workout() as workout; else noWorkout"
-    class="max-w-4xl mx-auto space-y-6 animate-fadeIn"
-  >
-    <!-- Hero Section / Title -->
-    <div
-      class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
-    >
-      <div>
-        <h2 class="text-4xl font-extrabold tracking-tight text-white mb-2">
-          {{ workout.nombre }}
-        </h2>
-        <div class="flex flex-wrap gap-2">
-          <span
-            *ngFor="let musculo of workout.musculos"
-            class="px-3 py-1 bg-primary/20 text-primary border border-primary/30 rounded-full text-xs font-semibold uppercase tracking-wider"
-          >
-            {{ musculo }}
-          </span>
-        </div>
-      </div>
-
-      <!-- Chart Preview only if session exists or some stats? For now just placeholders aligned -->
-    </div>
-
-    <!-- Active Session Info (Floating or Card) -->
-    <div *ngIf="currentSession" class="mb-6">
-      <app-ui-card
-        customClass="border-primary/50 shadow-[0_0_20px_rgba(225,29,72,0.15)]"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p
-              class="text-sm text-green-400 font-bold uppercase tracking-widest flex items-center gap-2"
-            >
-              <span
-                class="w-2 h-2 rounded-full bg-green-500 animate-pulse"
-              ></span>
-              Sesión Activa
-            </p>
-            <p class="text-xs text-muted-foreground mt-1">
-              Iniciado: {{ currentSession.fechaInicio | date : "shortTime" }}
-            </p>
-          </div>
-          <div>
-            <!-- Mini stats or timer could go here -->
-          </div>
-        </div>
-      </app-ui-card>
-    </div>
-
-    <!-- Timer Overlay / Section -->
-    <div *ngIf="showTimer" class="sticky top-4 z-50 mb-6 animate-slideDown">
-      <app-ui-card
-        customClass="bg-black/80 backdrop-blur-xl border-primary shadow-2xl"
-      >
-        <div class="flex flex-col items-center gap-4">
-          <app-timer></app-timer>
-          <div class="flex gap-4 items-center">
-            <p class="text-lg font-bold">
-              Volumen: <span class="text-primary">{{ pesoTotal }} kg</span>
-            </p>
-            <app-ui-button
-              (clicked)="finalizarRutina()"
-              variant="danger"
-              size="sm"
-            >
-              Finalizar Sesión
-            </app-ui-button>
-          </div>
-        </div>
-      </app-ui-card>
-    </div>
-
-    <!-- Actions Bar -->
-    <div class="flex flex-wrap gap-3">
-      <app-ui-button
-        (clicked)="iniciarRutina()"
-        variant="primary"
-        customClass="flex-1 md:flex-none"
-      >
-        <mat-icon class="mr-2">play_arrow</mat-icon> Iniciar
-      </app-ui-button>
-
-      <app-ui-button
-        (clicked)="router.navigate(['/workout', workout.id, 'edit'])"
-        variant="ghost"
-      >
-        <mat-icon class="mr-2">edit</mat-icon> Editar
-      </app-ui-button>
-
-      <app-ui-button
-        (clicked)="router.navigate(['/progress'])"
-        variant="outline"
-      >
-        <mat-icon class="mr-2">bar_chart</mat-icon> Ver Progreso
-      </app-ui-button>
-    </div>
-
-    <hr class="border-white/10" />
-
-    <!-- Exercises List -->
-    <div class="space-y-4">
-      <h3 class="text-xl font-bold text-white mb-4">Ejercicios</h3>
-
-      <div
-        *ngFor="let ejercicio of workout.ejercicios; let i = index"
-        class="animate-slideUp"
-        [style.animation-delay]="i * 100 + 'ms'"
-      >
-        <app-ui-card customClass="hover:bg-white/5 transition-colors group">
-          <div
-            (click)="toggleExpand(i)"
-            class="flex justify-between items-center cursor-pointer"
-          >
-            <div class="flex items-center gap-4">
-              <div
-                class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold border border-primary/20"
-              >
-                {{ i + 1 }}
-              </div>
-              <div>
-                <h4
-                  class="text-lg font-semibold text-white group-hover:text-primary transition-colors"
-                >
-                  {{ ejercicio.nombre }}
-                </h4>
-                <p class="text-xs text-muted-foreground">
-                  {{ ejercicio.grupoMuscular }} • {{ ejercicio.tipo }}
-                </p>
-              </div>
-            </div>
-
-            <mat-icon
-              class="text-muted-foreground transition-transform duration-300"
-              [class.rotate-180]="expandedIndex === i"
-            >
-              expand_more
-            </mat-icon>
-          </div>
-
-          <!-- Detalles expandibles -->
-          <div
-            *ngIf="expandedIndex === i"
-            class="mt-4 pt-4 border-t border-zinc-800 animate-fadeIn space-y-4"
-          >
-            <!-- Video Demo -->
-            <div
-              *ngIf="getVideoEmbedUrl(ejercicio.videoUrl) as embedUrl"
-              class="rounded-xl overflow-hidden shadow-lg border border-zinc-800 aspect-video w-full bg-black"
-            >
-              <iframe
-                [src]="embedUrl | safeUrl"
-                class="w-full h-full"
-                frameborder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen
-              >
-              </iframe>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4 text-sm">
-              <div class="bg-black/30 p-3 rounded-lg border border-zinc-800">
-                <span class="text-zinc-500 block mb-1">Descanso</span>
-                <span class="text-white font-bold">{{
-                  ejercicio.descanso || "60s"
-                }}</span>
-              </div>
-              <div class="bg-black/40 p-3 rounded-md">
-                <p class="text-[10px] text-muted-foreground uppercase">Reps</p>
-                <p class="text-xl font-mono">{{ ejercicio.repeticiones }}</p>
-              </div>
-              <div class="bg-black/40 p-3 rounded-md">
-                <p class="text-[10px] text-muted-foreground uppercase">Peso</p>
-                <p class="text-xl font-mono text-primary">
-                  {{ ejercicio.pesokg }}
-                  <span class="text-xs text-muted-foreground">kg</span>
-                </p>
-              </div>
-              <div class="bg-black/40 p-3 rounded-md">
-                <p class="text-[10px] text-muted-foreground uppercase">
-                  Descanso
-                </p>
-                <p class="text-xl font-mono">{{ ejercicio.descanso }}s</p>
-              </div>
-            </div>
-
-            <div
-              *ngIf="ejercicio.serieCalentamiento"
-              class="text-sm bg-yellow-500/10 text-yellow-500 p-2 rounded border border-yellow-500/20"
-            >
-              🔥 Calentamiento: {{ ejercicio.serieCalentamiento }} x
-              {{ ejercicio.repeticionesCalentamiento }}
-            </div>
-
-            <div class="flex gap-2 justify-end mt-4">
-              <app-ui-button
-                (clicked)="editExercise(i)"
-                variant="ghost"
-                size="sm"
-              >
-                Ajustar
-              </app-ui-button>
-            </div>
-
-            <app-exercise-timer
-              [restTime]="ejercicio.descanso"
-            ></app-exercise-timer>
-          </div>
-        </app-ui-card>
-      </div>
-    </div>
-  </div>
-
-  <ng-template #noWorkout>
-    <div
-      class="flex flex-col items-center justify-center h-[60vh] text-center space-y-4"
-    >
-      <mat-icon class="text-6xl text-muted-foreground">fitness_center</mat-icon>
-      <p class="text-muted-foreground text-lg">Rutina no encontrada</p>
-      <app-ui-button (clicked)="router.navigate(['/workouts'])"
-        >Volver</app-ui-button
-      >
+  <!-- Loading State -->
+  <ng-template #loading>
+    <div class="flex flex-col items-center justify-center min-h-screen">
+       <div class="h-10 w-10 border-4 border-zinc-800 border-t-[#CCFF00] rounded-full animate-spin mb-4"></div>
+       <p class="text-zinc-500 text-xs tracking-widest uppercase">Cargando Rutina...</p>
     </div>
   </ng-template>
+
+  <!-- Content -->
+  <div *ngIf="workout() as workout; else loading" class="relative z-10 max-w-lg mx-auto">
+    
+    <!-- 1. Header Navigation -->
+    <div class="px-4 py-4 flex items-center justify-between sticky top-0 bg-[#0B0E14]/80 backdrop-blur-md z-50 border-b border-white/5">
+       <button (click)="goBack()" class="flex items-center gap-1 text-[#CCFF00] font-medium text-sm hover:text-white transition-colors">
+          <mat-icon class="text-lg">arrow_back_ios</mat-icon>
+          {{ workout.fecha | date:'EEEE' | titlecase }}
+       </button>
+       <button class="text-white">
+          <mat-icon>more_horiz</mat-icon>
+       </button>
+    </div>
+
+    <div class="px-5 pt-2 pb-6 space-y-8">
+       
+        <!-- 2. Trainer Banner -->
+        <div class="bg-[#151921] rounded-2xl p-5 border border-zinc-800 flex items-center gap-4 relative overflow-hidden group cursor-pointer hover:border-zinc-700 transition-all">
+           <!-- Glow effect -->
+           <div class="absolute -right-10 -top-10 w-32 h-32 bg-blue-500/10 blur-[50px] rounded-full pointer-events-none"></div>
+           
+           <div class="h-10 w-10 rounded-lg bg-white/10 flex items-center justify-center text-white">
+               <mat-icon>sports_gymnastics</mat-icon>
+           </div>
+           
+           <div class="flex-1">
+               <h3 class="text-white font-bold text-sm">Entrenador</h3>
+               <p class="text-zinc-400 text-xs leading-relaxed mt-1">
+                   ¡Eleva tu estado físico! Descubre los secretos detrás de la selección de ejercicios.
+               </p>
+           </div>
+           
+           <mat-icon class="text-zinc-600 group-hover:text-white transition-colors">chevron_right</mat-icon>
+        </div>
+
+
+        <!-- 3. Muscles Horizontal List -->
+        <div>
+            <h3 class="text-lg font-bold text-white mb-4">Músculos a entrenar</h3>
+            <div class="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x">
+                
+                <div *ngFor="let m of workout.musculos" class="snap-start flex-shrink-0 bg-[#151921] rounded-xl p-3 w-[140px] border border-zinc-800 flex flex-col items-center gap-2 group hover:border-[#CCFF00]/50 transition-colors">
+                    <!-- Muscle Placeholder Img -->
+                    <div class="h-16 w-16 bg-zinc-800 rounded-full flex items-center justify-center overflow-hidden border border-zinc-700 relative">
+                        <img [src]="'https://placehold.co/100x100/1c1c1c/CCFF00?text=' + m.substring(0,2).toUpperCase()" class="opacity-80 group-hover:opacity-100 transition-opacity" alt="Muscle">
+                    </div>
+                    
+                    <div class="text-center w-full">
+                        <p class="text-white font-bold text-sm truncate w-full">{{ m }}</p>
+                        <span class="inline-block mt-1 px-2 py-0.5 bg-[#CCFF00] text-black text-[10px] font-bold rounded-full">
+                            {{ getLocationPercentage(m) }}%
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- 4. Warmup & Exercises Header -->
+        <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+            <h3 class="text-lg font-bold text-white">Calentamiento</h3>
+            <mat-icon class="text-[#CCFF00] text-sm rotate-45">arrow_outward</mat-icon>
+        </div>
+        
+        <div class="flex items-center justify-between mt-8 mb-4">
+             <h3 class="text-xl font-bold text-white">{{ workout.ejercicios.length }} ejercicios</h3>
+             <button class="h-8 w-8 rounded-full bg-[#CCFF00] text-black flex items-center justify-center hover:scale-110 transition-transform shadow-[0_0_15px_rgba(204,255,0,0.3)]">
+                 <mat-icon class="text-lg">add</mat-icon>
+             </button>
+        </div>
+
+
+        <!-- 5. Exercise List (Cards) -->
+        <div class="space-y-4">
+            
+            <div *ngFor="let ex of workout.ejercicios; let i = index" 
+                 class="bg-[#151921] p-3 rounded-2xl flex items-center gap-4 relative group hover:bg-[#1a1f29] transition-colors cursor-pointer border border-transparent hover:border-zinc-800"
+                 (click)="toggleExpand(i)">
+                
+                <!-- Thumbnail -->
+                <div class="h-20 w-20 flex-shrink-0 rounded-xl bg-zinc-800 overflow-hidden relative border border-zinc-700">
+                    <img [src]="'https://placehold.co/150x150/222/555?text=' + ex.nombre.substring(0,1)" alt="Exercise" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                    <!-- Mini muscle icon overlay -->
+                    <div class="absolute bottom-1 right-1 h-6 w-6 bg-[#0B0E14]/80 backdrop-blur rounded-md flex items-center justify-center border border-white/10">
+                        <mat-icon class="text-[14px] text-zinc-400">fitness_center</mat-icon>
+                    </div>
+                </div>
+
+                <!-- Info -->
+                <div class="flex-1 min-w-0 pr-8">
+                     <h4 class="text-white font-bold text-base mb-1 truncate leading-tight">{{ ex.nombre }}</h4>
+                     <p class="text-zinc-400 text-xs font-medium">
+                         {{ ex.series }} series - {{ ex.repeticiones }} reps <span *ngIf="ex.pesokg">- {{ ex.pesokg }} kg</span>
+                     </p>
+                </div>
+
+                <!-- Actions (Absolute Right) -->
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <button class="text-zinc-600 hover:text-red-500 transition-colors p-1">
+                        <mat-icon class="text-lg">favorite</mat-icon> <!-- Filled if favorite -->
+                    </button>
+                    <button class="text-zinc-500 hover:text-white transition-colors p-1">
+                        <mat-icon>more_horiz</mat-icon>
+                    </button>
+                </div>
+
+                 <!-- Expanded Details (Inline for now, could be separate) -->
+                 <div *ngIf="expandedIndex === i" class="absolute left-0 top-full w-full bg-[#151921] border-x border-b border-zinc-800 rounded-b-2xl p-4 z-20 shadow-2xl animate-in slide-in-from-top-2 duration-200">
+                     <p class="text-xs text-zinc-400 mb-4">{{ ex.notas || 'Sin notas adicionales.' }}</p>
+                     <div class="flex gap-2">
+                        <button (click)="iniciarRutina(); $event.stopPropagation()" class="flex-1 py-3 bg-[#CCFF00] text-black font-bold uppercase text-xs rounded-xl hover:bg-[#bce600]">
+                            Iniciar
+                        </button>
+                        <button (click)="router.navigate(['/workouts', workout.id, 'edit']); $event.stopPropagation()" class="px-4 py-3 border border-zinc-700 text-zinc-300 font-bold uppercase text-xs rounded-xl hover:bg-zinc-800">
+                           Editar
+                        </button>
+                     </div>
+                 </div>
+
+            </div>
+
+        </div>
+
+        <!-- Start Button Sticky -->
+        <div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-sm px-6 z-40" *ngIf="!showTimer">
+            <button (click)="iniciarRutina()" 
+                    class="w-full py-4 bg-[#CCFF00] hover:bg-[#bce600] text-black font-extrabold text-sm uppercase tracking-widest rounded-2xl shadow-[0_0_20px_rgba(204,255,0,0.4)] transition-all hover:scale-[1.02] flex items-center justify-center gap-2">
+                <mat-icon>play_arrow</mat-icon> COMENZAR RUTINA
+            </button>
+        </div>
+
+    </div>
+  </div>
 </div>

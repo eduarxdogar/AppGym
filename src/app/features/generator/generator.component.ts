@@ -1,19 +1,20 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MuscleFatigueMapComponent } from '../../shared/ui/muscle-fatigue-map/muscle-fatigue-map.component';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
 import { AiCoachService, UserProfile } from '../../core/services/ai-coach.service';
 import { Workout } from '../../models/workout.model';
 import { WorkoutService } from '../../core/services/workout.service';
+import { RecoveryService, MuscleStatus } from '../../core/services/recovery.service';
+import { ProfessionalBodyMapComponent } from '../../shared/components/professional-body-map/professional-body-map.component';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-generator',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MuscleFatigueMapComponent, UiButtonComponent, UiCardComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, ProfessionalBodyMapComponent],
   templateUrl: './generator.component.html',
 })
 export class GeneratorComponent {
@@ -21,6 +22,7 @@ export class GeneratorComponent {
   // Dependencies
   private aiService = inject(AiCoachService);
   private workoutService = inject(WorkoutService);
+  private recoveryService = inject(RecoveryService);
   private router = inject(Router);
 
   // State
@@ -28,26 +30,27 @@ export class GeneratorComponent {
   isLoading = signal<boolean>(false);
   generatedWorkout = signal<Workout | null>(null);
 
-  // Mock Fatigue Data
-  // In a real app, this would come from a store or service based on user history
-  currentFatigue = signal<Record<string, number>>({
-    'pecho': 80,
-    'hombros': 65,
-    'piernas': 10,
-    'espalda': 10,
-    'core': 30,
-    'brazos': 45
-  });
+  // Real Data Signals
+  recoveryStatus = this.recoveryService.muscleRecoveryStatus; // Signal<Map<string, MuscleStatus>>
 
-  get readyToTrain(): string {
-     // Simple logic to suggest fresh muscles
-     const fresh = Object.entries(this.currentFatigue())
-        .filter(([_, val]) => val < 40)
-        .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1)); // Capitalize
-     
-     if (fresh.length === 0) return 'Descanso Activo / Cardio';
-     return fresh.join(', ');
-  }
+  // Computed: Músculos con recuperación > 90% (o 80% si somos menos estrictos)
+  readyToTrain = computed(() => {
+    const statusMap = this.recoveryStatus();
+    const readyMuscles: string[] = [];
+
+    statusMap.forEach((status, key) => {
+        if (status.percentage >= 80) { // 80% threshold for "Ready"
+            // Capitalizar nombre
+            const formattedName = status.name.charAt(0).toUpperCase() + status.name.slice(1);
+            if (!readyMuscles.includes(formattedName)) {
+                readyMuscles.push(formattedName);
+            }
+        }
+    });
+
+    if (readyMuscles.length === 0) return 'Todo el cuerpo (Fatiga General)';
+    return readyMuscles.join(', ');
+  });
 
   async generate() {
     if (!this.userPrompt().trim()) return;
@@ -55,11 +58,17 @@ export class GeneratorComponent {
     this.isLoading.set(true);
     this.generatedWorkout.set(null);
 
-    // Create a dummy profile for the mock
+    // Convert Map to plain object record for AI
+    const fatigueRecord: Record<string, number> = {};
+    this.recoveryStatus().forEach((val, key) => {
+        fatigueRecord[key] = val.percentage;
+    });
+
+    // Create profile with REAL data
     const profile: UserProfile = {
-        weight: 75,
-        height: 180,
-        fatigueLevels: this.currentFatigue(),
+        weight: 75, // TODO: Get from UserService
+        height: 180, // TODO: Get from UserService
+        fatigueLevels: fatigueRecord,
         availableDays: ['Hoy'],
         equipment: ['Gym Completo']
     };
