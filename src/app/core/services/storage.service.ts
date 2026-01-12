@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
 import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, where } from '@angular/fire/firestore';
 import { Observable, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
@@ -11,6 +11,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 export class StorageService {
   private firestore = inject(Firestore);
   private authService = inject(AuthService);
+  private injector = inject(Injector);
   
   // Create an observable from the currentUser signal to react to login/logout
   private user$ = toObservable(this.authService.currentUser);
@@ -30,7 +31,7 @@ export class StorageService {
         }
         const workoutsCol = collection(this.firestore, 'workouts');
         const q = query(workoutsCol, where('userId', '==', user.uid));
-        return collectionData(q, { idField: 'id' });
+        return runInInjectionContext(this.injector, () => collectionData(q, { idField: 'id' }));
       })
     );
   }

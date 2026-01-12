@@ -47,7 +47,7 @@
             </textarea>
             
             <app-ui-button 
-                (clicked)="generateRoutine()" 
+                (clicked)="generate()" 
                 variant="primary" 
                 customClass="w-full py-4 text-lg shadow-[0_0_20px_rgba(204,252,126,0.2)]"
                 [disabled]="isLoading() || !userPrompt()">
@@ -70,7 +70,7 @@
                             </span>
                             <h3 class="text-2xl font-bold text-white">{{ generatedWorkout()?.nombre }}</h3>
                             <p class="text-zinc-400 text-sm mt-1">
-                                {{ generatedWorkout()?.ejercicios?.length }} Ejercicios • Dificultad {{ generatedWorkout()?.nivelDificultad | titlecase }}
+                                {{ generatedWorkout()?.ejercicios?.length }} Ejericicios • Duración ~{{ (generatedWorkout()?.ejercicios?.length || 0) * 10 }} min
                             </p>
                         </div>
                     </div>
@@ -93,15 +93,16 @@
                         </div>
                     </div>
 
-                    <app-ui-button (clicked)="saveAndStart()" variant="primary" customClass="w-full">
-                        Guardar y Empezar
-                    </app-ui-button>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                         <app-ui-button (clicked)="generatedWorkout.set(null)" variant="outline" customClass="w-full sm:w-1/2 border-red-500/50 text-red-500 hover:bg-red-500/10 hover:border-red-500">
+                            Descartar
+                        </app-ui-button>
+                        <app-ui-button (clicked)="saveAndStart()" variant="primary" customClass="w-full sm:w-1/2">
+                            Guardar y Empezar
+                        </app-ui-button>
+                    </div>
                 </div>
             </app-ui-card>
-            
-            <button (click)="generatedWorkout.set(null)" class="w-full mt-4 text-zinc-500 hover:text-white text-sm underline">
-                Descartar y probar otro prompt
-            </button>
         </div>
 
     </div>
