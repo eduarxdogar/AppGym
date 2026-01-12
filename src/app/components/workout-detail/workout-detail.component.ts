@@ -1,5 +1,6 @@
 import { Component, OnInit, ViewChild, input, effect, inject, computed, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Firestore, collection, doc } from '@angular/fire/firestore';
 import { Workout } from '../../models/workout.model';
 import { WorkoutService } from '../../core/services/workout.service';
 import { CommonModule } from '@angular/common';
@@ -10,6 +11,8 @@ import { TrainingHistoryService } from '../../core/services/training-history.ser
 import { TimerComponent } from '../../features/timer/timer.component';
 import { TrainingSession } from '../../models/training-session.model';
 import { FormsModule } from '@angular/forms';
+
+import { WorkoutSession, WorkoutSessionExercise, WorkoutSessionSet } from '../../models/workout-session.model';
 
 interface WorkoutSet {
   reps: number;
@@ -30,6 +33,7 @@ export class WorkoutDetailComponent implements OnInit {
   public router = inject(Router);
   private trainingSessionService = inject(TrainingSessionService);
   private trainingHistoryService = inject(TrainingHistoryService);
+  private firestore = inject(Firestore); // Correct injection context
 
   // --- SIGNALS ---
   workout = computed(() => {
@@ -59,9 +63,29 @@ export class WorkoutDetailComponent implements OnInit {
   isActive = signal<boolean>(false);
   activeSets = signal<Map<number, WorkoutSet[]>>(new Map()); // Key: Exercise Index
 
-  showTimer = false; // Legacy, kept for compatibility if needed, but isActive drives UI
+  // Global Timer State (Session)
+  sessionSeconds = signal<number>(0);
+  sessionInterval: any;
+  
+  // Rest Timer State
+  isResting = signal<boolean>(false); // Toggles Modal
+  
+  showTimer = false; 
   expandedIndex: number | null = null;
-  @ViewChild(TimerComponent) timerComponent!: TimerComponent;
+  @ViewChild('restTimer') restTimer!: TimerComponent;
+  
+  // Computed for UI
+  sessionTimeFormatted = computed(() => {
+    const totalSeconds = this.sessionSeconds();
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    
+    // Format: "MM:SS" or "HH:MM:SS"
+    const pad = (n: number) => n < 10 ? '0'+n : n;
+    if (hrs > 0) return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+    return `${pad(mins)}:${pad(secs)}`;
+  });
 
   constructor() {
     // Initialize sets when workout loads
@@ -104,30 +128,65 @@ export class WorkoutDetailComponent implements OnInit {
       this.isActive.set(true); // Switch UI to Active Mode
       this.showTimer = true;
       
-      // Allow view to update then start timer
-      setTimeout(() => {
-          if (this.timerComponent) this.timerComponent.start();
-      }, 100);
+      this.startSessionTimer(); // Global timer starts at 0
 
       this.trainingSessionService.startSession(w);
     }
   }
 
-  finalizarRutina() {
-    if (confirm('¿Terminar entrenamiento?')) {
+  async finalizarRutina() {
+    if (confirm('¿Guardar Entrenamiento y finalizar sesión?')) {
         this.isActive.set(false);
         this.showTimer = false;
         
-        if (this.timerComponent) this.timerComponent.pause();
+        if (this.sessionInterval) clearInterval(this.sessionInterval);
+        this.stopRestTimer();
         
         // Save Session Logic
-        const session = this.trainingSessionService.getCurrentSession();
-        if (session) {
-            session.fechaFin = new Date();
-            session.duracion = this.timerComponent ? this.timerComponent.timeFormatted : '00:00';
-            session.pesoTotal = this.calculateTotalVolume();
-            this.trainingSessionService.saveSession(session);
-            this.trainingHistoryService.addSession(session);
+        const workout = this.workout();
+        const startTime = this.trainingSessionService.getCurrentSession()?.fechaInicio || new Date(); // Fallback
+        
+        if (workout) {
+             // Map active sets to WorkoutSession structure
+             const sessionExercises: WorkoutSessionExercise[] = workout.ejercicios.map((ex, index) => {
+                 const sets = this.activeSets().get(index) || [];
+                 return {
+                     exerciseId: ex.id || index, // Use index if ID missing
+                     name: ex.nombre,
+                     targetSets: ex.series || 0,
+                     sets: sets.map(s => ({
+                         weight: s.weight,
+                         reps: s.reps,
+                         completed: s.completed
+                     }))
+                 };
+             });
+
+             // Collect muscle groups
+             const muscles = new Set<string>();
+             workout.musculos?.forEach(m => muscles.add(m));
+             workout.ejercicios.forEach(ex => {
+                 if(ex.grupoMuscular) muscles.add(ex.grupoMuscular);
+             });
+
+             const session: WorkoutSession = {
+                 id: doc(collection(this.firestore, 'dummy')).id, // Use class property
+                 userId: '', 
+                 workoutId: workout.id,
+                 name: workout.nombre,
+                 startTime: startTime.toISOString(),
+                 endTime: new Date().toISOString(),
+                 duration: this.sessionTimeFormatted(),
+                 totalVolume: this.calculateTotalVolume(),
+                 musclesWorked: Array.from(muscles),
+                 exercises: sessionExercises,
+                 feeling: 'good'
+             };
+
+             await this.trainingHistoryService.addSession(session);
+             
+             // Clear temp session
+             this.trainingSessionService.saveSession(null);
         }
         
         this.router.navigate(['/dashboard']);
@@ -151,6 +210,18 @@ export class WorkoutDetailComponent implements OnInit {
       this.activeSets.set(map);
   }
 
+  deleteSet(exIndex: number, setIndex: number) {
+      if(!confirm('¿Eliminar esta serie?')) return;
+      
+      const map = new Map(this.activeSets());
+      const sets = map.get(exIndex);
+      if(sets && sets.length > 0) {
+          sets.splice(setIndex, 1);
+          map.set(exIndex, sets);
+          this.activeSets.set(map);
+      }
+  }
+
   toggleSetComplete(exIndex: number, setIndex: number) {
       const map = new Map(this.activeSets());
       const sets = map.get(exIndex);
@@ -158,7 +229,41 @@ export class WorkoutDetailComponent implements OnInit {
           sets[setIndex].completed = !sets[setIndex].completed;
           map.set(exIndex, sets);
           this.activeSets.set(map); // Trigger update
+
+          // Optional: Start Rest Timer automatically if completed
+          if(sets[setIndex].completed) {
+              // this.startRestTimer(); // Uncomment if auto-start desired
+          }
       }
+  }
+
+  // --- GLOBAL TIMER ---
+  
+  startSessionTimer() {
+      if (this.sessionInterval) clearInterval(this.sessionInterval);
+      this.sessionSeconds.set(0);
+      this.sessionInterval = setInterval(() => {
+          this.sessionSeconds.update(v => v + 1);
+      }, 1000);
+  }
+
+  // --- REST TIMER ---
+
+  openRestTimer() {
+      this.isResting.set(true);
+      // Wait for ViewChild
+      setTimeout(() => {
+          if (this.restTimer) this.restTimer.start();
+      }, 50);
+  }
+
+  closeRestTimer() {
+      this.isResting.set(false);
+      if (this.restTimer) this.restTimer.pause();
+  }
+
+  stopRestTimer() {
+      this.closeRestTimer();
   }
 
   // --- HELPERS ---

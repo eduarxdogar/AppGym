@@ -104,7 +104,30 @@
     <!-- VIEW: ACTIVE MODE (Execution)              -->
     <!-- ========================================== -->
     <ng-container *ngIf="isActive()">
+
+        <!-- REST TIMER OVERLAY -->
+        <div *ngIf="isResting()" class="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center animate-fadeIn">
+             <div class="relative bg-[#151921] border border-zinc-800 p-8 rounded-3xl flex flex-col items-center gap-6 shadow-2xl">
+                 <button (click)="closeRestTimer()" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors">
+                     <mat-icon>close</mat-icon>
+                 </button>
+                 <h3 class="text-xl font-bold text-white uppercase tracking-widest">Descanso</h3>
+                 
+                 <!-- Use existing TimerComponent for Rest -->
+                 <app-timer #restTimer [duration]="60"></app-timer>
+                 
+                 <button (click)="closeRestTimer()" class="mt-4 text-[#CCFF00] font-bold uppercase text-xs tracking-widest hover:underline">
+                     Ocultar Temporizador
+                 </button>
+             </div>
+        </div>
         
+        <!-- FAB to open Rest Timer -->
+        <button *ngIf="!isResting()" (click)="openRestTimer()" 
+                class="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-[#151921] border border-zinc-700 text-[#CCFF00] shadow-lg flex items-center justify-center z-50 hover:scale-110 transition-transform">
+            <mat-icon>timer</mat-icon>
+        </button>
+
         <!-- Active Header / Timer -->
         <div class="bg-[#0B0E14] sticky top-0 z-50 border-b border-zinc-800 pb-4 pt-4 px-4 shadow-xl">
              <div class="flex justify-between items-center mb-4">
@@ -113,10 +136,10 @@
                  </button>
                  <div class="flex flex-col items-center">
                      <span class="text-[10px] uppercase tracking-widest text-[#CCFF00] font-bold">Tiempo Transcurrido</span>
-                     <app-timer class="text-3xl font-mono font-bold text-white"></app-timer>
+                     <span class="text-3xl font-mono font-bold text-white">{{ sessionTimeFormatted() }}</span>
                  </div>
                  <button (click)="finalizarRutina()" class="bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border border-red-500/50">
-                     Terminar
+                     Guardar
                  </button>
              </div>
              
@@ -149,7 +172,8 @@
                         <div class="col-span-1">Set</div>
                         <div class="col-span-3">KG</div>
                         <div class="col-span-3">Reps</div>
-                        <div class="col-span-3">Check</div>
+                        <div class="col-span-2">Check</div>
+                        <div class="col-span-1"></div>
                     </div>
 
                     <!-- Rows -->
@@ -179,7 +203,7 @@
                         </div>
 
                         <!-- Checkbox -->
-                        <div class="col-span-3 flex justify-center">
+                        <div class="col-span-2 flex justify-center">
                             <button (click)="toggleSetComplete(i, sIndex)" 
                                     [class.bg-[#CCFF00]]="set.completed"
                                     [class.text-black]="set.completed"
@@ -188,6 +212,15 @@
                                     class="h-8 w-12 rounded-lg flex items-center justify-center transition-all active:scale-95">
                                 <mat-icon *ngIf="set.completed">check</mat-icon>
                                 <mat-icon *ngIf="!set.completed">check_box_outline_blank</mat-icon>
+                            </button>
+                        </div>
+                        
+                        <!-- Delete Button -->
+                        <div class="col-span-1 flex justify-center">
+                            <button *ngIf="getSetsForExercise(i).length > 1"
+                                    (click)="deleteSet(i, sIndex)" 
+                                    class="text-zinc-600 hover:text-red-500 transition-colors">
+                                <mat-icon class="text-lg">delete</mat-icon>
                             </button>
                         </div>
                     </div>

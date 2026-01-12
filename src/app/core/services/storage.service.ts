@@ -18,15 +18,10 @@ export class StorageService {
 
   constructor() { }
 
-  /**
-   * Obtiene los workouts de Firestore filtrados por el usuario autenticado.
-   * Retorna un Observable que se actualiza si cambia el usuario.
-   */
   getWorkouts(): Observable<any[]> {
     return this.user$.pipe(
       switchMap(user => {
         if (!user) {
-          // Si no hay usuario, retornamos array vacío
           return of([]);
         }
         const workoutsCol = collection(this.firestore, 'workouts');
@@ -36,10 +31,6 @@ export class StorageService {
     );
   }
 
-  /**
-   * Guarda o actualiza un workout.
-   * Usa el ID del workout como ID del documento e incluye el userId real.
-   */
   async saveWorkout(workout: any): Promise<void> {
     const user = this.authService.currentUser();
     if (!user) {
@@ -49,7 +40,6 @@ export class StorageService {
     try {
       const workoutsCol = collection(this.firestore, 'workouts');
       const docRef = doc(workoutsCol, String(workout.id));
-      // Guardamos con el userId actual
       await setDoc(docRef, { ...workout, userId: user.uid }, { merge: true });
     } catch (error) {
       console.error('Error saving workout:', error);
@@ -57,9 +47,6 @@ export class StorageService {
     }
   }
 
-  /**
-   * Elimina un workout por ID.
-   */
   async deleteWorkout(id: string | number): Promise<void> {
     try {
       const workoutsCol = collection(this.firestore, 'workouts');

@@ -24,16 +24,16 @@ export class RecoveryService {
     'Core'
   ];
 
-  // Signal reactivo de los entrenamientos del usuario
-  private workouts = toSignal(this.storageService.getWorkouts(), { initialValue: [] });
+  // Signal reactivo del historial de entrenamientos (Realizadas)
+  private history = toSignal(this.storageService.getHistory(), { initialValue: [] });
 
   /**
    * Signal computado que retorna el estado de recuperación de cada músculo
    * Se actualiza automáticamente cuando cambian los workouts o el usuario
    */
   readonly muscleRecoveryStatus = computed(() => {
-    const workouts = this.workouts() as Workout[];
-    return this.calculateFatigue(workouts);
+    const sessions = this.history() as any[];
+    return this.calculateFatigue(sessions);
   });
 
   constructor() {}
@@ -48,7 +48,7 @@ export class RecoveryService {
   /**
    * Calcula la fatiga basándose en el historial
    */
-  private calculateFatigue(workouts: Workout[]): Map<string, MuscleStatus> {
+  private calculateFatigue(sessions: any[]): Map<string, MuscleStatus> {
     const statusMap = new Map<string, MuscleStatus>();
     const now = Date.now();
     const RECOVERY_WINDOW_HOURS = 72; // Tiempo base para recuperación total
@@ -62,30 +62,37 @@ export class RecoveryService {
       });
     });
 
-    if (!workouts || workouts.length === 0) return statusMap;
+    if (!sessions || sessions.length === 0) return statusMap;
 
     // Buscar la última fecha de entrenamiento para cada músculo
     // Iteramos sobre todos los workouts (idealmente ordenados por fecha, pero buscamos el max)
-    workouts.forEach(workout => {
-        if (!workout.fecha || !workout.ejercicios) return;
+    // Buscar la última fecha de entrenamiento para cada músculo
+    sessions.forEach(session => {
+        // Soporte para WorkoutSession (endTime/startTime) o legacy
+        const dateStr = session.endTime || session.startTime || (session as any).fecha;
+        if (!dateStr) return;
         
-        const workoutDate = new Date(workout.fecha).getTime();
+        const workoutDate = new Date(dateStr).getTime();
         
         // Identificar músculos trabajados en este workout
-        // Usamos un Set para no procesar el mismo músculo múltiples veces por workout
         const musclesInWorkout = new Set<string>();
 
-        // 1. Revisar músculos explícitos del workout
-        if (workout.musculos) {
-            workout.musculos.forEach(m => musclesInWorkout.add(this.normalizeMuscleName(m)));
+        // 1. Revisar músculos explícitos
+        const musclesList = session.musclesWorked || (session as any).musculos;
+        if (musclesList) {
+            musclesList.forEach((m: string) => musclesInWorkout.add(this.normalizeMuscleName(m)));
         }
 
-        // 2. Revisar ejercicios individuales (fallback o detalle)
-        workout.ejercicios.forEach(exercise => {
-            if (exercise.grupoMuscular) {
-                musclesInWorkout.add(this.normalizeMuscleName(exercise.grupoMuscular));
-            }
-        });
+        // 2. Revisar ejercicios (fallback)
+        const exercises = session.exercises || (session as any).ejercicios;
+        if (exercises) {
+            exercises.forEach((exercise: any) => {
+                const group = exercise.grupoMuscular || exercise.groupMuscular; 
+                if (group) {
+                    musclesInWorkout.add(this.normalizeMuscleName(group));
+                }
+            });
+        }
 
         // Actualizar estado para los músculos encontrados
         musclesInWorkout.forEach(muscleName => {

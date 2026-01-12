@@ -17,7 +17,21 @@ export class ProgressComponent implements OnInit {
   constructor(private historyService: TrainingHistoryService) {}
 
   ngOnInit(): void {
-    this.sesiones = this.historyService.getHistory();
-    this.totalPesoLev = this.sesiones.reduce((total, session) => total + (session.pesoTotal || 0), 0);
+    this.historyService.getHistory().subscribe({
+        next: (data: any[]) => {
+            this.sesiones = data.map(session => ({
+                id: Number(session.id) || Date.now(),
+                workoutId: Number(session.workoutId),
+                nombre: session.name || session.nombre || 'Entrenamiento',
+                fechaInicio: new Date(session.startTime || session.fechaInicio),
+                fechaFin: session.endTime ? new Date(session.endTime) : undefined,
+                duracion: session.duration,
+                pesoTotal: session.totalVolume || session.pesoTotal
+            }));
+            
+            this.totalPesoLev = this.sesiones.reduce((total, session) => total + (session.pesoTotal || 0), 0);
+        },
+        error: (err) => console.error('Error loading progress:', err)
+    });
   }
 }
