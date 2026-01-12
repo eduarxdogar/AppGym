@@ -7,15 +7,20 @@ import { ProgressComponent } from './features/progress/progress.component';
 import { WorkoutEditComponent } from './components/workout-edit/workout-edit.component';
 import { LoginComponent } from './features/login/login.component';
 import { authGuard } from './core/guards/auth.guard';
+import { DashboardComponent } from './features/dashboard/dashboard.component';
+import { RecoveryPageComponent } from './features/recovery/recovery.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
-  { path: '', redirectTo: 'workouts', pathMatch: 'full' },
+  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
   { 
       path: '', 
       runGuardsAndResolvers: 'always',
       canActivate: [authGuard],
       children: [
+        { path: 'dashboard', component: DashboardComponent },
+        { path: 'recovery-detail', loadComponent: () => import('./features/recovery-detail/recovery-detail.component').then(m => m.RecoveryDetailComponent) },
+        { path: 'recovery', redirectTo: 'recovery-detail', pathMatch: 'full' },
         { path: 'workouts', component: WorkoutListComponent },
         { path: 'workouts/:id', component: WorkoutDetailComponent },
         { path: 'calendar', component: CalendarComponent },
