@@ -1,8 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, effect } from '@angular/core'; // Added effect
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
 import { MatIconModule } from '@angular/material/icon';
+import { Router } from '@angular/router'; // Added Router
 
 @Component({
   selector: 'app-login',
@@ -63,6 +64,17 @@ import { MatIconModule } from '@angular/material/icon';
 })
 export class LoginComponent {
   private authService = inject(AuthService);
+  private router = inject(Router);
+
+  constructor() {
+      // Auto-redirect if user is already logged in
+      effect(() => {
+          const user = this.authService.currentUser();
+          if (user) {
+              this.router.navigate(['/dashboard']);
+          }
+      });
+  }
 
   login() {
     this.authService.loginWithGoogle();

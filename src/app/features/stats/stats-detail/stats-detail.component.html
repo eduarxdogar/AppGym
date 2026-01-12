@@ -1,0 +1,97 @@
+<div class="min-h-screen bg-[#0B0E14] text-white pb-20 font-sans">
+    
+    <!-- 1. HEADER -->
+    <div class="sticky top-0 z-50 bg-[#0B0E14]/90 backdrop-blur-md border-b border-zinc-800 px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <button [routerLink]="['/dashboard']" class="h-10 w-10 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+                <mat-icon>arrow_back</mat-icon>
+            </button>
+            <h1 class="text-xl font-bold uppercase tracking-wide">{{ getTitle() }}</h1>
+        </div>
+        <!-- Optional: Export or Share -->
+        <button class="text-zinc-500 hover:text-white transition">
+            <mat-icon>share</mat-icon>
+        </button>
+    </div>
+
+    <div class="max-w-4xl mx-auto p-5 space-y-8 animate-fadeIn">
+        
+        <!-- 2. TIME FILTERS -->
+        <div class="flex gap-2 p-1 bg-zinc-900/50 rounded-xl w-full border border-zinc-800 overflow-x-auto">
+            <button *ngFor="let r of ranges" 
+                    (click)="setRange(r)"
+                    class="flex-1 py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
+                    [ngClass]="{'bg-[#CCFF00] text-black shadow-lg': range() === r, 'text-zinc-500 hover:text-zinc-300': range() !== r}">
+                {{ r === 'total' ? 'Todo' : (r | titlecase) }}
+            </button>
+        </div>
+
+        <!-- 3. MAIN CHART (Line) -->
+        <div class="bg-[#151921] border border-zinc-800 rounded-3xl p-4 md:p-6 h-[300px] relative shadow-2xl">
+            <canvas baseChart 
+                    [data]="lineChartData" 
+                    [options]="lineChartOptions" 
+                    [type]="lineChartType"
+                    *ngIf="stats(); else loading">
+            </canvas>
+            <ng-template #loading>
+                <div class="h-full flex items-center justify-center text-zinc-600">
+                    <mat-icon class="animate-spin mr-2">donut_large</mat-icon> Loading...
+                </div>
+            </ng-template>
+        </div>
+
+        <!-- 4. STATS GRID -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" *ngIf="stats() as s">
+            <!-- Total -->
+            <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 group hover:border-zinc-700 transition">
+                <span class="text-xs text-zinc-500 font-bold uppercase tracking-widest">Total</span>
+                <span class="text-2xl font-bold text-white group-hover:text-[#CCFF00] transition-colors">
+                    {{ s.total | number:'1.0-0' }}
+                </span>
+            </div>
+             <!-- Max -->
+             <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 group hover:border-zinc-700 transition">
+                <span class="text-xs text-zinc-500 font-bold uppercase tracking-widest">Máximo</span>
+                <span class="text-2xl font-bold text-white group-hover:text-blue-400 transition-colors">
+                    {{ s.max | number:'1.0-0' }}
+                </span>
+            </div>
+             <!-- Avg -->
+             <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 group hover:border-zinc-700 transition">
+                <span class="text-xs text-zinc-500 font-bold uppercase tracking-widest">Promedio</span>
+                <span class="text-2xl font-bold text-white group-hover:text-purple-400 transition-colors">
+                    {{ s.avg | number:'1.0-0' }}
+                </span>
+            </div>
+             <!-- Count -->
+             <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 group hover:border-zinc-700 transition">
+                <span class="text-xs text-zinc-500 font-bold uppercase tracking-widest">Entrenamientos</span>
+                <span class="text-2xl font-bold text-white group-hover:text-pink-400 transition-colors">
+                    {{ s.count }}
+                </span>
+            </div>
+        </div>
+
+        <!-- 5. MUSCLE DISTRIBUTION (Radar) -->
+        <div class="bg-[#151921] border border-zinc-800 rounded-3xl p-6 relative overflow-hidden">
+            <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                <mat-icon class="text-[#CCFF00]">accessibility_new</mat-icon> Balance Muscular
+            </h3>
+            
+            <div class="h-[300px] w-full flex justify-center" *ngIf="muscleData() as data">
+                 <canvas baseChart 
+                    [data]="data" 
+                    [options]="radarChartOptions" 
+                    [type]="radarChartType">
+                </canvas>
+            </div>
+            
+            <!-- Description -->
+            <p class="text-center text-xs text-zinc-500 mt-4 max-w-md mx-auto">
+                Basado en la frecuencia de tus ejercicios guardados. Un gráfico equilibrado indica un desarrollo físico simétrico.
+            </p>
+        </div>
+
+    </div>
+</div>

@@ -178,33 +178,37 @@
        
        <div class="grid grid-cols-2 gap-3">
           <!-- Item 1 -->
-          <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
-             <div class="flex items-center gap-3">
-                <mat-icon class="text-zinc-500 group-hover:text-white transition">keyboard_arrow_down</mat-icon>
-                <span class="text-slate-300 text-sm font-bold">Entrenamiento</span>
-             </div>
-          </div>
+           <div [routerLink]="['/trends', 'workouts']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                 <mat-icon class="text-zinc-500 group-hover:text-white transition">event_note</mat-icon>
+                 <span class="text-slate-300 text-sm font-bold">Entrenamientos</span>
+              </div>
+              <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
+           </div>
           <!-- Item 2 -->
-          <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
-             <div class="flex items-center gap-3">
-                <mat-icon class="text-zinc-500 group-hover:text-white transition">keyboard_arrow_down</mat-icon>
-                <span class="text-slate-300 text-sm font-bold">Volumen</span>
-             </div>
-          </div>
+           <div [routerLink]="['/trends', 'volume']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                 <mat-icon class="text-zinc-500 group-hover:text-white transition">fitness_center</mat-icon>
+                 <span class="text-slate-300 text-sm font-bold">Volumen</span>
+              </div>
+              <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
+           </div>
           <!-- Item 3 -->
-           <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
-             <div class="flex items-center gap-3">
-                <mat-icon class="text-zinc-500 group-hover:text-white transition">keyboard_arrow_down</mat-icon>
-                <span class="text-slate-300 text-sm font-bold">Calorías</span>
-             </div>
-          </div>
+            <div [routerLink]="['/trends', 'calories']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                 <mat-icon class="text-zinc-500 group-hover:text-white transition">local_fire_department</mat-icon>
+                 <span class="text-slate-300 text-sm font-bold">Calorías</span>
+              </div>
+              <mat-icon class="text-zinc-600 group-hover:text-[#ff6600]">chevron_right</mat-icon>
+           </div>
           <!-- Item 4 -->
-           <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
-             <div class="flex items-center gap-3">
-                <mat-icon class="text-zinc-500 group-hover:text-white transition">keyboard_arrow_down</mat-icon>
-                <span class="text-slate-300 text-sm font-bold">Serie</span>
-             </div>
-          </div>
+           <div [routerLink]="['/trends', 'sets']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+              <div class="flex items-center gap-3">
+                 <mat-icon class="text-zinc-500 group-hover:text-white transition">repeat</mat-icon>
+                 <span class="text-slate-300 text-sm font-bold">Series</span>
+              </div>
+              <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
+           </div>
        </div>
     </div>
 

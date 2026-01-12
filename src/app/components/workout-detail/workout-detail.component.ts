@@ -180,7 +180,8 @@ export class WorkoutDetailComponent implements OnInit {
                  totalVolume: this.calculateTotalVolume(),
                  musclesWorked: Array.from(muscles),
                  exercises: sessionExercises,
-                 feeling: 'good'
+                 feeling: 'good',
+                 calories: Math.round((this.sessionSeconds() / 60 * 5) + (this.calculateTotalVolume() * 0.0005))
              };
 
              await this.trainingHistoryService.addSession(session);

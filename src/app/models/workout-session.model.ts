@@ -25,4 +25,5 @@ export interface WorkoutSession {
     musclesWorked: string[];
     exercises: WorkoutSessionExercise[];
     feeling?: 'good' | 'tired' | 'average' | 'strong'; // User feedback
+    calories?: number;
 }
