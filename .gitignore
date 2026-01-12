@@ -48,4 +48,5 @@ Thumbs.db
 Thumbs.db
 
 # Environments (Secretos)
-src/environments/environment.prod.ts
+src/environments/environment.development.ts
+src/environments/environment.ts
