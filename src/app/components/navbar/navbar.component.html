@@ -29,6 +29,17 @@
     </a>
   </nav>
 
+  <!-- Auth Section -->
+  <div class="flex items-center gap-2" *ngIf="user()">
+        <img [src]="user()?.photoURL" aria-hidden="true" class="h-8 w-8 rounded-full border border-white/20" 
+             [alt]="user()?.displayName"
+             [title]="user()?.displayName">
+        <button mat-button (click)="logout()" class="text-sm font-semibold hover:text-red-400 transition-colors">
+            <mat-icon>logout</mat-icon>
+            <span class="hidden sm:inline ml-1">Salir</span>
+        </button>
+  </div>
+
   <!-- Menú hamburguesa para pantallas móviles -->
   <div class="md:hidden">
     <button mat-icon-button [matMenuTriggerFor]="mobileMenu">

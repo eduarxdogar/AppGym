@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
 import { Workout } from '../../models/workout.model';
 import { Ejercicio } from '../../models/ejercicio.model';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+import { environment } from '../../../environments/environment';
 
 export interface UserProfile {
   weight: number;
@@ -26,32 +27,123 @@ Reglas:
 @Injectable({
   providedIn: 'root'
 })
+@Injectable({
+  providedIn: 'root'
+})
 export class AiCoachService {
+  private genAI: GoogleGenerativeAI;
+  private model: any;
 
-  constructor() { }
+  constructor() { 
+    const key = environment.geminiApiKey;
+    console.log('AI Coach initialized. API Key ends with:', key ? key.slice(-4) : 'NO_KEY');
+    
+    this.genAI = new GoogleGenerativeAI(key);
+    this.model = this.genAI.getGenerativeModel({ 
+        model: "gemini-flash-latest",
+        safetySettings: [
+            {
+                category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                threshold: HarmBlockThreshold.BLOCK_NONE,
+            },
+            {
+                category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                threshold: HarmBlockThreshold.BLOCK_NONE,
+            },
+            {
+                category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                threshold: HarmBlockThreshold.BLOCK_NONE,
+            },
+            {
+                category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                threshold: HarmBlockThreshold.BLOCK_NONE,
+            },
+        ],
+        generationConfig: { responseMimeType: "application/json" }
+    });
+  }
 
   /**
-   * Genera una rutina personalizada basada en el perfil del usuario.
-   * Simula una llamada a una IA Generativa.
+   * Genera una rutina personalizada usando Gemini API.
    */
-  generateRoutine(profile: UserProfile): Observable<Workout> {
-    console.log('AI Coach: Analizando perfil...', profile);
-    console.log('System Prompt Loaded:', SYSTEM_PROMPT); // Simulando envío a LLM
-    
-    // Simulación de "Pensamiento" de la IA
-    const targetMuscles = this.determineTargetMuscles(profile.fatigueLevels);
-    
-    const mockRoutine: Workout = {
-      id: Date.now(),
-      nombre: `AI Smart Routine: ${profile.goal ? profile.goal.toUpperCase() : 'GENERAL'}`,
-      fecha: new Date().toISOString(),
-      nivelDificultad: 'intermedio',
-      musculos: targetMuscles,
-      ejercicios: this.generateSmartExercises(targetMuscles)
-    };
+  async generateWorkout(userPrompt: string, userProfile: any): Promise<Workout> {
+    console.log('AI Coach: Generating workout with Gemini...', { userPrompt, userProfile });
+    console.log('AI Coach: Usando motor gemini-flash-latest');
 
-    // Retorna la rutina después de 2 segundos simulando latencia de red/procesamiento
-    return of(mockRoutine).pipe(delay(2000));
+    const prompt = this.buildPrompt(userPrompt, userProfile);
+    
+    try {
+        const result = await this.model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        console.log('Gemini Response:', text);
+        
+        // Clean markdown if present
+        let cleanText = text;
+        // Elimina ```json al inicio y ``` al final
+        cleanText = cleanText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+        
+        const workoutData = JSON.parse(cleanText);
+        
+        // Asignar ID y fecha
+        const workout: Workout = {
+            ...workoutData,
+            id: Date.now(),
+            fecha: new Date().toISOString(),
+            // Ensure compatibility if AI misses some fields
+            ejercicios: workoutData.ejercicios || []
+        };
+        
+        return workout;
+    } catch (error) {
+        console.error('Error generating workout:', error);
+        throw error;
+    }
+  }
+
+  private buildPrompt(userPrompt: string, profile: any): string {
+    return `
+      ${SYSTEM_PROMPT}
+      
+      CONTEXTO DEL USUARIO:
+      - Objetivo: ${profile.goal || 'General'}
+      - Nivel: ${profile.level || 'Intermedio'}
+      - Equipamiento: ${profile.equipment?.join(', ') || 'Gimnasio completo'}
+      - Días disponibles: ${profile.availableDays?.join(', ') || 'Cualquiera'}
+      - Fatiga Muscular Reciente: ${JSON.stringify(profile.fatigueLevels || {})}
+      - Solicitud específica del usuario: "${userPrompt}"
+
+      REGLA DE ORO: Debes responder EXCLUSIVAMENTE con un objeto JSON válido que cumpla esta estructura exacta. 
+      No incluyas markdown, solo el JSON raw.
+
+      ESTRUCTURA JSON REQUERIDA (Interface Workout):
+      {
+        "nombre": "string (Nombre atractivo de la rutina)",
+        "nivelDificultad": "principiante" | "intermedio" | "avanzado",
+        "musculos": ["string" (Lista de grupos musculares principales)],
+        "ejercicios": [
+          {
+            "id": number (1, 2, 3...),
+            "nombre": "string",
+            "grupoMuscular": "string",
+            "tipo": "compuesto" | "aislado",
+            "series": number,
+            "repeticiones": number,
+            "descanso": "string (ej: '90s')",
+            "pesokg": number (Estimado para el nivel),
+            "rir": number (Recamara),
+            "notas": "string (Instrucciones técnicas, usar términos como Drop Sets, RIR, Tempo)"
+          }
+        ]
+      }
+
+      Instrucciones adicionales:
+      - Incluye al menos 6 ejercicios.
+      - Cada ejercicio debe tener 3-4 series.
+      - Usa terminología técnica en las notas.
+      - Si hay fatiga alta en un músculo, evítalo.
+    `;
   }
 
   /**
@@ -94,87 +186,5 @@ export class AiCoachService {
     });
 
     return fatigueStarts;
-  }
-
-  private determineTargetMuscles(fatigue: Record<string, number>): string[] {
-    // Si pecho está fatigado (>70), sugerimos Espalda/Pierna
-    // Lógica simple de demostración
-    const fatiguePecho = fatigue['pecho'] || 0;
-    
-    if (fatiguePecho > 70) {
-        return ['espalda', 'piernas'];
-    }
-    return ['pecho', 'tríceps'];
-  }
-
-  private generateSmartExercises(targets: string[]): Ejercicio[] {
-    const exercises: Ejercicio[] = [];
-
-    if (targets.includes('espalda')) {
-        exercises.push({
-            id: 2,
-            nombre: 'Remo con Barra (AI Optimizada)',
-            grupoMuscular: 'espalda',
-            tipo: 'compuesto',
-            series: 4,
-            repeticiones: 12,
-            pesokg: 50,
-            descanso: '90s',
-            notas: 'Enfócate en la retracción escapular. La IA detectó debilidad en romboides.'
-        });
-    }
-
-    if (targets.includes('piernas')) {
-        exercises.push({
-            id: 3,
-            nombre: 'Sentadilla Hack',
-            grupoMuscular: 'piernas',
-            tipo: 'compuesto',
-            series: 3,
-            repeticiones: 15,
-            pesokg: 80,
-            descanso: '2 min',
-            dropSet: {
-                sets: [
-                    { porcentaje: 100, repeticiones: 15, peso: 80 },
-                    { porcentaje: 70, repeticiones: 15, peso: 55 }
-                ]
-            },
-            tipos: 'drop-set',
-            notas: 'Drop Set añadido para maximizar hipertrofia metabólica.'
-        });
-    }
-
-    if (targets.includes('pecho')) {
-        exercises.push({
-            id: 1,
-            nombre: 'Press Banca Inteligente',
-            grupoMuscular: 'pecho',
-            tipo: 'compuesto',
-            series: 4,
-            repeticiones: 10,
-            pesokg: 60, 
-            descanso: '90s',
-            serieCalentamiento: 2,
-            repeticionesCalentamiento: 15,
-            notas: 'Controla la excéntrica (3 segundos) para mayor daño muscular.'
-        });
-    }
-
-    // Default fallback
-    if (exercises.length === 0) {
-        exercises.push({
-            id: 99,
-            nombre: 'Burpees Full Body',
-            grupoMuscular: 'fullbody',
-            tipo: 'compuesto',
-            series: 3,
-            repeticiones: 20, 
-            descanso: '60s',
-            pesokg: 0
-        });
-    }
-
-    return exercises;
   }
 }
