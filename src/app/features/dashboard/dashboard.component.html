@@ -1,0 +1,174 @@
+<div class="min-h-screen bg-[#0B0E14] text-slate-200 pb-20 relative overflow-hidden font-sans">
+  
+  <!-- Background Ambient -->
+  <div class="absolute inset-0 bg-grid opacity-30 pointer-events-none"></div>
+  <div class="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-900/20 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <div class="relative z-10 p-5 md:p-8 max-w-5xl mx-auto space-y-8 animate-fadeIn">
+    
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-white tracking-wide">HELLO, <span class="text-[#CCFF00] glow-text">ATHLETE</span></h1>
+        <p class="text-xs text-slate-500 uppercase tracking-widest mt-1">Ready to dominate?</p>
+      </div>
+      <div class="h-10 w-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
+        <mat-icon class="text-zinc-400">person</mat-icon>
+      </div>
+    </div>
+
+    <!-- SECTION A: HERO CARD (Next Workout) -->
+    <div class="w-full bg-[#151921] border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl group hover:border-zinc-700 transition-colors duration-300">
+      
+      <!-- Card Header -->
+      <div class="bg-[#CCFF00] px-4 py-2 flex justify-between items-center">
+        <span class="text-black font-extrabold text-xs tracking-[0.2em] uppercase flex items-center gap-2">
+           <mat-icon class="text-sm h-4 w-4">bolt</mat-icon> Next Mission
+        </span>
+        <span class="text-black/80 font-bold text-xs" *ngIf="nextWorkout()">{{ nextWorkout()?.fecha | date:'MMM d' }}</span>
+      </div>
+
+      <!-- Card Body -->
+      <div class="p-6">
+        <div *ngIf="nextWorkout(); else noWorkoutHero">
+          <h2 class="text-2xl font-bold text-white mb-1">{{ nextWorkout()?.nombre }}</h2>
+          <div class="flex items-center gap-4 text-xs text-slate-400 mb-6">
+            <span class="flex items-center gap-1"><mat-icon class="text-sm h-4 w-4">fitness_center</mat-icon> {{ nextWorkout()?.ejercicios?.length }} Exercises</span>
+            <span class="flex items-center gap-1"><mat-icon class="text-sm h-4 w-4">schedule</mat-icon> ~60 Min</span>
+            <span class="flex items-center gap-1 text-[#CCFF00]"><mat-icon class="text-sm h-4 w-4">bar_chart</mat-icon> {{ nextWorkout()?.nivelDificultad | titlecase }}</span>
+          </div>
+
+          <!-- Thumbnails (Placeholders) -->
+          <div class="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+            <div class="h-12 w-12 rounded bg-zinc-800 flex-shrink-0 border border-zinc-700 hover:border-[#CCFF00] transition" *ngFor="let i of [1,2,3,4]"></div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center gap-4">
+            <button class="h-12 w-12 rounded-full bg-[#CCFF00] text-black flex items-center justify-center shadow-[0_0_15px_rgba(204,255,0,0.4)] hover:scale-110 transition-transform">
+              <mat-icon>play_arrow</mat-icon>
+            </button>
+            <button class="h-10 w-10 rounded-full bg-zinc-800 text-slate-300 flex items-center justify-center border border-zinc-700 hover:bg-zinc-700 transition"
+                    title="Regenerate">
+              <mat-icon class="scale-75">refresh</mat-icon>
+            </button>
+            <div class="flex-grow"></div>
+            <button class="text-xs text-slate-500 hover:text-white transition flex items-center gap-1">
+               DETAILS <mat-icon class="text-sm">arrow_forward</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <ng-template #noWorkoutHero>
+          <div class="text-center py-8">
+             <p class="text-slate-400 mb-4">No active missions detected.</p>
+             <app-ui-button (clicked)="generateRoutine()" variant="primary" customClass="bg-[#CCFF00] text-black hover:bg-[#bbe600]">
+               Initialize Protocol
+             </app-ui-button>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- SECTION B: STATS GRID -->
+    <div class="grid grid-cols-2 gap-4">
+      
+      <!-- Calendar Card -->
+      <div class="bg-[#151921] p-4 rounded-3xl border border-zinc-800 flex flex-col justify-between h-[160px] cursor-pointer hover:bg-[#1a1f29] transition">
+         <div class="flex justify-between items-start">
+            <div class="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+               <mat-icon class="text-sm">calendar_today</mat-icon>
+            </div>
+            <mat-icon class="text-zinc-600 text-sm">arrow_outward</mat-icon>
+         </div>
+         <div>
+            <span class="text-2xl font-bold text-white">{{ workouts().length }}</span>
+            <p class="text-xs text-slate-500 font-medium mt-1">Total Workouts</p>
+         </div>
+      </div>
+
+      <!-- Recovery Ring Card -->
+      <div (click)="navigateToRecovery()" 
+           class="bg-[#151921] p-4 rounded-3xl border border-zinc-800 flex flex-col justify-between h-[160px] cursor-pointer hover:bg-[#1a1f29] transition group relative overflow-hidden">
+         
+         <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
+             <mat-icon class="text-4xl text-white">monitor_heart</mat-icon>
+         </div>
+
+         <div class="flex justify-between items-start">
+             <div class="h-8 w-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+               <mat-icon class="text-sm">health_and_safety</mat-icon>
+             </div>
+         </div>
+
+         <div class="flex items-end justify-between">
+            <div>
+               <div class="flex items-baseline gap-1">
+                 <span class="text-3xl font-bold" [ngClass]="recoveryColorClass()">{{ globalRecoveryScore() }}%</span>
+               </div>
+               <p class="text-xs text-slate-500 font-medium mt-1">System Recovery</p>
+            </div>
+            
+            <!-- Mini Ring -->
+            <div class="relative h-10 w-10">
+               <svg class="h-full w-full rotate-[-90deg]" viewBox="0 0 36 36">
+                  <path class="text-zinc-800" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="4" />
+                  <path [attr.stroke-dasharray]="globalRecoveryScore() + ', 100'" 
+                        [ngClass]="recoveryColorClass()"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                        fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+               </svg>
+            </div>
+         </div>
+      </div>
+    </div>
+
+    <!-- SECTION C: QUICK ACTIONS -->
+    <div>
+       <h3 class="text-xs font-bold text-slate-500 mb-4 tracking-widest uppercase">Quick Access</h3>
+       <div class="grid grid-cols-3 gap-3">
+          
+          <!-- Custom (AI) -->
+          <button (click)="generateRoutine()" class="flex flex-col items-center justify-center gap-2 bg-[#151921] border border-zinc-800 rounded-xl p-4 hover:border-[#CCFF00] hover:bg-[#CCFF00]/5 transition group">
+             <mat-icon class="text-[#CCFF00] group-hover:scale-110 transition">auto_awesome</mat-icon>
+             <span class="text-[10px] font-bold text-slate-300">AI GENERATOR</span>
+          </button>
+
+          <!-- Cardio -->
+          <button class="flex flex-col items-center justify-center gap-2 bg-[#151921] border border-zinc-800 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-400/5 transition group">
+             <mat-icon class="text-blue-400 group-hover:scale-110 transition">directions_run</mat-icon>
+             <span class="text-[10px] font-bold text-slate-300">CARDIO</span>
+          </button>
+
+          <!-- Nutrition (Placeholder) -->
+          <button class="flex flex-col items-center justify-center gap-2 bg-[#151921] border border-zinc-800 rounded-xl p-4 hover:border-pink-500 hover:bg-pink-500/5 transition group">
+             <mat-icon class="text-pink-500 group-hover:scale-110 transition">restaurant</mat-icon>
+             <span class="text-[10px] font-bold text-slate-300">NUTRITION</span>
+          </button>
+
+       </div>
+    </div>
+
+  </div>
+
+  <!-- SECTION D: BOTTOM NAVIGATION -->
+  <div class="fixed bottom-0 left-0 right-0 bg-[#0B0E14]/90 backdrop-blur-md border-t border-zinc-800 flex justify-around items-center h-16 z-50 px-2 safe-area-bottom">
+     <button class="flex flex-col items-center gap-1 p-2 text-[#CCFF00]">
+        <mat-icon>home</mat-icon>
+        <span class="text-[9px] font-bold">HOME</span>
+     </button>
+     <button class="flex flex-col items-center gap-1 p-2 text-zinc-500 hover:text-white transition">
+        <mat-icon>search</mat-icon>
+        <span class="text-[9px] font-bold">EXPLORE</span>
+     </button>
+     <button class="flex flex-col items-center gap-1 p-2 text-zinc-500 hover:text-white transition">
+        <mat-icon>bar_chart</mat-icon>
+        <span class="text-[9px] font-bold">STATS</span>
+     </button>
+     <button class="flex flex-col items-center gap-1 p-2 text-zinc-500 hover:text-white transition">
+        <mat-icon>person</mat-icon>
+        <span class="text-[9px] font-bold">PROFILE</span>
+     </button>
+  </div>
+
+</div>
