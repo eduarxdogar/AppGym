@@ -1,17 +1,20 @@
 <div class="min-h-screen bg-background text-foreground p-4 sm:p-6 pb-20">
-  
   <!-- Header / Navigation Back? if needed, or just let breadcrumbs handle it -->
 
-  <div *ngIf="workout; else noWorkout" class="max-w-4xl mx-auto space-y-6 animate-fadeIn">
-    
+  <div
+    *ngIf="workout() as workout; else noWorkout"
+    class="max-w-4xl mx-auto space-y-6 animate-fadeIn"
+  >
     <!-- Hero Section / Title -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <div
+      class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
+    >
       <div>
         <h2 class="text-4xl font-extrabold tracking-tight text-white mb-2">
           {{ workout.nombre }}
         </h2>
         <div class="flex flex-wrap gap-2">
-           <span
+          <span
             *ngFor="let musculo of workout.musculos"
             class="px-3 py-1 bg-primary/20 text-primary border border-primary/30 rounded-full text-xs font-semibold uppercase tracking-wider"
           >
@@ -19,23 +22,31 @@
           </span>
         </div>
       </div>
-      
+
       <!-- Chart Preview only if session exists or some stats? For now just placeholders aligned -->
     </div>
 
     <!-- Active Session Info (Floating or Card) -->
     <div *ngIf="currentSession" class="mb-6">
-      <app-ui-card customClass="border-primary/50 shadow-[0_0_20px_rgba(225,29,72,0.15)]">
+      <app-ui-card
+        customClass="border-primary/50 shadow-[0_0_20px_rgba(225,29,72,0.15)]"
+      >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-green-400 font-bold uppercase tracking-widest flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            <p
+              class="text-sm text-green-400 font-bold uppercase tracking-widest flex items-center gap-2"
+            >
+              <span
+                class="w-2 h-2 rounded-full bg-green-500 animate-pulse"
+              ></span>
               Sesión Activa
             </p>
-            <p class="text-xs text-muted-foreground mt-1">Iniciado: {{ currentSession.fechaInicio | date:'shortTime' }}</p>
+            <p class="text-xs text-muted-foreground mt-1">
+              Iniciado: {{ currentSession.fechaInicio | date : "shortTime" }}
+            </p>
           </div>
           <div>
-             <!-- Mini stats or timer could go here -->
+            <!-- Mini stats or timer could go here -->
           </div>
         </div>
       </app-ui-card>
@@ -43,134 +54,176 @@
 
     <!-- Timer Overlay / Section -->
     <div *ngIf="showTimer" class="sticky top-4 z-50 mb-6 animate-slideDown">
-        <app-ui-card customClass="bg-black/80 backdrop-blur-xl border-primary shadow-2xl">
-            <div class="flex flex-col items-center gap-4">
-                <app-timer></app-timer>
-                <div class="flex gap-4 items-center">
-                    <p class="text-lg font-bold">Volumen: <span class="text-primary">{{ pesoTotal }} kg</span></p>
-                    <app-ui-button 
-                        (clicked)="finalizarRutina()" 
-                        variant="danger"
-                        size="sm">
-                        Finalizar Sesión
-                    </app-ui-button>
-                </div>
-            </div>
-        </app-ui-card>
+      <app-ui-card
+        customClass="bg-black/80 backdrop-blur-xl border-primary shadow-2xl"
+      >
+        <div class="flex flex-col items-center gap-4">
+          <app-timer></app-timer>
+          <div class="flex gap-4 items-center">
+            <p class="text-lg font-bold">
+              Volumen: <span class="text-primary">{{ pesoTotal }} kg</span>
+            </p>
+            <app-ui-button
+              (clicked)="finalizarRutina()"
+              variant="danger"
+              size="sm"
+            >
+              Finalizar Sesión
+            </app-ui-button>
+          </div>
+        </div>
+      </app-ui-card>
     </div>
 
     <!-- Actions Bar -->
     <div class="flex flex-wrap gap-3">
-        <app-ui-button 
-            (clicked)="iniciarRutina()" 
-            variant="primary" 
-            customClass="flex-1 md:flex-none">
-            <mat-icon class="mr-2">play_arrow</mat-icon> Iniciar
-        </app-ui-button>
-        
-        <app-ui-button 
-            (clicked)="router.navigate(['/workout', workout.id, 'edit'])"
-            variant="ghost">
-            <mat-icon class="mr-2">edit</mat-icon> Editar
-        </app-ui-button>
-        
-        <app-ui-button 
-            (clicked)="router.navigate(['/progress'])"
-            variant="outline">
-            <mat-icon class="mr-2">bar_chart</mat-icon> Ver Progreso
-        </app-ui-button>
+      <app-ui-button
+        (clicked)="iniciarRutina()"
+        variant="primary"
+        customClass="flex-1 md:flex-none"
+      >
+        <mat-icon class="mr-2">play_arrow</mat-icon> Iniciar
+      </app-ui-button>
+
+      <app-ui-button
+        (clicked)="router.navigate(['/workout', workout.id, 'edit'])"
+        variant="ghost"
+      >
+        <mat-icon class="mr-2">edit</mat-icon> Editar
+      </app-ui-button>
+
+      <app-ui-button
+        (clicked)="router.navigate(['/progress'])"
+        variant="outline"
+      >
+        <mat-icon class="mr-2">bar_chart</mat-icon> Ver Progreso
+      </app-ui-button>
     </div>
 
     <hr class="border-white/10" />
 
     <!-- Exercises List -->
     <div class="space-y-4">
-        <h3 class="text-xl font-bold text-white mb-4">Ejercicios</h3>
-        
-        <div *ngFor="let ejercicio of workout.ejercicios; let i = index" class="animate-slideUp" [style.animation-delay]="i * 100 + 'ms'">
-            <app-ui-card customClass="hover:bg-white/5 transition-colors group">
-                <div 
-                    (click)="toggleExpand(i)"
-                    class="flex justify-between items-center cursor-pointer"
+      <h3 class="text-xl font-bold text-white mb-4">Ejercicios</h3>
+
+      <div
+        *ngFor="let ejercicio of workout.ejercicios; let i = index"
+        class="animate-slideUp"
+        [style.animation-delay]="i * 100 + 'ms'"
+      >
+        <app-ui-card customClass="hover:bg-white/5 transition-colors group">
+          <div
+            (click)="toggleExpand(i)"
+            class="flex justify-between items-center cursor-pointer"
+          >
+            <div class="flex items-center gap-4">
+              <div
+                class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold border border-primary/20"
+              >
+                {{ i + 1 }}
+              </div>
+              <div>
+                <h4
+                  class="text-lg font-semibold text-white group-hover:text-primary transition-colors"
                 >
-                    <div class="flex items-center gap-4">
-                        <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold border border-primary/20">
-                            {{ i + 1 }}
-                        </div>
-                        <div>
-                            <h4 class="text-lg font-semibold text-white group-hover:text-primary transition-colors">
-                                {{ ejercicio.nombre }}
-                            </h4>
-                            <p class="text-xs text-muted-foreground">
-                                {{ ejercicio.grupoMuscular }} • {{ ejercicio.tipo }}
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <mat-icon 
-                        class="text-muted-foreground transition-transform duration-300"
-                        [class.rotate-180]="expandedIndex === i">
-                        expand_more
-                    </mat-icon>
-                </div>
+                  {{ ejercicio.nombre }}
+                </h4>
+                <p class="text-xs text-muted-foreground">
+                  {{ ejercicio.grupoMuscular }} • {{ ejercicio.tipo }}
+                </p>
+              </div>
+            </div>
 
-                <!-- Detalles expandibles -->
-            <div *ngIf="expandedIndex === i" class="mt-4 pt-4 border-t border-zinc-800 animate-fadeIn space-y-4">
-                
-                <!-- Video Demo -->
-                <div *ngIf="getVideoEmbedUrl(ejercicio.videoUrl) as embedUrl" class="rounded-xl overflow-hidden shadow-lg border border-zinc-800 aspect-video w-full bg-black">
-                     <iframe [src]="embedUrl | safeUrl" 
-                             class="w-full h-full" 
-                             frameborder="0" 
-                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                             allowfullscreen>
-                     </iframe>
-                </div>
+            <mat-icon
+              class="text-muted-foreground transition-transform duration-300"
+              [class.rotate-180]="expandedIndex === i"
+            >
+              expand_more
+            </mat-icon>
+          </div>
 
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div class="bg-black/30 p-3 rounded-lg border border-zinc-800">
-                        <span class="text-zinc-500 block mb-1">Descanso</span>
-                        <span class="text-white font-bold">{{ ejercicio.descanso || '60s' }}</span>
-                    </div>
-                        <div class="bg-black/40 p-3 rounded-md">
-                            <p class="text-[10px] text-muted-foreground uppercase">Reps</p>
-                            <p class="text-xl font-mono">{{ ejercicio.repeticiones }}</p>
-                        </div>
-                        <div class="bg-black/40 p-3 rounded-md">
-                            <p class="text-[10px] text-muted-foreground uppercase">Peso</p>
-                            <p class="text-xl font-mono text-primary">{{ ejercicio.pesokg }} <span class="text-xs text-muted-foreground">kg</span></p>
-                        </div>
-                        <div class="bg-black/40 p-3 rounded-md">
-                            <p class="text-[10px] text-muted-foreground uppercase">Descanso</p>
-                            <p class="text-xl font-mono">{{ ejercicio.descanso }}s</p>
-                        </div>
-                    </div>
+          <!-- Detalles expandibles -->
+          <div
+            *ngIf="expandedIndex === i"
+            class="mt-4 pt-4 border-t border-zinc-800 animate-fadeIn space-y-4"
+          >
+            <!-- Video Demo -->
+            <div
+              *ngIf="getVideoEmbedUrl(ejercicio.videoUrl) as embedUrl"
+              class="rounded-xl overflow-hidden shadow-lg border border-zinc-800 aspect-video w-full bg-black"
+            >
+              <iframe
+                [src]="embedUrl | safeUrl"
+                class="w-full h-full"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+              >
+              </iframe>
+            </div>
 
-                    <div *ngIf="ejercicio.serieCalentamiento" class="text-sm bg-yellow-500/10 text-yellow-500 p-2 rounded border border-yellow-500/20">
-                        🔥 Calentamiento: {{ ejercicio.serieCalentamiento }} x {{ ejercicio.repeticionesCalentamiento }}
-                    </div>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div class="bg-black/30 p-3 rounded-lg border border-zinc-800">
+                <span class="text-zinc-500 block mb-1">Descanso</span>
+                <span class="text-white font-bold">{{
+                  ejercicio.descanso || "60s"
+                }}</span>
+              </div>
+              <div class="bg-black/40 p-3 rounded-md">
+                <p class="text-[10px] text-muted-foreground uppercase">Reps</p>
+                <p class="text-xl font-mono">{{ ejercicio.repeticiones }}</p>
+              </div>
+              <div class="bg-black/40 p-3 rounded-md">
+                <p class="text-[10px] text-muted-foreground uppercase">Peso</p>
+                <p class="text-xl font-mono text-primary">
+                  {{ ejercicio.pesokg }}
+                  <span class="text-xs text-muted-foreground">kg</span>
+                </p>
+              </div>
+              <div class="bg-black/40 p-3 rounded-md">
+                <p class="text-[10px] text-muted-foreground uppercase">
+                  Descanso
+                </p>
+                <p class="text-xl font-mono">{{ ejercicio.descanso }}s</p>
+              </div>
+            </div>
 
-                    <div class="flex gap-2 justify-end mt-4">
-                         <app-ui-button 
-                            (clicked)="editExercise(i)"
-                            variant="ghost" 
-                            size="sm">
-                            Ajustar
-                        </app-ui-button>
-                    </div>
-                    
-                    <app-exercise-timer [restTime]="ejercicio.descanso"></app-exercise-timer>
-                </div>
-            </app-ui-card>
-        </div>
+            <div
+              *ngIf="ejercicio.serieCalentamiento"
+              class="text-sm bg-yellow-500/10 text-yellow-500 p-2 rounded border border-yellow-500/20"
+            >
+              🔥 Calentamiento: {{ ejercicio.serieCalentamiento }} x
+              {{ ejercicio.repeticionesCalentamiento }}
+            </div>
+
+            <div class="flex gap-2 justify-end mt-4">
+              <app-ui-button
+                (clicked)="editExercise(i)"
+                variant="ghost"
+                size="sm"
+              >
+                Ajustar
+              </app-ui-button>
+            </div>
+
+            <app-exercise-timer
+              [restTime]="ejercicio.descanso"
+            ></app-exercise-timer>
+          </div>
+        </app-ui-card>
+      </div>
     </div>
   </div>
 
   <ng-template #noWorkout>
-    <div class="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
-        <mat-icon class="text-6xl text-muted-foreground">fitness_center</mat-icon>
-        <p class="text-muted-foreground text-lg">Rutina no encontrada</p>
-        <app-ui-button (clicked)="router.navigate(['/workouts'])">Volver</app-ui-button>
+    <div
+      class="flex flex-col items-center justify-center h-[60vh] text-center space-y-4"
+    >
+      <mat-icon class="text-6xl text-muted-foreground">fitness_center</mat-icon>
+      <p class="text-muted-foreground text-lg">Rutina no encontrada</p>
+      <app-ui-button (clicked)="router.navigate(['/workouts'])"
+        >Volver</app-ui-button
+      >
     </div>
   </ng-template>
 </div>

@@ -42,9 +42,12 @@ export class WorkoutEditComponent {
   constructor() {
     // Effect to load data when ID changes
     effect(() => {
-      const workoutId = Number(this.id());
+      const workoutId = this.id();
       if (workoutId) {
-        const found = this.workoutService.getWorkoutById(workoutId);
+        // Unwrap the signal from the service
+        const workoutSignal = this.workoutService.getWorkoutById(workoutId);
+        const found = workoutSignal();
+        
         if (found) {
           // Deep clone to avoid mutating service state directly until saved
           this.workoutForm.set(structuredClone(found));
