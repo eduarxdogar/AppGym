@@ -49,7 +49,7 @@ export class GeneratorComponent {
      return fresh.join(', ');
   }
 
-  generateRoutine() {
+  async generate() {
     if (!this.userPrompt().trim()) return;
 
     this.isLoading.set(true);
@@ -65,16 +65,15 @@ export class GeneratorComponent {
     };
 
     // Call AI Service
-    this.aiService.generateRoutine(profile).subscribe({
-        next: (workout) => {
-            this.generatedWorkout.set(workout);
-            this.isLoading.set(false);
-        },
-        error: (err) => {
-            console.error(err);
-            this.isLoading.set(false);
-        }
-    });
+    try {
+        const workout = await this.aiService.generateWorkout(this.userPrompt(), profile);
+        this.generatedWorkout.set(workout);
+    } catch (err) {
+        console.error(err);
+        alert('Ocurrió un error generando la rutina. Por favor intenta de nuevo.');
+    } finally {
+        this.isLoading.set(false);
+    }
   }
 
   saveAndStart() {
