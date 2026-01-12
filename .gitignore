@@ -40,3 +40,12 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# ... (todo lo que ya tenías) ...
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Environments (Secretos)
+src/environments/environment.prod.ts
