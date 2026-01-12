@@ -1,4 +1,4 @@
-import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, where } from '@angular/fire/firestore';
 import { Observable, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
@@ -11,8 +11,9 @@ import { toObservable } from '@angular/core/rxjs-interop';
 export class StorageService {
   private firestore = inject(Firestore);
   private authService = inject(AuthService);
-  private injector = inject(Injector);
-  
+  // private injector = inject(Injector); // Removed as it is no longer needed
+
+  // Create an observable from the currentUser signal to react to login/logout
   private user$ = toObservable(this.authService.currentUser);
 
   constructor() { }
@@ -23,12 +24,9 @@ export class StorageService {
         if (!user) {
           return of([]);
         }
-        // Use runInInjectionContext safely
-        return runInInjectionContext(this.injector, () => {
-             const workoutsCol = collection(this.firestore, 'workouts');
-             const q = query(workoutsCol, where('userId', '==', user.uid));
-             return collectionData(q, { idField: 'id' });
-        });
+        const workoutsCol = collection(this.firestore, 'workouts');
+        const q = query(workoutsCol, where('userId', '==', user.uid));
+        return collectionData(q, { idField: 'id' });
       })
     );
   }
@@ -60,41 +58,18 @@ export class StorageService {
     }
   }
 
-  // --- HISTORY MANAGEMENT ---
-  
-  getHistory(): Observable<any[]> {
-    return this.user$.pipe(
-      switchMap(user => {
-        if (!user) return of([]);
-        return runInInjectionContext(this.injector, () => {
-             const historyCol = collection(this.firestore, 'workout_history');
-             const q = query(historyCol, where('userId', '==', user.uid));
-             return collectionData(q, { idField: 'id' });
-        });
-      })
-    );
-  }
+  // --- Métodos Legacy (LocalStorage) ---
+  // Se mantienen vacíos para evitar errores de compilación
 
-  async saveHistory(session: any): Promise<void> {
-    const user = this.authService.currentUser();
-    if (!user) throw new Error('User must be authenticated');
-
-    try {
-      const historyCol = collection(this.firestore, 'workout_history');
-      // If session doesn't have ID, create one
-      const docId = session.id ? String(session.id) : doc(historyCol).id;
-      const docRef = doc(historyCol, docId);
-      
-      await setDoc(docRef, { ...session, id: docId, userId: user.uid }, { merge: true });
-    } catch (error) {
-      console.error('Error saving history:', error);
-      throw error;
-    }
-  }
-
-  // --- Legacy Methods (Empty) ---
+  /** @deprecated */
   getItem<T>(key: string): T | null { return null; }
-  setItem<T>(key: string, value: T): void {}
-  removeItem(key: string): void {}
-  clear(): void {}
+
+  /** @deprecated */
+  setItem<T>(key: string, value: T): void { }
+
+  /** @deprecated */
+  removeItem(key: string): void { }
+
+  /** @deprecated */
+  clear(): void { }
 }
