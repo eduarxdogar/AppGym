@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { WorkoutService } from '../../core/services/workout.service';
 import { RecoveryService } from '../../core/services/recovery.service';
+import { AuthService } from '../../core/services/auth.service';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 
 @Component({
@@ -26,10 +27,14 @@ export class DashboardComponent {
   private workoutService = inject(WorkoutService);
   private recoveryService = inject(RecoveryService);
   private router = inject(Router);
+  private authService = inject(AuthService); // Inject Auth
 
   // Signals
   workouts = this.workoutService.workouts;
   muscleStatus = this.recoveryService.getMuscleRecoveryStatus();
+
+  // Expose User for Template
+  currentUser = this.authService.currentUser;
 
   // Computed: Obtener la última rutina (o la próxima sugerida)
   nextWorkout = computed(() => {
