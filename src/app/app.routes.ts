@@ -20,6 +20,8 @@ export const routes: Routes = [
       children: [
         { path: 'dashboard', component: DashboardComponent },
         { path: 'recovery-detail', loadComponent: () => import('./features/recovery-detail/recovery-detail.component').then(m => m.RecoveryDetailComponent) },
+        { path: 'weekly-plan', loadComponent: () => import('./features/weekly-plan/weekly-plan.component').then(m => m.WeeklyPlanComponent) },
+        { path: 'strength-score-info', loadComponent: () => import('./features/strength-score-info/strength-score-info.component').then(m => m.StrengthScoreInfoComponent) },
         { path: 'recovery', redirectTo: 'recovery-detail', pathMatch: 'full' },
         { path: 'workouts', component: WorkoutListComponent },
         { path: 'workouts/:id', component: WorkoutDetailComponent },
