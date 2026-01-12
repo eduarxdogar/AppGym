@@ -1,4 +1,4 @@
-import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, where } from '@angular/fire/firestore';
 import { Observable, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
@@ -11,8 +11,8 @@ import { toObservable } from '@angular/core/rxjs-interop';
 export class StorageService {
   private firestore = inject(Firestore);
   private authService = inject(AuthService);
-  private injector = inject(Injector);
-  
+  // private injector = inject(Injector); // Removed as it is no longer needed
+
   // Create an observable from the currentUser signal to react to login/logout
   private user$ = toObservable(this.authService.currentUser);
 
@@ -31,7 +31,7 @@ export class StorageService {
         }
         const workoutsCol = collection(this.firestore, 'workouts');
         const q = query(workoutsCol, where('userId', '==', user.uid));
-        return runInInjectionContext(this.injector, () => collectionData(q, { idField: 'id' }));
+        return collectionData(q, { idField: 'id' });
       })
     );
   }
@@ -73,16 +73,16 @@ export class StorageService {
 
   // --- Métodos Legacy (LocalStorage) ---
   // Se mantienen vacíos para evitar errores de compilación
-  
+
   /** @deprecated */
   getItem<T>(key: string): T | null { return null; }
 
   /** @deprecated */
-  setItem<T>(key: string, value: T): void {}
+  setItem<T>(key: string, value: T): void { }
 
   /** @deprecated */
-  removeItem(key: string): void {}
+  removeItem(key: string): void { }
 
   /** @deprecated */
-  clear(): void {}
+  clear(): void { }
 }
