@@ -8,12 +8,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 import { AiCoachService, UserProfile } from '../../core/services/ai-coach.service';
-import { MuscleFatigueMapComponent } from '../../shared/ui/muscle-fatigue-map/muscle-fatigue-map.component';
+import { RecoveryMonitorComponent } from '../../features/dashboard/components/recovery-monitor/recovery-monitor.component';
 
 @Component({
   selector: 'app-workout-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, UiCardComponent, UiButtonComponent, MuscleFatigueMapComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, UiCardComponent, UiButtonComponent, RecoveryMonitorComponent],
   templateUrl: './workout-list.component.html',
   styleUrls: ['./workout-list.component.scss'],
 })
