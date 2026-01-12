@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, input, effect, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, input, effect, inject, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Workout } from '../../models/workout.model';
 import { WorkoutService } from '../../core/services/workout.service';
@@ -24,9 +24,17 @@ import { SafeUrlPipe } from '../../shared/pipes/safe-url.pipe';
 export class WorkoutDetailComponent implements OnInit {
   // Input signal automatically bound to route param ':id'
   // Angular Casts to string by default, we can transform it
-  id = input<string>(''); 
+  // Input signal required
+  id = input.required<string>();
+  
+  // Refactor: workout is now a Signal unpacked from the service
+  workout = computed(() => {
+    const currentId = this.id();
+    // Unwrap the signal from the service
+    const workoutSignal = this.workoutService.getWorkoutById(currentId);
+    return workoutSignal();
+  });
 
-  workout?: Workout;
   showTimer = false;
   pesoTotal = 0;
   fechaInicio?: Date;
@@ -40,33 +48,27 @@ export class WorkoutDetailComponent implements OnInit {
   private trainingHistoryService = inject(TrainingHistoryService);
 
   constructor() {
-    // Effect to react when input changes (though usually handled in ngOnInit or computed if synchronous)
+    // Removed manual effect for workout loading since 'workout' is now a computed signal
     effect(() => {
-      const workoutId = Number(this.id());
-      if (workoutId) {
-        console.log("ID recibido via Signal:", workoutId);
-        this.workout = this.workoutService.getWorkoutById(workoutId);
-        console.log("Rutina obtenida:", this.workout);
-        
-        if (!this.workout) {
-          console.error("Rutina no encontrada para ID:", workoutId);
+        const w = this.workout();
+        if (w) {
+            console.log("Rutina cargada (Signal):", w);
+        } else {
+            console.log("Rutina no encontrada o cargando...");
         }
-      }
     });
   }
 
   ngOnInit(): void {
-    // Logic moved to effect for reactivity, or keep here if we trust id is available.
-    // With component binding, id input is available in ngOnInit.
-    // We keep the effect for robustness or just relying on checking it here.
-    // For now, let's allow the effect to handle data loading to be properly "Signal-based".
   }
   
   toggleExpand(index: number) {
     this.expandedIndex = this.expandedIndex === index ? null : index;
   }
+
   iniciarRutina() {
-    if (this.workout) {
+    const w = this.workout();
+    if (w) {
       this.fechaInicio = new Date();
       this.showTimer = true;
       this.pesoTotal = this.calcularPesoTotal();
@@ -75,7 +77,7 @@ export class WorkoutDetailComponent implements OnInit {
         this.timerComponent.start();
       }
 
-      this.trainingSessionService.startSession(this.workout);
+      this.trainingSessionService.startSession(w);
       console.log("Sesión iniciada:", this.trainingSessionService.getCurrentSession());
     }
   }
@@ -104,7 +106,8 @@ export class WorkoutDetailComponent implements OnInit {
   }
 
   calcularPesoTotal(): number {
-    return this.workout?.ejercicios.reduce((total, ejercicio) => {
+    const w = this.workout();
+    return w?.ejercicios.reduce((total: number, ejercicio: any) => {
       const peso = ejercicio.pesokg ?? 0;
       const series = ejercicio.series ?? 0; // por si no hay series, cuenta al menos 1
       return total + (peso * series);
@@ -121,25 +124,24 @@ export class WorkoutDetailComponent implements OnInit {
 
   // Métodos para editar y eliminar ejercicios
   editExercise(index: number): void {
-    if (this.workout) {
-      const ejercicio = this.workout.ejercicios[index];
+    const w = this.workout();
+    if (w) {
+      const ejercicio = w.ejercicios[index];
       console.log("Editar ejercicio:", ejercicio);
       // Por ejemplo, navegar a un componente de edición específico:
-      this.router.navigate(['/edit-exercise', this.workout.id, index]);
+      this.router.navigate(['/edit-exercise', w.id, index]);
     }
   }
 
   deleteExercise(index: number): void {
-    if (this.workout) {
+    const w = this.workout();
+    if (w) {
       const confirmado = confirm('¿Estás seguro de eliminar este ejercicio?');
       if (confirmado) {
-        this.workoutService.deleteExerciseFromWorkout(this.workout.id, index);
+        this.workoutService.deleteExerciseFromWorkout(w.id, index);
         // Refresh local workout if needed, though signal handles broader state. 
-        // Since we have a local reference 'this.workout', it might not verify immediately if it's a copy.
-        // But getWorkoutById returns a reference from the signal array (if simple find), so it might reflect.
-        // Best practice with signals: verify reactivity. 
-        // For now, calling service ensures persistence and signal update.
-        console.log("Ejercicio eliminado.", this.workout.ejercicios);
+        // Signal updates automatically.
+        console.log("Ejercicio eliminado.");
       }
     }
   }

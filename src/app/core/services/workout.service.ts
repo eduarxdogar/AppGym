@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, Signal } from '@angular/core';
 import { Workout } from '../../models/workout.model';
 import { Ejercicio } from '../../models/ejercicio.model'; 
 import { StorageService } from './storage.service';
@@ -8,103 +8,48 @@ import { StorageService } from './storage.service';
 })
 export class WorkoutService {
   private storageService = inject(StorageService);
-  private readonly STORAGE_KEY = 'workouts';
-
-  // Signal para manejar el estado de los workouts
-  private workoutsSignal = signal<Workout[]>(this.loadFromLocalStorage());
-
+  
+  // Signal para manejar el estado de los workouts - inicializamos vacío
+  private workoutsSignal = signal<Workout[]>([]);
+  
   // Signal computada de solo lectura para exponer los workouts
   readonly workouts = computed(() => this.workoutsSignal());
 
-  private loadFromLocalStorage(): Workout[] {
-    const stored = this.storageService.getItem<Workout[]>(this.STORAGE_KEY);
-    return (stored && stored.length > 0) ? stored : this.getMockWorkouts();
-  }
-
-  private getMockWorkouts(): Workout[] {
-    return [
-      {
-        id: 1,
-        nombre: 'Push Day - Pecho y Tríceps',
-        musculos: ['pecho', 'tríceps', 'hombros'],
-        nivelDificultad: 'intermedio',
-        ejercicios: [
-          {
-            id: 101,
-            nombre: 'Press Banca Plano',
-            grupoMuscular: 'pecho',
-            series: 4,
-            repeticiones: 10,
-            pesokg: 60,
-            descanso: '90s',
-            tipo: 'compuesto',
-            videoUrl: 'https://www.youtube.com/watch?v=rT7DgCr-3pg'
-          },
-          {
-            id: 102,
-            nombre: 'Press Inclinado con Mancuernas',
-            grupoMuscular: 'pecho',
-            series: 3,
-            repeticiones: 12,
-            pesokg: 24,
-            descanso: '90s',
-            tipo: 'compuesto',
-            videoUrl: 'https://www.youtube.com/watch?v=0G2_kH0p9xQ' 
-          },
-          {
-            id: 103,
-            nombre: 'Extensiones de Tríceps en Polea',
-            grupoMuscular: 'tríceps',
-            series: 3,
-            repeticiones: 15,
-            pesokg: 20,
-            descanso: '60s',
-            tipo: 'aislado'
-          }
-        ]
+  constructor() {
+    // Suscribirse a los cambios en Firestore
+    this.storageService.getWorkouts().subscribe({
+      next: (workouts) => {
+        console.log('Workouts received from Firestore:', workouts);
+        this.workoutsSignal.set(workouts);
       },
-      {
-        id: 2,
-        nombre: 'Pull Day - Espalda y Bíceps',
-        musculos: ['espalda', 'bíceps'],
-        nivelDificultad: 'avanzado',
-        ejercicios: [
-            { id: 201, nombre: 'Dominadas', grupoMuscular: 'espalda', series: 4, repeticiones: 10, descanso: '120s', tipo: 'compuesto', videoUrl: 'https://www.youtube.com/watch?v=Xe_HNE8d7sY' },
-            { id: 202, nombre: 'Remo con Barra', grupoMuscular: 'espalda', series: 4, repeticiones: 12, pesokg: 60, descanso: '90s', tipo: 'compuesto' }
-        ]
+      error: (err) => {
+        console.error('Error fetching workouts:', err);
       }
-    ];
+    });
   }
 
-  private saveToLocalStorage() {
-    this.storageService.setItem(this.STORAGE_KEY, this.workoutsSignal());
+  // --- Métodos de Acción Asíncronos ---
+
+  // Agregar (Create) - Guarda en Firestore y la suscripción actualizará la UI
+  async addWorkout(workout: Workout) {
+    await this.storageService.saveWorkout(workout);
+    // No hace falta actualizar localmente porque la suscripción lo hará
   }
 
-  getWorkouts(): Workout[] {
-    return this.workoutsSignal();
+  // Editar (Update) - Guarda en Firestore
+  async updateWorkout(workout: Workout) {
+    await this.storageService.saveWorkout(workout);
   }
 
-  addWorkout(workout: Workout) {
-    this.workoutsSignal.update(workouts => [...workouts, workout]);
-    this.saveToLocalStorage();
+  // Eliminar (Delete) - Borra en Firestore
+  async deleteWorkout(id: number) {
+    await this.storageService.deleteWorkout(id);
   }
 
-  updateWorkout(workout: Workout) {
-    this.workoutsSignal.update(workouts => 
-      workouts.map(w => w.id === workout.id ? workout : w)
+  getWorkoutById(id: string | number): Signal<Workout | undefined> {
+    return computed(() => 
+      this.workoutsSignal().find(w => String(w.id) === String(id))
     );
-    this.saveToLocalStorage();
-  }
-
-  deleteWorkout(id: number) {
-    this.workoutsSignal.update(workouts => 
-      workouts.filter(w => w.id !== id)
-    );
-    this.saveToLocalStorage();
-  }
-
-  getWorkoutById(id: number): Workout | undefined {
-    return this.workoutsSignal().find(w => w.id === id);
   }
 
   getWorkoutsByGrupo(grupo: string): Workout[] {
@@ -113,92 +58,81 @@ export class WorkoutService {
     );
   }
 
+  // --- Refactorización de Sub-items (Ejercicios) ---
+  // Estos métodos modifican el objeto localmente y luego guardan TODO el workout.
+
   // Agregar un nuevo ejercicio a una rutina específica
-  addExerciseToWorkout(workoutId: number, ejercicio: Ejercicio): void {
-    this.workoutsSignal.update(workouts => {
-      return workouts.map(workout => {
-        if (workout.id === workoutId) {
-          return {
-            ...workout,
-            ejercicios: [...workout.ejercicios, ejercicio]
-          };
-        }
-        return workout;
-      });
-    });
-    this.saveToLocalStorage();
+  async addExerciseToWorkout(workoutId: number, ejercicio: Ejercicio): Promise<void> {
+    const workout = this.getWorkoutById(workoutId)();
+    if (!workout) return;
+
+    const updatedWorkout = {
+        ...workout,
+        ejercicios: [...workout.ejercicios, ejercicio]
+    };
+    await this.storageService.saveWorkout(updatedWorkout);
   }
 
   // Editar un ejercicio existente en una rutina
-  editExerciseInWorkout(workoutId: number, ejercicioIndex: number, updatedEjercicio: Ejercicio): void {
-    this.workoutsSignal.update(workouts => {
-      return workouts.map(workout => {
-        if (workout.id === workoutId && workout.ejercicios[ejercicioIndex]) {
-          const updatedEjercicios = [...workout.ejercicios];
-          updatedEjercicios[ejercicioIndex] = updatedEjercicio;
-          return { ...workout, ejercicios: updatedEjercicios };
-        }
-        return workout;
-      });
-    });
-    this.saveToLocalStorage();
+  async editExerciseInWorkout(workoutId: number, ejercicioIndex: number, updatedEjercicio: Ejercicio): Promise<void> {
+    const workout = this.getWorkoutById(workoutId)();
+    if (!workout || !workout.ejercicios[ejercicioIndex]) return;
+
+    const updatedEjercicios = [...workout.ejercicios];
+    updatedEjercicios[ejercicioIndex] = updatedEjercicio;
+    const updatedWorkout = { ...workout, ejercicios: updatedEjercicios };
+    
+    await this.storageService.saveWorkout(updatedWorkout);
   }
 
   // Eliminar un ejercicio de una rutina
-  deleteExerciseFromWorkout(workoutId: number, ejercicioIndex: number): void {
-    this.workoutsSignal.update(workouts => {
-      return workouts.map(workout => {
-        if (workout.id === workoutId && workout.ejercicios[ejercicioIndex]) {
-          const updatedEjercicios = [...workout.ejercicios];
-          updatedEjercicios.splice(ejercicioIndex, 1);
-          return { ...workout, ejercicios: updatedEjercicios };
-        }
-        return workout;
-      });
-    });
-    this.saveToLocalStorage();
+  async deleteExerciseFromWorkout(workoutId: number, ejercicioIndex: number): Promise<void> {
+    const workout = this.getWorkoutById(workoutId)();
+    if (!workout || !workout.ejercicios[ejercicioIndex]) return;
+
+    const updatedEjercicios = [...workout.ejercicios];
+    updatedEjercicios.splice(ejercicioIndex, 1);
+    const updatedWorkout = { ...workout, ejercicios: updatedEjercicios };
+
+    await this.storageService.saveWorkout(updatedWorkout);
   }
 
   // Configurar un ejercicio avanzado (Top Set y Back Set)
-  configureAdvancedExercise(workoutId: number, ejercicioIndex: number): void {
-    this.workoutsSignal.update(workouts => {
-      return workouts.map(workout => {
-        if (workout.id === workoutId && workout.ejercicios[ejercicioIndex]) {
-          const updatedEjercicios = [...workout.ejercicios];
-          const ejercicio = { ...updatedEjercicios[ejercicioIndex] }; // Copia superficial es ok para props simples, pero cuidado con objetos anidados
+  async configureAdvancedExercise(workoutId: number, ejercicioIndex: number): Promise<void> {
+    const workout = this.getWorkoutById(workoutId)();
+    if (!workout || !workout.ejercicios[ejercicioIndex]) return;
 
-          // Configurar como Top Set
-          ejercicio.tipo = 'compuesto';
-          ejercicio.tipos = 'top-set';
-          ejercicio.series = 4;
-          ejercicio.repeticiones = 6;
-          ejercicio.descanso = '5 min';
-          ejercicio.rir = 2; 
-          ejercicio.parciales = false;
-          updatedEjercicios[ejercicioIndex] = ejercicio;
+    const updatedEjercicios = [...workout.ejercicios];
+    const ejercicio = { ...updatedEjercicios[ejercicioIndex] };
 
-          // Crear un Back Set basado en el Top Set
-          const backSet: Ejercicio = {
-            ...ejercicio,
-            tipos: 'back-set',
-            pesokg: (ejercicio.pesokg ?? 0) * 0.8, // 80% del peso del Top Set
-            repeticiones: 12,
-            descanso: '15 seg',
-            rir: 0, // Sin RIR en el Back Set
-            parciales: true, // Activar parciales en el Back Set
-          };
+    // Configurar como Top Set
+    ejercicio.tipo = 'compuesto';
+    ejercicio.tipos = 'top-set';
+    ejercicio.series = 4;
+    ejercicio.repeticiones = 6;
+    ejercicio.descanso = '5 min';
+    ejercicio.rir = 2; 
+    ejercicio.parciales = false;
+    updatedEjercicios[ejercicioIndex] = ejercicio;
 
-          updatedEjercicios.push(backSet);
-          return { ...workout, ejercicios: updatedEjercicios };
-        }
-        return workout;
-      });
-    });
-    this.saveToLocalStorage();
+    // Crear un Back Set basado en el Top Set
+    const backSet: Ejercicio = {
+      ...ejercicio,
+      tipos: 'back-set',
+      pesokg: (ejercicio.pesokg ?? 0) * 0.8, // 80% del peso del Top Set
+      repeticiones: 12,
+      descanso: '15 seg',
+      rir: 0, 
+      parciales: true,
+    };
+
+    updatedEjercicios.push(backSet);
+    const updatedWorkout = { ...workout, ejercicios: updatedEjercicios };
+    await this.storageService.saveWorkout(updatedWorkout);
   }
 
   // Añadir una Super Serie a una rutina
-  addSuperSetToWorkout(workoutId: number): void {
+  async addSuperSetToWorkout(workoutId: number): Promise<void> {
     const superSet: Ejercicio = {
       id: Date.now(),
       nombre: 'Super Serie',
@@ -212,54 +146,43 @@ export class WorkoutService {
       serieCalentamiento: 0,
       repeticionesCalentamiento: 0,
     };
-    this.addExerciseToWorkout(workoutId, superSet);
+    await this.addExerciseToWorkout(workoutId, superSet);
   }
 
-  addDropSetToExercise(workoutId: number, ejercicioIndex: number): void {
-     this.workoutsSignal.update(workouts => {
-      return workouts.map(workout => {
-        if (workout.id === workoutId && workout.ejercicios[ejercicioIndex]) {
-          const ejercicio = { ...workout.ejercicios[ejercicioIndex] };
-          
-          if (!ejercicio.pesokg) return workout;
+  async addDropSetToExercise(workoutId: number, ejercicioIndex: number): Promise<void> {
+    const workout = this.getWorkoutById(workoutId)();
+    if (!workout || !workout.ejercicios[ejercicioIndex]) return;
+    
+    const ejercicio = { ...workout.ejercicios[ejercicioIndex] };
+    if (!ejercicio.pesokg) return;
 
-          ejercicio.tipos = 'drop-set';
-          ejercicio.dropSet = {
-            sets: [
-              { porcentaje: 1.0, repeticiones: 6 },
-              { porcentaje: 0.8, repeticiones: 10 },
-              { porcentaje: 0.6, repeticiones: 15 }
-            ]
-          };
-          
-          const updatedEjercicios = [...workout.ejercicios];
-          updatedEjercicios[ejercicioIndex] = ejercicio;
-          return { ...workout, ejercicios: updatedEjercicios };
-        }
-        return workout;
-      });
-     });
-     this.saveToLocalStorage();
+    ejercicio.tipos = 'drop-set';
+    ejercicio.dropSet = {
+        sets: [
+            { porcentaje: 1.0, repeticiones: 6 },
+            { porcentaje: 0.8, repeticiones: 10 },
+            { porcentaje: 0.6, repeticiones: 15 }
+        ]
+    };
+    
+    const updatedEjercicios = [...workout.ejercicios];
+    updatedEjercicios[ejercicioIndex] = ejercicio;
+    const updatedWorkout = { ...workout, ejercicios: updatedEjercicios };
+    await this.storageService.saveWorkout(updatedWorkout);
   }
 
-  addSuperSetToExercise(workoutId: number, ejercicioIndex: number, ejercicioVinculado: Ejercicio): void {
-    this.workoutsSignal.update(workouts => {
-      return workouts.map(workout => {
-        if (workout.id === workoutId && workout.ejercicios[ejercicioIndex]) {
-          const ejercicio = { ...workout.ejercicios[ejercicioIndex] };
-          // Aquí forzamos que el ejercicio se marque como de tipo "super-serie"
-          ejercicio.tipos = 'super-serie';
-          // Se asigna el ejercicio vinculado al campo superSetEjercicio.
-          ejercicio.superSetEjercicio = ejercicioVinculado;
-          
-          const updatedEjercicios = [...workout.ejercicios];
-          updatedEjercicios[ejercicioIndex] = ejercicio;
-          return { ...workout, ejercicios: updatedEjercicios };
-        }
-        return workout;
-      });
-    });
-    this.saveToLocalStorage();
+  async addSuperSetToExercise(workoutId: number, ejercicioIndex: number, ejercicioVinculado: Ejercicio): Promise<void> {
+    const workout = this.getWorkoutById(workoutId)();
+    if (!workout || !workout.ejercicios[ejercicioIndex]) return;
+
+    const ejercicio = { ...workout.ejercicios[ejercicioIndex] };
+    ejercicio.tipos = 'super-serie';
+    ejercicio.superSetEjercicio = ejercicioVinculado;
+    
+    const updatedEjercicios = [...workout.ejercicios];
+    updatedEjercicios[ejercicioIndex] = ejercicio;
+    const updatedWorkout = { ...workout, ejercicios: updatedEjercicios };
+    await this.storageService.saveWorkout(updatedWorkout);
   }
   
   // Método para verificar si un ejercicio es avanzado

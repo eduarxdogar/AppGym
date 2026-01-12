@@ -1,56 +1,73 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, where } from '@angular/fire/firestore';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class StorageService {
+  private firestore = inject(Firestore);
+  private readonly TEMP_USER_ID = 'usuario-dev-001';
 
   constructor() { }
 
   /**
-   * Obtiene un item del localStorage y lo parsea.
-   * Retorna null si no existe o si hay un error al parsear.
+   * Obtiene los workouts de Firestore.
+   * Retorna un Observable con el array de datos.
    */
+  getWorkouts(): Observable<any[]> {
+    const workoutsCol = collection(this.firestore, 'workouts');
+    const q = query(workoutsCol, where('userId', '==', this.TEMP_USER_ID));
+    return collectionData(q, { idField: 'id' });
+  }
+
+  /**
+   * Guarda o actualiza un workout.
+   * Usa el ID del workout como ID del documento.
+   */
+  async saveWorkout(workout: any): Promise<void> {
+    try {
+      const workoutsCol = collection(this.firestore, 'workouts');
+      const docRef = doc(workoutsCol, String(workout.id));
+      await setDoc(docRef, { ...workout, userId: this.TEMP_USER_ID }, { merge: true });
+    } catch (error) {
+      console.error('Error saving workout:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Elimina un workout por ID.
+   */
+  async deleteWorkout(id: string | number): Promise<void> {
+    try {
+      const workoutsCol = collection(this.firestore, 'workouts');
+      const docRef = doc(workoutsCol, String(id));
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error('Error deleting workout:', error);
+      throw error;
+    }
+  }
+
+  // --- Métodos Legacy (LocalStorage) ---
+  // Se mantienen vacíos para evitar errores de compilación en otros componentes
+  // que aún no se hayan migrado completamente o por seguridad.
+
+  /** @deprecated */
   getItem<T>(key: string): T | null {
-    try {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : null;
-    } catch (error) {
-      console.error(`Error getting item ${key} from localStorage`, error);
-      return null;
-    }
+    return null;
   }
 
-  /**
-   * Guarda un item en el localStorage.
-   */
+  /** @deprecated */
   setItem<T>(key: string, value: T): void {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch (error) {
-      console.error(`Error setting item ${key} to localStorage`, error);
-    }
   }
 
-  /**
-   * Elimina un item del localStorage.
-   */
+  /** @deprecated */
   removeItem(key: string): void {
-    try {
-      localStorage.removeItem(key);
-    } catch (error) {
-      console.error(`Error removing item ${key} from localStorage`, error);
-    }
   }
 
-  /**
-   * Limpia todo el localStorage.
-   */
+  /** @deprecated */
   clear(): void {
-    try {
-      localStorage.clear();
-    } catch (error) {
-      console.error('Error clearing localStorage', error);
-    }
   }
 }

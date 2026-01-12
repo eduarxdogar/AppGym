@@ -19,9 +19,9 @@ import { MuscleFatigueMapComponent } from '../../shared/ui/muscle-fatigue-map/mu
 })
 export class WorkoutListComponent implements OnInit {
 
-  workouts: Workout[] = [];
-  
   private workoutService = inject(WorkoutService);
+  // Exponemos la signal del servicio directamente
+  workouts = this.workoutService.workouts;
   private aiCoachService = inject(AiCoachService);
   public router = inject(Router);
 
@@ -39,7 +39,7 @@ export class WorkoutListComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
-    this.workouts = this.workoutService.getWorkouts(); 
+    // Ya no es necesario inicializar manualmente
   }
 
   generateAiRoutine() {
@@ -52,7 +52,7 @@ export class WorkoutListComponent implements OnInit {
 
   deleteWorkout(id: number) {
     this.workoutService.deleteWorkout(id);
-    this.workouts = this.workoutService.getWorkouts(); 
+    // La signal se actualiza sola
   }
 
   addWorkout() {
@@ -64,6 +64,6 @@ export class WorkoutListComponent implements OnInit {
       nivelDificultad: 'principiante', 
     };
     this.workoutService.addWorkout(newWorkout);
-    this.workouts = this.workoutService.getWorkouts(); 
+    // La signal se actualiza sola
   }
 }
