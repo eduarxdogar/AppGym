@@ -73,17 +73,19 @@
     <!-- SECTION B: STATS GRID -->
     <div class="grid grid-cols-2 gap-4">
       
-      <!-- Calendar Card -->
-      <div class="bg-[#151921] p-4 rounded-3xl border border-zinc-800 flex flex-col justify-between h-[160px] cursor-pointer hover:bg-[#1a1f29] transition">
+      <!-- Calendar Card (Weekly Plan) -->
+      <div [routerLink]="['/weekly-plan']"
+           class="bg-[#151921] p-4 rounded-3xl border border-zinc-800 flex flex-col justify-between h-[160px] cursor-pointer hover:bg-[#1a1f29] transition group">
          <div class="flex justify-between items-start">
-            <div class="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
-               <mat-icon class="text-sm">calendar_today</mat-icon>
+            <div class="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-[#CCFF00] group-hover:text-black transition-colors">
+               <mat-icon class="text-sm">calendar_view_week</mat-icon>
             </div>
-            <mat-icon class="text-zinc-600 text-sm">arrow_outward</mat-icon>
+            <mat-icon class="text-zinc-600 text-sm group-hover:text-white transition">arrow_forward</mat-icon>
          </div>
          <div>
-            <span class="text-2xl font-bold text-white">{{ workouts().length }}</span>
-            <p class="text-xs text-slate-500 font-medium mt-1">Total Workouts</p>
+            <!-- Using a static count or dynamic if available, keeping strictly to the plan request "Tu Plan Semanal" feel -->
+            <span class="text-2xl font-bold text-white">3</span> 
+            <p class="text-xs text-slate-500 font-medium mt-1 uppercase tracking-wide">Tu Plan Semanal</p>
          </div>
       </div>
 
@@ -123,6 +125,8 @@
       </div>
     </div>
 
+
+
     <!-- SECTION C: QUICK ACTIONS -->
     <div>
        <h3 class="text-xs font-bold text-slate-500 mb-4 tracking-widest uppercase">Quick Access</h3>
@@ -146,6 +150,61 @@
              <span class="text-[10px] font-bold text-slate-300">NUTRITION</span>
           </button>
 
+       </div>
+    </div>
+
+    <!-- SECTION: STRENGTH SCORE -->
+    <div [routerLink]="['/strength-score-info']"
+         class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center gap-4 hover:border-white/10 transition cursor-pointer hover:bg-[#1f2937]">
+       <div class="h-12 w-12 flex-shrink-0 bg-white rounded-lg flex items-center justify-center transform rotate-45 overflow-hidden shadow-lg shadow-white/10">
+          <div class="transform -rotate-45 font-bold text-black text-xl flex items-center justify-center">
+             <mat-icon class="text-black font-bold">emoji_events</mat-icon>
+          </div>
+       </div>
+       <div>
+          <h3 class="text-white font-bold text-lg">Puntaje de Fuerza</h3>
+          <p class="text-zinc-400 text-xs">Necesitas completar algunos entrenamientos antes de poder ver tu puntaje.</p>
+       </div>
+    </div>
+
+    <!-- SECTION: TRENDS -->
+    <div>
+       <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xs font-bold text-slate-500 tracking-widest uppercase">Tendencias</h3>
+          <button class="text-xs text-zinc-400 flex items-center gap-1 hover:text-white transition group">
+             Últimos 7 días <mat-icon class="text-xs group-hover:translate-y-0.5 transition-transform">keyboard_arrow_down</mat-icon>
+          </button>
+       </div>
+       
+       <div class="grid grid-cols-2 gap-3">
+          <!-- Item 1 -->
+          <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+             <div class="flex items-center gap-3">
+                <mat-icon class="text-zinc-500 group-hover:text-white transition">keyboard_arrow_down</mat-icon>
+                <span class="text-slate-300 text-sm font-bold">Entrenamiento</span>
+             </div>
+          </div>
+          <!-- Item 2 -->
+          <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+             <div class="flex items-center gap-3">
+                <mat-icon class="text-zinc-500 group-hover:text-white transition">keyboard_arrow_down</mat-icon>
+                <span class="text-slate-300 text-sm font-bold">Volumen</span>
+             </div>
+          </div>
+          <!-- Item 3 -->
+           <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+             <div class="flex items-center gap-3">
+                <mat-icon class="text-zinc-500 group-hover:text-white transition">keyboard_arrow_down</mat-icon>
+                <span class="text-slate-300 text-sm font-bold">Calorías</span>
+             </div>
+          </div>
+          <!-- Item 4 -->
+           <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+             <div class="flex items-center gap-3">
+                <mat-icon class="text-zinc-500 group-hover:text-white transition">keyboard_arrow_down</mat-icon>
+                <span class="text-slate-300 text-sm font-bold">Serie</span>
+             </div>
+          </div>
        </div>
     </div>
 
