@@ -12,9 +12,18 @@ import { RecoveryPageComponent } from './features/recovery/recovery.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-  { 
-      path: '', 
+  {
+    path: 'trends/:type',
+    loadComponent: () => import('./features/stats/stats-detail/stats-detail.component').then(m => m.StatsDetailComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: '',
+    redirectTo: 'login',
+    pathMatch: 'full'
+  },
+  {
+      path: '',
       runGuardsAndResolvers: 'always',
       canActivate: [authGuard],
       children: [
