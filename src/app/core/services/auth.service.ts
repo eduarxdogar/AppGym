@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Auth, GoogleAuthProvider, User, signInWithPopup, signOut, onAuthStateChanged, user } from '@angular/fire/auth';
+import { Auth, GoogleAuthProvider, User, signInWithPopup, signOut, onAuthStateChanged, authState } from '@angular/fire/auth';
 import { Router } from '@angular/router';
 
 @Injectable({
@@ -14,6 +14,9 @@ export class AuthService {
   
   // Public readonly signal
   readonly currentUser = this._currentUser.asReadonly();
+
+  // Observable for robust RxJS combinations (avoids sync null on toObservable)
+  readonly authState$ = authState(this.auth);
 
   constructor() {
     // Sync signal with Firebase Auth state

@@ -173,6 +173,7 @@ export class WeeklyPlanComponent {
 
   // State
   isLoading = signal<boolean>(false);
+  errorMessage = signal<string | null>(null);
   
   // Wizard State
   selectedLevel: 'Principiante' | 'Intermedio' | 'Avanzado' | null = null;
@@ -199,17 +200,13 @@ export class WeeklyPlanComponent {
 
   async deleteWorkout(event: Event, id: number) {
      event.stopPropagation();
-     if(confirm('¿Estás seguro de eliminar esta rutina del plan?')) {
-        await this.workoutService.deleteWorkout(id);
-     }
+     await this.workoutService.deleteWorkout(id);
   }
 
   async resetPlan() {
-     if(confirm('¿Borrar TODO el plan actual? Esta acción no se puede deshacer.')) {
-        // Delete all shown workouts
-        for(const w of this.weekWorkouts()) {
-           if(w.id) await this.workoutService.deleteWorkout(w.id);
-        }
+     // TODO: Replace with a UiConfirmDialogComponent when available
+     for(const w of this.weekWorkouts()) {
+        if(w.id) await this.workoutService.deleteWorkout(w.id);
      }
   }
 
@@ -217,6 +214,7 @@ export class WeeklyPlanComponent {
      if (!this.selectedLevel || !this.userGoal) return;
 
      this.isLoading.set(true);
+     this.errorMessage.set(null);
 
      // Get Real Fatigue
      const fatigueRecord: Record<string, number> = {};
@@ -247,7 +245,7 @@ export class WeeklyPlanComponent {
         }
      } catch (err) {
         console.error(err);
-        alert('Error generando el plan. Intenta nuevamente.');
+        this.errorMessage.set('Error generando el plan. Intenta nuevamente.');
      } finally {
         this.isLoading.set(false);
      }

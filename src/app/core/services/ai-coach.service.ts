@@ -1,7 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
 import { Workout } from '../../models/workout.model';
-import { Ejercicio } from '../../models/ejercicio.model';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { environment } from '../../../environments/environment';
 
@@ -22,51 +20,49 @@ export interface WeeklyPlanRequest {
 }
 
 const SYSTEM_PROMPT = `
-Eres un entrenador olímpico de élite, experto en biomecánica, periodización y programación de fuerza (PhD).
-Tu objetivo es generar la rutina de entrenamiento PERFECTA para el usuario, basándote en su perfil, fatiga muscular reciente y equipamiento disponible.
+Eres un ENTRENADOR PERSONAL DE ÉLITE y EXPERTO EN BIOMECÁNICA, HIPERTROFIA Y FITNESS CIENTÍFICO.
+Tu objetivo es generar la rutina de entrenamiento PERFECTA y DEFINITIVA para el usuario, basándote estrictamente en la evidencia científica, su perfil biométrico, fatiga muscular reciente y equipamiento disponible.
 
-REGLAS DE NIVEL DE FIITNESS:
-1. Principiante: Prioriza máquinas, técnica básica, bajo volumen (2-3 series por ejercicio), ejercicios full-body o torso/pierna, repeticiones moderadas-altas.
-2. Intermedio: Introduce pesos libres compuestos, RPE/RIR, divisiones (Push/Pull/Legs o Upper/Lower), volumen moderado (3-4 series), sobrecarga progresiva clara.
-3. Avanzado: Técnicas de intensidad (Drop sets, Rest-pause, Myo-reps), especialización, alto volumen, periodización ondulante, gestión de fatiga precisa.
+TU TONO DEBE SER: Altamente motivador, directo, estructurado y profesional (estilo "coach agresivo pero científico"). No des excusas, da resultados.
 
-Reglas Generales:
-1. Prioriza la seguridad y la técnica siempre.
-2. Si un músculo está fatigado (>70%), NO lo entrenes directamente, enfócate en antagonistas o descanso activo.
-3. Para planes semanales, asegura una distribución lógica de volumen y recuperación.
+REGLAS DE NIVEL DE FITNESS Y PROGRAMACIÓN:
+1. Principiante: Prioriza aprendizaje motor, máquinas estabilizadas, técnica básica, bajo volumen (2-3 series por ejercicio), rutinas full-body o torso/pierna, repeticiones moderadas-altas (10-15) dejando siempre un RIR 2-3 en el tanque.
+2. Intermedio: Introduce pesos libres compuestos pesados, gestión de RPE/RIR estricta, divisiones (Push/Pull/Legs o Upper/Lower), volumen moderado (3-4 series), sobrecarga progresiva programada.
+3. Avanzado: Implementa técnicas de alta intensidad (Drop sets, Rest-pause, Myo-reps), especialización de puntos débiles, alto volumen, periodización ondulante, y gestión milimétrica de la fatiga.
+
+REGLAS DE ORO:
+1. BIOMECÁNICA PRIMERO: Prioriza la seguridad y la maximización del torque en el músculo objetivo por encima del peso.
+2. GESTIÓN DE FATIGA: Si un músculo está fatigado (>70%), ESTÁ ESTRICTAMENTE PROHIBIDO entrenarlo directamente de forma pesada; enfócate en sus antagonistas, estabilizadores o prescribe descanso activo.
+3. COHESIÓN: Para planes semanales, asegura una distribución perfecta del volumen total para evitar sobreentrenamiento y favorecer la supercompensación.
 `;
 
 @Injectable({
   providedIn: 'root'
 })
 export class AiCoachService {
-  private genAI: GoogleGenerativeAI;
-  private model: any;
+  private genAI: GoogleGenerativeAI | null = null;
+  private model: any = null;
+  private isConfigured = false;
 
   constructor() { 
     const key = environment.geminiApiKey;
-    console.log('AI Coach initialized. API Key ends with:', key ? key.slice(-4) : 'NO_KEY');
     
+    if (!key || key.includes('PEGAR_AQUI') || key === '') {
+        console.warn("⚠️ Falta configurar la API Key de Gemini en environment.ts. AI Coach desactivado.");
+        this.isConfigured = false;
+        return;
+    }
+
+    console.log('AI Coach initialized. API Key ends with:', key.slice(-4));
+    this.isConfigured = true;
     this.genAI = new GoogleGenerativeAI(key);
     this.model = this.genAI.getGenerativeModel({ 
         model: "gemini-flash-latest",
         safetySettings: [
-            {
-                category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-                threshold: HarmBlockThreshold.BLOCK_NONE,
-            },
-            {
-                category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                threshold: HarmBlockThreshold.BLOCK_NONE,
-            },
-            {
-                category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                threshold: HarmBlockThreshold.BLOCK_NONE,
-            },
-            {
-                category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                threshold: HarmBlockThreshold.BLOCK_NONE,
-            },
+            { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+            { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+            { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+            { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
         ],
         generationConfig: { responseMimeType: "application/json" }
     });
@@ -76,6 +72,10 @@ export class AiCoachService {
    * Genera una rutina personalizada usando Gemini API.
    */
   async generateWorkout(userPrompt: string, userProfile: UserProfile): Promise<Workout> {
+    if (!this.isConfigured || !this.model) {
+        return this.getFallbackWorkout(userProfile);
+    }
+
     console.log('AI Coach: Generating single workout...', { userPrompt });
 
     const prompt = this.buildPrompt(userPrompt, userProfile, 'single');
@@ -96,7 +96,8 @@ export class AiCoachService {
         };
     } catch (error) {
         console.error('Error generating workout:', error);
-        throw error;
+        // Fallback en lugar de romperse para que UI pueda manejarlo suavemente
+        return this.getFallbackWorkout(userProfile);
     }
   }
 
@@ -104,6 +105,10 @@ export class AiCoachService {
    * Genera un plan semanal completo.
    */
   async generateWeeklyPlan(request: WeeklyPlanRequest): Promise<Workout[]> {
+    if (!this.isConfigured || !this.model) {
+        return [];
+    }
+
     console.log('AI Coach: Generating weekly plan...', request);
 
     const prompt = this.buildPrompt(request.userPrompt, request.profile, 'weekly', request.daysToGenerate);
@@ -138,9 +143,31 @@ export class AiCoachService {
 
     } catch (error) {
       console.error('Error generating weekly plan:', error);
-      throw error;
+      // Retornar fallback vacio o un error manejado
+      return [];
     }
   }
+
+   private getFallbackWorkout(userProfile: UserProfile): Workout {
+       return {
+           id: Date.now(),
+           nombre: 'AI Coach no configurado',
+           nivelDificultad: (userProfile.fitnessLevel?.toLowerCase() as "principiante" | "intermedio" | "avanzado") || 'intermedio',
+           fecha: new Date().toISOString(),
+           musculos: ['General'],
+           ejercicios: [{
+              id: 1,
+              nombre: 'Descanso activo',
+              grupoMuscular: 'todo el cuerpo',
+              tipo: 'aislado',
+              series: 1,
+              repeticiones: 1,
+              descanso: '0s',
+              pesokg: 0,
+              notas: 'Falta configurar la llave de la IA. Ve a las variables de entorno para insertarla.'
+           }]
+        };
+   }
 
   private cleanJson(text: string): string {
     return text.replace(/^```json\s*/, '').replace(/\s*```$/, '');

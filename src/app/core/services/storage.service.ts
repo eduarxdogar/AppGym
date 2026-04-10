@@ -1,9 +1,8 @@
 import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
 import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, where } from '@angular/fire/firestore';
 import { Observable, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { switchMap, catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { toObservable } from '@angular/core/rxjs-interop';
 
 @Injectable({
   providedIn: 'root'
@@ -12,13 +11,11 @@ export class StorageService {
   private firestore = inject(Firestore);
   private authService = inject(AuthService);
   private injector = inject(Injector);
-  
-  private user$ = toObservable(this.authService.currentUser);
 
   constructor() { }
 
   getWorkouts(): Observable<any[]> {
-    return this.user$.pipe(
+    return this.authService.authState$.pipe(
       switchMap(user => {
         if (!user) {
           return of([]);
@@ -27,8 +24,17 @@ export class StorageService {
         return runInInjectionContext(this.injector, () => {
              const workoutsCol = collection(this.firestore, 'workouts');
              const q = query(workoutsCol, where('userId', '==', user.uid));
-             return collectionData(q, { idField: 'id' });
+             return collectionData(q, { idField: 'id' }).pipe(
+                 catchError(err => {
+                     console.error('Firestore rule or collection error:', err);
+                     return of([]);
+                 })
+             );
         });
+      }),
+      catchError(err => {
+        console.error('Auth state error in getWorkouts:', err);
+        return of([]);
       })
     );
   }
@@ -63,14 +69,23 @@ export class StorageService {
   // --- HISTORY MANAGEMENT ---
   
   getHistory(): Observable<any[]> {
-    return this.user$.pipe(
+    return this.authService.authState$.pipe(
       switchMap(user => {
         if (!user) return of([]);
         return runInInjectionContext(this.injector, () => {
              const historyCol = collection(this.firestore, 'workout_history');
              const q = query(historyCol, where('userId', '==', user.uid));
-             return collectionData(q, { idField: 'id' });
+             return collectionData(q, { idField: 'id' }).pipe(
+                 catchError(err => {
+                     console.error('Firestore rule or collection error in history:', err);
+                     return of([]);
+                 })
+             );
         });
+      }),
+      catchError(err => {
+        console.error('Auth state error in getHistory:', err);
+        return of([]);
       })
     );
   }
