@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { WorkoutService } from '../../core/services/workout.service';
 import { AiCoachService, WeeklyPlanRequest, UserProfile } from '../../core/services/ai-coach.service';
 import { RecoveryService } from '../../core/services/recovery.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-weekly-plan',
@@ -21,7 +22,7 @@ import { RecoveryService } from '../../core/services/recovery.service';
             <mat-icon>arrow_back</mat-icon>
             </button>
             <div>
-            <h1 class="text-2xl font-bold tracking-wider uppercase">Tu Plan Semanal</h1>
+            <h1 class="text-2xl font-bold tracking-wider uppercase">Tu Plan de {{ weekWorkouts().length }} Días</h1>
             <p class="text-xs text-zinc-500 tracking-widest">AGENDA DE ENTRENAMIENTO</p>
             </div>
         </div>
@@ -165,6 +166,47 @@ import { RecoveryService } from '../../core/services/recovery.service';
 
         </div>
 
+        <!-- Add Day with AI Button -->
+        <div *ngIf="weekWorkouts().length > 0 && !isLoading()" class="mt-6 flex justify-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <button (click)="addDayWithAI()" [disabled]="isGeneratingDay()"
+                  class="group relative overflow-hidden py-3 px-6 rounded-full bg-zinc-800/80 border border-zinc-700 hover:border-[#CCFF00] hover:bg-zinc-800 transition-all duration-300 flex items-center justify-center gap-2 text-[#CCFF00] font-bold text-sm tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#CCFF00] focus:ring-offset-2 focus:ring-offset-[#151921] shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+              
+              <div class="absolute inset-0 bg-gradient-to-r from-[#CCFF00]/0 via-[#CCFF00]/10 to-[#CCFF00]/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+
+              <mat-icon *ngIf="!isGeneratingDay()" class="text-lg">auto_awesome</mat-icon>
+              <span *ngIf="!isGeneratingDay()">Autocompletar Día (IA)</span>
+              <div *ngIf="isGeneratingDay()" class="h-4 w-4 border-2 border-zinc-500 border-t-[#CCFF00] rounded-full animate-spin"></div>
+              <span *ngIf="isGeneratingDay()">Generando...</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Delete/Reset Confirmation Modal -->
+      <div *ngIf="showConfirmModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+         <div class="bg-[#151921] border border-zinc-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+            <div class="flex items-center gap-3 text-red-500 mb-4">
+               <div class="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                  <mat-icon>warning</mat-icon>
+               </div>
+               <h3 class="text-lg font-bold text-white tracking-wide">
+                  {{ pendingAction() === 'reset' ? 'Borrar Plan Semanal' : 'Eliminar Rutina' }}
+               </h3>
+            </div>
+            
+            <p class="text-sm text-zinc-400 mb-8">
+               ¿Estás seguro que deseas continuar? Esta acción no se puede deshacer y los datos se perderán permanentemente.
+            </p>
+
+            <div class="flex gap-3 justify-end mt-4">
+               <button (click)="cancelAction()" class="px-5 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 font-bold tracking-wider text-xs hover:bg-zinc-800 transition">
+                  CANCELAR
+               </button>
+               <button (click)="confirmAction()" class="px-5 py-2.5 rounded-xl bg-red-500/20 text-red-500 border border-red-500/30 font-bold tracking-wider text-xs hover:bg-red-500 hover:text-white transition shadow-[0_0_15px_rgba(239,68,68,0.2)] hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]">
+                  CONFIRMAR
+               </button>
+            </div>
+         </div>
       </div>
     </div>
   `,
@@ -179,6 +221,7 @@ export class WeeklyPlanComponent {
   public aiService = inject(AiCoachService);
   private recoveryService = inject(RecoveryService);
   private router = inject(Router);
+  private toastService = inject(ToastService);
 
   // Constants
   levels: Array<'Principiante' | 'Intermedio' | 'Avanzado'> = ['Principiante', 'Intermedio', 'Avanzado'];
@@ -202,6 +245,14 @@ export class WeeklyPlanComponent {
      );
   });
 
+  // Modal State
+  showConfirmModal = signal<boolean>(false);
+  pendingAction = signal<'delete' | 'reset' | null>(null);
+  pendingWorkoutId = signal<number | null>(null);
+
+  // AI State
+  isGeneratingDay = signal<boolean>(false);
+
   goBack() {
     this.router.navigate(['/dashboard']);
   }
@@ -210,16 +261,88 @@ export class WeeklyPlanComponent {
      this.router.navigate(['/workouts', id]);
   }
 
-  async deleteWorkout(event: Event, id: number) {
+  deleteWorkout(event: Event, id: number) {
      event.stopPropagation();
-     await this.workoutService.deleteWorkout(id);
+     this.pendingAction.set('delete');
+     this.pendingWorkoutId.set(id);
+     this.showConfirmModal.set(true);
   }
 
-  async resetPlan() {
-     // TODO: Replace with a UiConfirmDialogComponent when available
-     for(const w of this.weekWorkouts()) {
-        if(w.id) await this.workoutService.deleteWorkout(w.id);
+  resetPlan() {
+     this.pendingAction.set('reset');
+     this.showConfirmModal.set(true);
+  }
+
+  cancelAction() {
+     this.showConfirmModal.set(false);
+     this.pendingAction.set(null);
+     this.pendingWorkoutId.set(null);
+  }
+
+  async confirmAction() {
+     const action = this.pendingAction();
+     this.showConfirmModal.set(false);
+
+     if (action === 'delete' && this.pendingWorkoutId() !== null) {
+        await this.workoutService.deleteWorkout(this.pendingWorkoutId()!);
+        this.toastService.showSuccess('Día de entrenamiento eliminado.');
+     } else if (action === 'reset') {
+        const total = this.weekWorkouts().length;
+        for(const w of this.weekWorkouts()) {
+           if(w.id) await this.workoutService.deleteWorkout(w.id);
+        }
+        if (total > 0) this.toastService.showInfo('El plan ha sido reseteado.');
      }
+
+     this.cancelAction();
+  }
+
+  async addDayWithAI() {
+      if (this.isGeneratingDay()) return;
+      
+      this.isGeneratingDay.set(true);
+      
+      // Get Real Fatigue
+      const fatigueRecord: Record<string, number> = {};
+      this.recoveryService.muscleRecoveryStatus().forEach((val, key) => {
+          fatigueRecord[key] = val.percentage;
+      });
+
+      const profile: UserProfile = {
+         weight: 75, // Default for now
+         height: 180,
+         fatigueLevels: fatigueRecord,
+         availableDays: ['Cualquiera'], 
+         equipment: ['Gym Completo'],
+         fitnessLevel: 'Intermedio',
+         goal: 'hipertrofia'
+      };
+
+      const prompt = "Genera un solo día de entrenamiento para complementar mi rutina actual. Analiza mi fatiga para no sobrecargar músculos exhaustos. Que sea variado e interesante.";
+
+      try {
+           const newWorkout = await this.aiService.generateWorkout(prompt, profile);
+
+           // Re-ajustar la fecha basándose en la fecha del último entrenamiento del plan actual, si existe.
+           const currentWorkouts = this.weekWorkouts();
+           if (currentWorkouts.length > 0) {
+              const lastWorkout = currentWorkouts[currentWorkouts.length - 1];
+              if (lastWorkout && lastWorkout.fecha) {
+                 const newDate = new Date(lastWorkout.fecha);
+                 newDate.setDate(newDate.getDate() + 1);
+                 newWorkout.fecha = newDate.toISOString();
+              }
+           }
+
+           await this.workoutService.addWorkout(newWorkout);
+           this.toastService.showSuccess('✨ Nuevo día generado y agregado al plan.');
+
+      } catch (err) {
+           console.error(err);
+           this.toastService.showError('Error al contactar a la IA. Revisa tu conexión.');
+      } finally {
+           this.isGeneratingDay.set(false);
+      }
   }
 
   async generatePlan() {
@@ -251,13 +374,14 @@ export class WeeklyPlanComponent {
      try {
         const plans = await this.aiService.generateWeeklyPlan(request);
         
-        // Add all workouts to service
         for (const plan of plans) {
            await this.workoutService.addWorkout(plan);
         }
+        this.toastService.showSuccess('Plan semanal generado satisfactoriamente.');
      } catch (err) {
         console.error(err);
         this.errorMessage.set('Error generando el plan. Intenta nuevamente.');
+        this.toastService.showError('Ocurrió un error generando el plan.');
      } finally {
         this.isLoading.set(false);
      }
