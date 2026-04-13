@@ -48,7 +48,7 @@ interface ChatMessage {
              <div *ngIf="msg.role === 'coach'" class="h-8 w-8 rounded-full bg-[#151921] border border-zinc-700 flex-shrink-0 flex items-center justify-center">
                  <mat-icon class="text-zinc-400 text-sm">smart_toy</mat-icon>
              </div>
-             <div class="p-4 rounded-2xl text-sm shadow-md"
+             <div class="p-4 rounded-2xl text-sm shadow-md whitespace-pre-wrap"
                   [ngClass]="msg.role === 'user' ? 'bg-[#CCFF00] text-black rounded-tr-sm' : 'bg-[#151921] border border-zinc-800 text-zinc-300 rounded-tl-sm w-full'">
                  {{ msg.text }}
              </div>
@@ -116,7 +116,14 @@ export class AiCoachDrawerComponent {
 
     try {
       const response = await this.aiCoachService.chatWithCoach(txt);
-      this.messages.push({ role: 'coach', text: response });
+      // Clean up response if it has raw quotes
+      let cleanResponse = response.trim();
+      if (cleanResponse.startsWith('"') && cleanResponse.endsWith('"')) {
+          cleanResponse = cleanResponse.substring(1, cleanResponse.length - 1);
+      }
+      // Replace literal \n with actual breaks if needed, though Angular bindings handle it mostly except for parsing Markdown. 
+      // It's clean plain text now.
+      this.messages.push({ role: 'coach', text: cleanResponse });
     } catch (err) {
       this.messages.push({ role: 'coach', text: "Error de conexión con mis circuitos." });
     } finally {

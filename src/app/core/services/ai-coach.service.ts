@@ -1,7 +1,8 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { Workout } from '../../models/workout.model';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { environment } from '../../../environments/environment';
+import { WorkoutService } from './workout.service';
 
 export interface UserProfile {
   weight: number;
@@ -43,6 +44,9 @@ export class AiCoachService {
   private genAI: GoogleGenerativeAI | null = null;
   public activeModel = signal<'gemini-2.5-flash' | 'gemini-2.5-pro'>('gemini-2.5-flash');
   private isConfigured = false;
+  
+  private workoutService = inject(WorkoutService);
+  private chatSession: any = null;
 
   constructor() { 
     const key = environment.geminiApiKey;
@@ -58,7 +62,7 @@ export class AiCoachService {
     this.genAI = new GoogleGenerativeAI(environment.geminiApiKey);
   }
 
-  private getModel() {
+  private getModel(isJson: boolean = true) {
      if (!this.genAI) return null;
      return this.genAI.getGenerativeModel({ 
         model: this.activeModel(),
@@ -68,7 +72,7 @@ export class AiCoachService {
             { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
             { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
         ],
-        generationConfig: { responseMimeType: "application/json" }
+        generationConfig: isJson ? { responseMimeType: "application/json" } : undefined
      });
   }
 
@@ -76,7 +80,7 @@ export class AiCoachService {
    * Genera una rutina personalizada usando Gemini API.
    */
   async generateWorkout(userPrompt: string, userProfile: UserProfile): Promise<Workout> {
-    const activeModelInstance = this.getModel();
+    const activeModelInstance = this.getModel(true);
     if (!this.isConfigured || !activeModelInstance) {
         return this.getFallbackWorkout(userProfile);
     }
@@ -110,7 +114,7 @@ export class AiCoachService {
    * Genera un plan semanal completo.
    */
   async generateWeeklyPlan(request: WeeklyPlanRequest): Promise<Workout[]> {
-    const activeModelInstance = this.getModel();
+    const activeModelInstance = this.getModel(true);
     if (!this.isConfigured || !activeModelInstance) {
         return [];
     }
@@ -158,14 +162,29 @@ export class AiCoachService {
    * Envía un mensaje de texto plano a la IA (Chat).
    */
   async chatWithCoach(message: string): Promise<string> {
-    const activeModelInstance = this.getModel();
+    const activeModelInstance = this.getModel(false);
     if (!this.isConfigured || !activeModelInstance) {
         return "El AI Coach no está configurado. Por favor provee la API Key.";
     }
 
     try {
-        const prompt = `${SYSTEM_PROMPT}\n\nUsuario: ${message}\nResponde de manera concisa y altamente motivadora, sin usar formato JSON para esto. ¡Como un coach real conversando!`;
-        const result = await activeModelInstance.generateContent(prompt);
+        if (!this.chatSession) {
+            const contextText = "Eres el AI Coach de la app Tríada. Háblale al usuario en tono motivador, directo y científico. RESPONDE SOLO EN TEXTO/MARKDOWN, NUNCA EN JSON. El usuario actualmente tiene este plan de entrenamiento en su base de datos: " + JSON.stringify(this.workoutService.workouts()) + ". Usa esta información para responder sus dudas.";
+            this.chatSession = activeModelInstance.startChat({
+                history: [
+                    {
+                        role: "user",
+                        parts: [{ text: contextText }],
+                    },
+                    {
+                        role: "model",
+                        parts: [{ text: "¡Entendido! Soy tu Coach de Tríada, listo para mutar y organizar tu entrenamiento basado en tu plan de datos." }],
+                    },
+                ]
+            });
+        }
+        
+        const result = await this.chatSession.sendMessage(message);
         const response = await result.response;
         return response.text();
     } catch (err) {
