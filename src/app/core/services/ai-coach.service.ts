@@ -154,6 +154,26 @@ export class AiCoachService {
     }
   }
 
+  /**
+   * Envía un mensaje de texto plano a la IA (Chat).
+   */
+  async chatWithCoach(message: string): Promise<string> {
+    const activeModelInstance = this.getModel();
+    if (!this.isConfigured || !activeModelInstance) {
+        return "El AI Coach no está configurado. Por favor provee la API Key.";
+    }
+
+    try {
+        const prompt = `${SYSTEM_PROMPT}\n\nUsuario: ${message}\nResponde de manera concisa y altamente motivadora, sin usar formato JSON para esto. ¡Como un coach real conversando!`;
+        const result = await activeModelInstance.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+    } catch (err) {
+        console.error('Error al chatear con Coach:', err);
+        return "Mi red neuronal falló, repite eso soldad@.";
+    }
+  }
+
    private getFallbackWorkout(userProfile: UserProfile): Workout {
        return {
            id: Date.now(),

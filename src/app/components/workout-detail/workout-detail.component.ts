@@ -69,6 +69,13 @@ export class WorkoutDetailComponent implements OnInit {
   
   // Rest Timer State
   isResting = signal<boolean>(false); // Toggles Modal
+
+  // --- Modals State ---
+  showExitModal = signal<boolean>(false);
+  pendingExitAction = signal<'exit' | 'save' | null>(null);
+  
+  showAddExerciseModal = signal<boolean>(false);
+  newExerciseName = signal<string>('');
   
   showTimer = false; 
   expandedIndex: number | null = null;
@@ -134,64 +141,67 @@ export class WorkoutDetailComponent implements OnInit {
     }
   }
 
-  async finalizarRutina() {
-    if (confirm('¿Guardar Entrenamiento y finalizar sesión?')) {
-        this.isActive.set(false);
-        this.showTimer = false;
-        
-        if (this.sessionInterval) clearInterval(this.sessionInterval);
-        this.stopRestTimer();
-        
-        // Save Session Logic
-        const workout = this.workout();
-        const startTime = this.trainingSessionService.getCurrentSession()?.fechaInicio || new Date(); // Fallback
-        
-        if (workout) {
-             // Map active sets to WorkoutSession structure
-             const sessionExercises: WorkoutSessionExercise[] = workout.ejercicios.map((ex, index) => {
-                 const sets = this.activeSets().get(index) || [];
-                 return {
-                     exerciseId: ex.id || index, // Use index if ID missing
-                     name: ex.nombre,
-                     targetSets: ex.series || 0,
-                     sets: sets.map(s => ({
-                         weight: s.weight,
-                         reps: s.reps,
-                         completed: s.completed
-                     }))
-                 };
-             });
+  finalizarRutina() {
+    this.pendingExitAction.set('save');
+    this.showExitModal.set(true);
+  }
 
-             // Collect muscle groups
-             const muscles = new Set<string>();
-             workout.musculos?.forEach(m => muscles.add(m));
-             workout.ejercicios.forEach(ex => {
-                 if(ex.grupoMuscular) muscles.add(ex.grupoMuscular);
-             });
+  async finalizeSession() {
+      this.isActive.set(false);
+      this.showTimer = false;
+      
+      if (this.sessionInterval) clearInterval(this.sessionInterval);
+      this.stopRestTimer();
+      
+      // Save Session Logic
+      const workout = this.workout();
+      const startTime = this.trainingSessionService.getCurrentSession()?.fechaInicio || new Date(); // Fallback
+      
+      if (workout) {
+           // Map active sets to WorkoutSession structure
+           const sessionExercises: WorkoutSessionExercise[] = workout.ejercicios.map((ex, index) => {
+               const sets = this.activeSets().get(index) || [];
+               return {
+                   exerciseId: ex.id || index, // Use index if ID missing
+                   name: ex.nombre,
+                   targetSets: ex.series || 0,
+                   sets: sets.map(s => ({
+                       weight: s.weight,
+                       reps: s.reps,
+                       completed: s.completed
+                   }))
+               };
+           });
 
-             const session: WorkoutSession = {
-                 id: doc(collection(this.firestore, 'dummy')).id, // Use class property
-                 userId: '', 
-                 workoutId: workout.id,
-                 name: workout.nombre,
-                 startTime: startTime.toISOString(),
-                 endTime: new Date().toISOString(),
-                 duration: this.sessionTimeFormatted(),
-                 totalVolume: this.calculateTotalVolume(),
-                 musclesWorked: Array.from(muscles),
-                 exercises: sessionExercises,
-                 feeling: 'good',
-                 calories: Math.round((this.sessionSeconds() / 60 * 5) + (this.calculateTotalVolume() * 0.0005))
-             };
+           // Collect muscle groups
+           const muscles = new Set<string>();
+           workout.musculos?.forEach(m => muscles.add(m));
+           workout.ejercicios.forEach(ex => {
+               if(ex.grupoMuscular) muscles.add(ex.grupoMuscular);
+           });
 
-             await this.trainingHistoryService.addSession(session);
-             
-             // Clear temp session
-             this.trainingSessionService.saveSession(null);
-        }
-        
-        this.router.navigate(['/dashboard']);
-    }
+           const session: WorkoutSession = {
+               id: doc(collection(this.firestore, 'dummy')).id, // Use class property
+               userId: '', 
+               workoutId: workout.id,
+               name: workout.nombre,
+               startTime: startTime.toISOString(),
+               endTime: new Date().toISOString(),
+               duration: this.sessionTimeFormatted(),
+               totalVolume: this.calculateTotalVolume(),
+               musclesWorked: Array.from(muscles),
+               exercises: sessionExercises,
+               feeling: 'good',
+               calories: Math.round((this.sessionSeconds() / 60 * 5) + (this.calculateTotalVolume() * 0.0005))
+           };
+
+           await this.trainingHistoryService.addSession(session);
+           
+           // Clear temp session
+           this.trainingSessionService.saveSession(null);
+      }
+      
+      this.router.navigate(['/dashboard']);
   }
 
   // --- SETS MANAGEMENT ---
@@ -281,12 +291,76 @@ export class WorkoutDetailComponent implements OnInit {
 
   goBack(): void {
     if(this.isActive()) {
-        if(confirm('¿Salir del modo entrenamiento?')) {
-            this.isActive.set(false);
-        }
+        this.pendingExitAction.set('exit');
+        this.showExitModal.set(true);
     } else {
         this.router.navigate(['/dashboard']); 
     }
+  }
+
+  // --- Modals Logic ---
+
+  cancelExitModal() {
+      this.showExitModal.set(false);
+      this.pendingExitAction.set(null);
+  }
+
+  async confirmExitModal() {
+      const action = this.pendingExitAction();
+      this.showExitModal.set(false);
+      if (action === 'save') {
+          await this.finalizeSession();
+      } else if (action === 'exit') {
+          this.isActive.set(false);
+      }
+      this.pendingExitAction.set(null);
+  }
+
+  openAddExerciseModal() {
+      this.newExerciseName.set('');
+      this.showAddExerciseModal.set(true);
+  }
+
+  closeAddExerciseModal() {
+      this.showAddExerciseModal.set(false);
+  }
+
+  saveNewExercise() {
+      const name = this.newExerciseName().trim();
+      if (!name) return;
+
+      const w = this.workout();
+      if(w) {
+          const wObj = Object.assign({}, w);
+          // Insert minimal exercise
+          wObj.ejercicios.push({
+              id: Date.now(),
+              nombre: name,
+              grupoMuscular: 'General',
+              tipo: 'aislado',
+              series: 3,
+              repeticiones: 10,
+              descanso: '60s',
+              pesokg: 0,
+              notas: 'Agregado manualmente'
+          });
+
+          // Re-initialize active set just for this new index
+          const newIndex = wObj.ejercicios.length - 1;
+          const map = new Map(this.activeSets());
+          
+          const targetSets = 3;
+          const sets: WorkoutSet[] = [];
+          for(let i=0; i<targetSets; i++) {
+              sets.push({ reps: 10, weight: 0, completed: false });
+          }
+          
+          map.set(newIndex, sets);
+          this.activeSets.set(map);
+
+          this.closeAddExerciseModal();
+          this.expandedIndex = newIndex; // Auto expand to let the user see it
+      }
   }
 
   getVideoEmbedUrl(videoUrl: string | undefined): string {

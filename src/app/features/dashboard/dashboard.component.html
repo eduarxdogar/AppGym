@@ -83,8 +83,8 @@
             <mat-icon class="text-zinc-600 text-sm group-hover:text-white transition">arrow_forward</mat-icon>
          </div>
          <div>
-            <!-- Using a static count or dynamic if available, keeping strictly to the plan request "Tu Plan Semanal" feel -->
-            <span class="text-2xl font-bold text-white">3</span> 
+            <!-- Using dynamic count from workout service signal -->
+            <span class="text-2xl font-bold text-white">{{ workouts().length || 0 }}</span> 
             <p class="text-xs text-slate-500 font-medium mt-1 uppercase tracking-wide">Tu Plan Semanal</p>
          </div>
       </div>
