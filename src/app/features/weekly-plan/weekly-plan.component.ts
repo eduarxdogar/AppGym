@@ -96,6 +96,18 @@ import { RecoveryService } from '../../core/services/recovery.service';
                  </div>
               </div>
 
+              <!-- AI Model -->
+              <div class="mb-6">
+                 <label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Motor de Inteligencia</label>
+                 <select 
+                    [ngModel]="aiService.activeModel()" 
+                    (ngModelChange)="aiService.activeModel.set($event)"
+                    class="w-full bg-[#0B0E14] border border-zinc-700 rounded-xl p-3 text-sm text-white focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00] transition outline-none appearance-none cursor-pointer">
+                    <option value="gemini-2.5-flash">⚡ Entrenador Rápido (Flash)</option>
+                    <option value="gemini-2.5-pro">🧠 Entrenador Élite (Pro)</option>
+                 </select>
+              </div>
+
               <!-- Action -->
               <button (click)="generatePlan()" 
                       [disabled]="!selectedLevel || !userGoal"
@@ -164,7 +176,7 @@ import { RecoveryService } from '../../core/services/recovery.service';
 export class WeeklyPlanComponent {
   // Services
   private workoutService = inject(WorkoutService);
-  private aiService = inject(AiCoachService);
+  public aiService = inject(AiCoachService);
   private recoveryService = inject(RecoveryService);
   private router = inject(Router);
 

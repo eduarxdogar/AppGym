@@ -20,7 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
 export class GeneratorComponent {
   
   // Dependencies
-  private aiService = inject(AiCoachService);
+  public aiService = inject(AiCoachService);
   private workoutService = inject(WorkoutService);
   private recoveryService = inject(RecoveryService);
   private router = inject(Router);

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Workout } from '../../models/workout.model';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { environment } from '../../../environments/environment';
@@ -41,7 +41,7 @@ REGLAS DE ORO:
 })
 export class AiCoachService {
   private genAI: GoogleGenerativeAI | null = null;
-  private model: any = null;
+  public activeModel = signal<'gemini-2.5-flash' | 'gemini-2.5-pro'>('gemini-2.5-flash');
   private isConfigured = false;
 
   constructor() { 
@@ -53,11 +53,15 @@ export class AiCoachService {
         return;
     }
 
-    console.log('AI Coach initialized. API Key ends with:', key.slice(-4));
+    console.log('AI Coach initialized. API Key ends with:', environment.geminiApiKey.slice(-4));
     this.isConfigured = true;
-    this.genAI = new GoogleGenerativeAI(key);
-    this.model = this.genAI.getGenerativeModel({ 
-        model: "gemini-flash-latest",
+    this.genAI = new GoogleGenerativeAI(environment.geminiApiKey);
+  }
+
+  private getModel() {
+     if (!this.genAI) return null;
+     return this.genAI.getGenerativeModel({ 
+        model: this.activeModel(),
         safetySettings: [
             { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
             { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -65,14 +69,15 @@ export class AiCoachService {
             { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
         ],
         generationConfig: { responseMimeType: "application/json" }
-    });
+     });
   }
 
   /**
    * Genera una rutina personalizada usando Gemini API.
    */
   async generateWorkout(userPrompt: string, userProfile: UserProfile): Promise<Workout> {
-    if (!this.isConfigured || !this.model) {
+    const activeModelInstance = this.getModel();
+    if (!this.isConfigured || !activeModelInstance) {
         return this.getFallbackWorkout(userProfile);
     }
 
@@ -81,7 +86,7 @@ export class AiCoachService {
     const prompt = this.buildPrompt(userPrompt, userProfile, 'single');
     
     try {
-        const result = await this.model.generateContent(prompt);
+        const result = await activeModelInstance.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
         
@@ -105,7 +110,8 @@ export class AiCoachService {
    * Genera un plan semanal completo.
    */
   async generateWeeklyPlan(request: WeeklyPlanRequest): Promise<Workout[]> {
-    if (!this.isConfigured || !this.model) {
+    const activeModelInstance = this.getModel();
+    if (!this.isConfigured || !activeModelInstance) {
         return [];
     }
 
@@ -114,7 +120,7 @@ export class AiCoachService {
     const prompt = this.buildPrompt(request.userPrompt, request.profile, 'weekly', request.daysToGenerate);
 
     try {
-      const result = await this.model.generateContent(prompt);
+      const result = await activeModelInstance.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
       

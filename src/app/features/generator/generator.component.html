@@ -59,6 +59,17 @@
              class="w-full bg-[#0B0E14] text-white rounded-xl border border-zinc-800 p-5 focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00] transition-all resize-none text-lg placeholder:text-zinc-600 mb-6"
              placeholder="Ej: Quiero enfocarme en Hombros y Tríceps, tengo 60 mins..."></textarea>
           
+          <div class="mb-4">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Motor de Inteligencia</label>
+              <select 
+                 [ngModel]="aiService.activeModel()" 
+                 (ngModelChange)="aiService.activeModel.set($event)"
+                 class="w-full bg-[#0B0E14] border border-zinc-700 rounded-xl p-3 text-sm text-white focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00] transition outline-none appearance-none cursor-pointer">
+                 <option value="gemini-2.5-flash">⚡ Entrenador Rápido (Flash)</option>
+                 <option value="gemini-2.5-pro">🧠 Entrenador Élite (Pro)</option>
+              </select>
+          </div>
+          
           <button (click)="generate()" 
                   [disabled]="isLoading() || !userPrompt()"
                   class="w-full py-5 bg-[#CCFF00] hover:bg-[#bbe600] disabled:opacity-50 disabled:cursor-not-allowed text-black font-extrabold text-xl rounded-xl transition-all shadow-[0_0_20px_rgba(204,255,0,0.3)] hover:shadow-[0_0_30px_rgba(204,255,0,0.5)] flex items-center justify-center gap-3">
