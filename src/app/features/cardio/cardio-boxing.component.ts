@@ -1,9 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { AiCoachService, BoxingRoutine } from '../../core/services/ai-coach.service';
+import { CardioSessionService } from '../../core/services/cardio-session.service';
 
 @Component({
   selector: 'app-cardio-boxing',
@@ -125,7 +126,7 @@ import { AiCoachService, BoxingRoutine } from '../../core/services/ai-coach.serv
           </div>
 
           <!-- Cooldown -->
-          <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-5">
+          <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 mb-6">
             <h3 class="text-sm font-bold text-purple-400 uppercase tracking-widest mb-3 flex items-center gap-2">
               <mat-icon class="text-sm">self_improvement</mat-icon> Cooldown
             </h3>
@@ -136,6 +137,16 @@ import { AiCoachService, BoxingRoutine } from '../../core/services/ai-coach.serv
               </li>
             </ul>
           </div>
+
+          <!-- Save Button -->
+          <button (click)="saveSession()" [disabled]="isSaving()"
+            class="w-full py-4 rounded-xl font-black text-lg uppercase tracking-wider transition-all
+                   bg-[#CCFF00] text-black hover:bg-[#bce600] disabled:opacity-50 disabled:cursor-not-allowed
+                   shadow-[0_0_20px_rgba(204,255,0,0.3)] flex items-center justify-center gap-2">
+            <mat-icon *ngIf="isSaving()" class="text-sm animate-spin">refresh</mat-icon>
+            <mat-icon *ngIf="!isSaving()" class="text-lg">done_all</mat-icon>
+            {{ isSaving() ? 'Guardando...' : 'Finalizar Sesión' }}
+          </button>
 
         </div>
 
@@ -151,11 +162,14 @@ import { AiCoachService, BoxingRoutine } from '../../core/services/ai-coach.serv
 })
 export class CardioBoxingComponent {
   private aiCoach = inject(AiCoachService);
+  private cardioService = inject(CardioSessionService);
+  private router = inject(Router);
 
   level = 'Intermedio';
   duration = '30';
 
   isLoading = signal(false);
+  isSaving = signal(false);
   routine = signal<BoxingRoutine | null>(null);
   error = signal<string | null>(null);
 
@@ -169,6 +183,27 @@ export class CardioBoxingComponent {
       this.error.set('No se pudo generar la rutina. Verifica tu API Key de Gemini.');
     } finally {
       this.isLoading.set(false);
+    }
+  }
+
+  async saveSession() {
+    const r = this.routine();
+    if (!r) return;
+    this.isSaving.set(true);
+    try {
+      // 8 METs para boxeo en 75kg
+      const cals = Math.round((r.totalDuration / 60) * 8.0 * 75);
+      await this.cardioService.saveSession({
+        date: new Date().toISOString(),
+        durationMinutes: r.totalDuration,
+        title: r.title,
+        level: this.level,
+        caloriesBurned: cals
+      });
+      this.router.navigate(['/dashboard']);
+    } catch (e: any) {
+      this.error.set('No se pudo guardar la sesión en Firebase.');
+      this.isSaving.set(false);
     }
   }
 }

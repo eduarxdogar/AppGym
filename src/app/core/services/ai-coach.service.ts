@@ -21,7 +21,7 @@ export interface WeeklyPlanRequest {
   daysToGenerate: number;
 }
 
-export interface DietPlan {
+export interface DayDietPlan {
   totalCalories: number;
   macros: { protein: string; carbs: string; fats: string };
   meals: Array<{
@@ -30,6 +30,15 @@ export interface DietPlan {
     foods: Array<{ item: string; amount: string; calories: number }>;
   }>;
 }
+
+/** Plan de 2 días base: entrenamiento y descanso */
+export interface WeeklyDietPlan {
+  trainingDay: DayDietPlan;
+  restDay: DayDietPlan;
+}
+
+/** Alias de compatibilidad */
+export type DietPlan = WeeklyDietPlan;
 
 export interface BoxingRoutine {
   title: string;
@@ -239,38 +248,61 @@ Métricas calculadas de los últimos 7 días: Sesiones=${metrics.workoutsCount},
   /**
    * Genera un plan nutricional diário usando Gemini.
    */
-  async generateDietPlan(profileData: { goal: string; weight: number; mealsPerDay: number }, targetCalories: number): Promise<DietPlan> {
+  async generateDietPlan(
+    profileData: { goal: string; weight: number; mealsPerDay: number; fastingProtocol: string; firstMealTime: string },
+    targetCalories: number
+  ): Promise<WeeklyDietPlan> {
     const model = this.getModel(true);
     if (!this.isConfigured || !model) {
       throw new Error('AI Coach no configurado');
     }
 
-    const prompt = `Eres un Nutricionista Deportivo de élite. Genera un plan de alimentación diario para ${profileData.goal} limpio basado en los datos del usuario.
+    const fastingNote = profileData.fastingProtocol !== 'Sin Ayuno'
+      ? `El usuario practica Ayuno Intermitente ${profileData.fastingProtocol}. Su primera comida es a las ${profileData.firstMealTime}. Ajusta la distribución de las comidas para que cuadren EXCLUSIVAMENTE dentro de su ventana de alimentación, consolidando las calorías si es necesario. NO incluyas comidas fuera de esa ventana.`
+      : 'El usuario NO practica ayuno intermitente. Distribuye las comidas a lo largo del día de forma balanceada.';
+
+    const prompt = `Eres un Nutricionista Deportivo de élite especializado en cronobiología y rendimiento deportivo. Genera un plan de alimentación para ${profileData.goal}.
 
 Datos del usuario:
 - Objetivo: ${profileData.goal}
 - Peso corporal: ${profileData.weight} kg
-- Calorías objetivo: ${targetCalories} kcal/día
-- Número de comidas: ${profileData.mealsPerDay} comidas al día
+- Calorías objetivo (día de entrenamiento): ${targetCalories} kcal
+- Número de comidas dentro de la ventana: ${profileData.mealsPerDay}
+- Protocolo de ayuno: ${profileData.fastingProtocol}
 
-IMPORTANTE: Responde EXCLUSIVAMENTE con un JSON válido con esta estructura exacta:
+INSTRUCCIONES DE AYUNO: ${fastingNote}
+
+IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta (2 planes base):
 {
-  "totalCalories": number,
-  "macros": { "protein": string, "carbs": string, "fats": string },
-  "meals": [
-    {
-      "name": string,
-      "time": string,
-      "foods": [
-        { "item": string, "amount": string, "calories": number }
-      ]
-    }
-  ]
-}`;
+  "trainingDay": {
+    "totalCalories": number,
+    "macros": { "protein": string, "carbs": string, "fats": string },
+    "meals": [
+      {
+        "name": string,
+        "time": string,
+        "foods": [ { "item": string, "amount": string, "calories": number } ]
+      }
+    ]
+  },
+  "restDay": {
+    "totalCalories": number,
+    "macros": { "protein": string, "carbs": string, "fats": string },
+    "meals": [
+      {
+        "name": string,
+        "time": string,
+        "foods": [ { "item": string, "amount": string, "calories": number } ]
+      }
+    ]
+  }
+}
+
+NOTA: El día de descanso debe tener ~15-20% menos calorías, priorizando proteína y grasas saludables sobre carbohidratos.`;
 
     const result = await model.generateContent(prompt);
     const text = this.cleanJson(result.response.text());
-    return JSON.parse(text) as DietPlan;
+    return JSON.parse(text) as WeeklyDietPlan;
   }
 
   /**
@@ -307,6 +339,44 @@ IMPORTANTE: Responde EXCLUSIVAMENTE con un JSON válido con esta estructura exac
     const result = await model.generateContent(prompt);
     const text = this.cleanJson(result.response.text());
     return JSON.parse(text) as BoxingRoutine;
+  }
+
+  /**
+   * Escanea una etiqueta nutricional desde una imagen y extrae los macros.
+   */
+  async scanNutritionLabel(base64: string, mimeType: string): Promise<{ calories: number; protein: number; carbs: number; fats: number }> {
+    const model = this.getModel(true);
+    if (!this.isConfigured || !model) throw new Error('AI Coach no configurado');
+
+    const prompt = `Eres un experto en nutrición. Analiza la imagen de esta etiqueta nutricional y extrae los valores por porción (por 100g si no indica porción).
+Devuelve SOLO un JSON con estos campos exactos (usa solo números, sin unidades):
+{ "calories": number, "protein": number, "carbs": number, "fats": number }`;
+
+    const result = await model.generateContent([
+      { text: prompt },
+      { inlineData: { data: base64, mimeType } }
+    ]);
+    const text = this.cleanJson(result.response.text());
+    return JSON.parse(text);
+  }
+
+  /**
+   * Analiza un reporte InBody para extraer composición corporal.
+   */
+  async scanInBodyReport(base64: string, mimeType: string): Promise<{ muscleKg?: number; fatPercent?: number; bmr?: number }> {
+    const model = this.getModel(true);
+    if (!this.isConfigured || !model) throw new Error('AI Coach no configurado');
+
+    const prompt = `Analiza este reporte InBody o de composición corporal. Extrae los valores principales.
+Devuelve SOLO un JSON con estos campos (usa null si no encuentras el valor):
+{ "muscleKg": number | null, "fatPercent": number | null, "bmr": number | null }`;
+
+    const result = await model.generateContent([
+      { text: prompt },
+      { inlineData: { data: base64, mimeType } }
+    ]);
+    const text = this.cleanJson(result.response.text());
+    return JSON.parse(text);
   }
 
    private getFallbackWorkout(userProfile: UserProfile): Workout {
