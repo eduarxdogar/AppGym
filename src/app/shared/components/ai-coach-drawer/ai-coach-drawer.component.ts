@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { UiStateService } from '../../../core/services/ui-state.service';
@@ -70,13 +70,31 @@ interface ChatMessage {
 
       <!-- Input Area -->
       <div class="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-[#0B0E14] via-[#0B0E14] to-transparent">
+          
+          <!-- Image Preview -->
+          <div *ngIf="selectedImage()" class="mb-2 relative inline-block animate-in zoom-in duration-200">
+              <img [src]="selectedImage()" class="h-20 w-20 object-cover rounded-lg border-2 border-[#CCFF00] shadow-lg">
+              <button (click)="removeImage()" class="absolute -top-2 -right-2 bg-black text-white rounded-full p-0.5 border border-zinc-700 hover:bg-zinc-800">
+                  <mat-icon class="text-xs w-4 h-4 flex items-center justify-center">close</mat-icon>
+              </button>
+          </div>
+
           <div class="relative flex items-end">
+              <!-- Attachment Button -->
+              <input type="file" #imageInput class="hidden" (change)="onImageSelected($event)" accept="image/*">
+              <button (click)="imageInput.click()" 
+                      [disabled]="isLoading"
+                      class="absolute left-2 bottom-2 h-8 w-8 rounded-full text-zinc-400 flex items-center justify-center hover:bg-zinc-800 hover:text-white transition-colors">
+                  <mat-icon class="text-[20px]">attach_file</mat-icon>
+              </button>
+
               <textarea rows="1" 
                         [(ngModel)]="userMessage"
                         (keyup.enter)="sendMessage($event)"
-                        class="w-full bg-[#151921] border border-zinc-700 rounded-2xl py-3 pl-4 pr-12 text-sm text-white focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00] outline-none resize-none transition-all shadow-lg placeholder:text-zinc-600 disabled:opacity-50"
+                        class="w-full bg-[#151921] border border-zinc-700 rounded-2xl py-3 pl-12 pr-12 text-sm text-white focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00] outline-none resize-none transition-all shadow-lg placeholder:text-zinc-600 disabled:opacity-50"
                         placeholder="Pregúntale al Coach..."
                         [disabled]="isLoading"></textarea>
+              
               <button (click)="sendMessage()" 
                       [disabled]="isLoading"
                       class="absolute right-2 bottom-2 h-8 w-8 rounded-full bg-[#CCFF00] text-black flex items-center justify-center hover:bg-[#bce600] transition-colors shadow-[0_0_10px_rgba(204,255,0,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
@@ -102,27 +120,64 @@ export class AiCoachDrawerComponent {
     }
   ];
 
+  selectedImage = signal<string | null>(null);
+  selectedImageMimeType = '';
+
+  onImageSelected(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+        const dataUrl = e.target.result;
+        // Extract actual mime type from dataURL
+        const mimeMatch = dataUrl.match(/data:([^;]+);base64/);
+        if (mimeMatch) {
+            this.selectedImageMimeType = mimeMatch[1];
+            this.selectedImage.set(dataUrl);
+        }
+    };
+    reader.readAsDataURL(file);
+    // Reset input value to allow selecting same file again
+    event.target.value = '';
+  }
+
+  removeImage() {
+    this.selectedImage.set(null);
+    this.selectedImageMimeType = '';
+  }
+
   async sendMessage(event?: Event) {
     if (event) {
       event.preventDefault(); // Prevent new line on enter
     }
 
     const txt = this.userMessage.trim();
-    if (!txt || this.isLoading) return;
+    const hasImage = !!this.selectedImage();
+    
+    if ((!txt && !hasImage) || this.isLoading) return;
 
+    // Capture state before clearing
+    const imageBase64Full = this.selectedImage();
+    const mimeType = this.selectedImageMimeType;
+    let cleanBase64 = undefined;
+    if (imageBase64Full) {
+        cleanBase64 = imageBase64Full.split(',')[1];
+    }
+
+    // UI Feedback
     this.userMessage = '';
-    this.messages.push({ role: 'user', text: txt });
+    this.removeImage();
+    this.messages.push({ role: 'user', text: txt || 'Imagen enviada' });
     this.isLoading = true;
 
     try {
-      const response = await this.aiCoachService.chatWithCoach(txt);
+      const response = await this.aiCoachService.chatWithCoach(txt, cleanBase64, mimeType);
       // Clean up response if it has raw quotes
       let cleanResponse = response.trim();
       if (cleanResponse.startsWith('"') && cleanResponse.endsWith('"')) {
           cleanResponse = cleanResponse.substring(1, cleanResponse.length - 1);
       }
-      // Replace literal \n with actual breaks if needed, though Angular bindings handle it mostly except for parsing Markdown. 
-      // It's clean plain text now.
       this.messages.push({ role: 'coach', text: cleanResponse });
     } catch (err) {
       this.messages.push({ role: 'coach', text: "Error de conexión con mis circuitos." });
