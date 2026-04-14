@@ -39,6 +39,8 @@ export const routes: Routes = [
         { path: 'timer', component: TimerComponent },
         { path: 'workout/:id/edit', component: WorkoutEditComponent },
         { path: 'generator', loadComponent: () => import('./features/generator/generator.component').then(m => m.GeneratorComponent) },
+        { path: 'nutrition', loadComponent: () => import('./features/nutrition/nutrition.component').then(m => m.NutritionComponent) },
+        { path: 'cardio', loadComponent: () => import('./features/cardio/cardio-boxing.component').then(m => m.CardioBoxingComponent) },
         { path: 'progress', component: ProgressComponent },
       ]
   },

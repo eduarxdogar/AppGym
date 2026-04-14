@@ -21,6 +21,29 @@ export interface WeeklyPlanRequest {
   daysToGenerate: number;
 }
 
+export interface DietPlan {
+  totalCalories: number;
+  macros: { protein: string; carbs: string; fats: string };
+  meals: Array<{
+    name: string;
+    time: string;
+    foods: Array<{ item: string; amount: string; calories: number }>;
+  }>;
+}
+
+export interface BoxingRoutine {
+  title: string;
+  totalDuration: number;
+  warmup: string[];
+  rounds: Array<{
+    roundNumber: number;
+    duration: string;
+    instructions: string;
+    focus: 'Cardio' | 'Technique' | 'Power';
+  }>;
+  cooldown: string[];
+}
+
 const SYSTEM_PROMPT = `
 Eres un ENTRENADOR PERSONAL DE ÉLITE y EXPERTO EN BIOMECÁNICA, HIPERTROFIA Y FITNESS CIENTÍFICO.
 Tu objetivo es generar la rutina de entrenamiento PERFECTA y DEFINITIVA para el usuario, basándote estrictamente en la evidencia científica, su perfil biométrico, fatiga muscular reciente y equipamiento disponible.
@@ -211,6 +234,79 @@ Métricas calculadas de los últimos 7 días: Sesiones=${metrics.workoutsCount},
         console.error('Error al chatear con Coach:', err);
         return "Mi red neuronal falló, repite eso soldad@.";
     }
+  }
+
+  /**
+   * Genera un plan nutricional diário usando Gemini.
+   */
+  async generateDietPlan(profileData: { goal: string; weight: number; mealsPerDay: number }, targetCalories: number): Promise<DietPlan> {
+    const model = this.getModel(true);
+    if (!this.isConfigured || !model) {
+      throw new Error('AI Coach no configurado');
+    }
+
+    const prompt = `Eres un Nutricionista Deportivo de élite. Genera un plan de alimentación diario para ${profileData.goal} limpio basado en los datos del usuario.
+
+Datos del usuario:
+- Objetivo: ${profileData.goal}
+- Peso corporal: ${profileData.weight} kg
+- Calorías objetivo: ${targetCalories} kcal/día
+- Número de comidas: ${profileData.mealsPerDay} comidas al día
+
+IMPORTANTE: Responde EXCLUSIVAMENTE con un JSON válido con esta estructura exacta:
+{
+  "totalCalories": number,
+  "macros": { "protein": string, "carbs": string, "fats": string },
+  "meals": [
+    {
+      "name": string,
+      "time": string,
+      "foods": [
+        { "item": string, "amount": string, "calories": number }
+      ]
+    }
+  ]
+}`;
+
+    const result = await model.generateContent(prompt);
+    const text = this.cleanJson(result.response.text());
+    return JSON.parse(text) as DietPlan;
+  }
+
+  /**
+   * Genera una rutina de boxeo y cardio usando Gemini.
+   */
+  async generateBoxingRoutine(level: string, durationMinutes: number): Promise<BoxingRoutine> {
+    const model = this.getModel(true);
+    if (!this.isConfigured || !model) {
+      throw new Error('AI Coach no configurado');
+    }
+
+    const prompt = `Eres un Entrenador de Boxeo y Acondicionamiento Físico de élite. Genera una rutina de shadow boxing y trabajo de pies.
+
+Sesión solicitada:
+- Nivel del atleta: ${level}
+- Duración total deseada: ${durationMinutes} minutos
+
+IMPORTANTE: Responde EXCLUSIVAMENTE con un JSON válido con esta estructura exacta:
+{
+  "title": string,
+  "totalDuration": number,
+  "warmup": [ string ],
+  "rounds": [
+    {
+      "roundNumber": number,
+      "duration": string,
+      "instructions": string,
+      "focus": "Cardio" | "Technique" | "Power"
+    }
+  ],
+  "cooldown": [ string ]
+}`;
+
+    const result = await model.generateContent(prompt);
+    const text = this.cleanJson(result.response.text());
+    return JSON.parse(text) as BoxingRoutine;
   }
 
    private getFallbackWorkout(userProfile: UserProfile): Workout {

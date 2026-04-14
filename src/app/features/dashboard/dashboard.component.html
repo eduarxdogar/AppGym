@@ -157,13 +157,13 @@
           </button>
 
           <!-- Cardio -->
-          <button class="flex flex-col items-center justify-center gap-2 bg-[#151921] border border-zinc-800 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-400/5 transition group">
+          <button [routerLink]="['/cardio']" class="flex flex-col items-center justify-center gap-2 bg-[#151921] border border-zinc-800 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-400/5 transition group">
              <mat-icon class="text-blue-400 group-hover:scale-110 transition">directions_run</mat-icon>
              <span class="text-[10px] font-bold text-slate-300">CARDIO</span>
           </button>
 
-          <!-- Nutrition (Placeholder) -->
-          <button class="flex flex-col items-center justify-center gap-2 bg-[#151921] border border-zinc-800 rounded-xl p-4 hover:border-pink-500 hover:bg-pink-500/5 transition group">
+          <!-- Nutrition -->
+          <button [routerLink]="['/nutrition']" class="flex flex-col items-center justify-center gap-2 bg-[#151921] border border-zinc-800 rounded-xl p-4 hover:border-pink-500 hover:bg-pink-500/5 transition group">
              <mat-icon class="text-pink-500 group-hover:scale-110 transition">restaurant</mat-icon>
              <span class="text-[10px] font-bold text-slate-300">NUTRITION</span>
           </button>
