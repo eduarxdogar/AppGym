@@ -5,10 +5,11 @@ import { AiCoachDrawerComponent } from './shared/components/ai-coach-drawer/ai-c
 import { CommonModule } from '@angular/common';
 import { UiStateService } from './core/services/ui-state.service';
 import { MatIconModule } from '@angular/material/icon';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ToastComponent, AiCoachDrawerComponent, CommonModule, MatIconModule],
+  imports: [RouterOutlet, ToastComponent, AiCoachDrawerComponent, CommonModule, MatIconModule, DragDropModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

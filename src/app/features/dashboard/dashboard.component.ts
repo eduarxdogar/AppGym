@@ -42,8 +42,15 @@ export class DashboardComponent {
     if (all.length === 0) return null;
     // Asumimos que la última creada es la "próxima" o la más relevante por ahora
     // En el futuro, esto podría ser "la rutina de hoy" basada en un calendario.
-    return all[0]; 
+    return all[0];
   });
+
+  // Mock data for target muscles
+  mockTargetMuscles = [
+    { name: 'Cuádriceps', percentage: 65 },
+    { name: 'Pecho', percentage: 90 },
+    { name: 'Tríceps', percentage: 45 }
+  ];
 
   // Computed: Promedio de recuperación global (0-100)
   globalRecoveryScore = computed(() => {

@@ -38,14 +38,32 @@
             <span class="flex items-center gap-1 text-[#CCFF00]"><mat-icon class="text-sm h-4 w-4">bar_chart</mat-icon> {{ nextWorkout()?.nivelDificultad | titlecase }}</span>
           </div>
 
-          <!-- Thumbnails (Placeholders) -->
-          <div class="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide">
-            <div class="h-12 w-12 rounded bg-zinc-800 flex-shrink-0 border border-zinc-700 hover:border-[#CCFF00] transition" *ngFor="let i of [1,2,3,4]"></div>
+          <!-- Músculos a entrenar -->
+          <div class="mb-6">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Músculos a entrenar</h3>
+            <div class="flex gap-4 overflow-x-auto snap-x scrollbar-hide pb-2">
+               <!-- Card -->
+               <div *ngFor="let m of mockTargetMuscles" class="bg-[#1A1E26] rounded-xl p-4 flex-shrink-0 flex items-center gap-4 snap-start border border-zinc-800">
+                  <div class="relative h-12 w-12 flex-shrink-0">
+                     <svg class="h-full w-full rotate-[-90deg]" viewBox="0 0 36 36">
+                        <circle cx="18" cy="18" r="15.9155" fill="none" class="stroke-zinc-800" stroke-width="4"></circle>
+                        <circle cx="18" cy="18" r="15.9155" fill="none" class="stroke-[#CCFF00]" stroke-width="4" [attr.stroke-dasharray]="m.percentage + ', 100'" stroke-linecap="round"></circle>
+                     </svg>
+                     <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
+                        {{ m.percentage }}%
+                     </div>
+                  </div>
+                  <div>
+                     <p class="text-sm font-bold text-white">{{ m.name }}</p>
+                     <p class="text-[10px] text-slate-500 uppercase tracking-wide">Foco</p>
+                  </div>
+               </div>
+            </div>
           </div>
 
           <!-- Actions -->
           <div class="flex items-center gap-4">
-            <button class="h-12 w-12 rounded-full bg-[#CCFF00] text-black flex items-center justify-center shadow-[0_0_15px_rgba(204,255,0,0.4)] hover:scale-110 transition-transform">
+            <button [routerLink]="['/workouts', nextWorkout()?.id]" class="h-12 w-12 rounded-full bg-[#CCFF00] text-black flex items-center justify-center shadow-[0_0_15px_rgba(204,255,0,0.4)] hover:scale-110 transition-transform">
               <mat-icon>play_arrow</mat-icon>
             </button>
             <button class="h-10 w-10 rounded-full bg-zinc-800 text-slate-300 flex items-center justify-center border border-zinc-700 hover:bg-zinc-700 transition"
@@ -53,7 +71,7 @@
               <mat-icon class="scale-75">refresh</mat-icon>
             </button>
             <div class="flex-grow"></div>
-            <button class="text-xs text-slate-500 hover:text-white transition flex items-center gap-1">
+            <button routerLink="/weekly-plan" class="text-xs text-slate-500 hover:text-white transition flex items-center gap-1">
                DETAILS <mat-icon class="text-sm">arrow_forward</mat-icon>
             </button>
           </div>
