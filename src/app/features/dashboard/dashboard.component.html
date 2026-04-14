@@ -188,45 +188,61 @@
     <!-- SECTION: TRENDS -->
     <div>
        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xs font-bold text-slate-500 tracking-widest uppercase">Tendencias</h3>
-          <button class="text-xs text-zinc-400 flex items-center gap-1 hover:text-white transition group">
-             Últimos 7 días <mat-icon class="text-xs group-hover:translate-y-0.5 transition-transform">keyboard_arrow_down</mat-icon>
-          </button>
+          <h3 class="text-xs font-bold text-slate-500 tracking-widest uppercase">Tendencias · Últimos 7 días</h3>
        </div>
        
        <div class="grid grid-cols-2 gap-3">
-          <!-- Item 1 -->
-           <div [routerLink]="['/trends', 'workouts']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                 <mat-icon class="text-zinc-500 group-hover:text-white transition">event_note</mat-icon>
-                 <span class="text-slate-300 text-sm font-bold">Entrenamientos</span>
-              </div>
-              <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
-           </div>
-          <!-- Item 2 -->
-           <div [routerLink]="['/trends', 'volume']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                 <mat-icon class="text-zinc-500 group-hover:text-white transition">fitness_center</mat-icon>
-                 <span class="text-slate-300 text-sm font-bold">Volumen</span>
-              </div>
-              <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
-           </div>
-          <!-- Item 3 -->
-            <div [routerLink]="['/trends', 'calories']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                 <mat-icon class="text-zinc-500 group-hover:text-white transition">local_fire_department</mat-icon>
-                 <span class="text-slate-300 text-sm font-bold">Calorías</span>
-              </div>
-              <mat-icon class="text-zinc-600 group-hover:text-[#ff6600]">chevron_right</mat-icon>
-           </div>
-          <!-- Item 4 -->
-           <div [routerLink]="['/trends', 'sets']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                 <mat-icon class="text-zinc-500 group-hover:text-white transition">repeat</mat-icon>
-                 <span class="text-slate-300 text-sm font-bold">Series</span>
-              </div>
-              <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
-           </div>
+          <!-- Entrenamientos -->
+          <div [routerLink]="['/trends', 'workouts']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+             <div class="flex items-center gap-3">
+                <mat-icon class="text-zinc-500 group-hover:text-white transition">event_note</mat-icon>
+                <div>
+                  <span class="block text-slate-300 text-sm font-bold">Sesiones</span>
+                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">{{ metrics().workoutsCount }}</span>
+                </div>
+             </div>
+             <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
+          </div>
+
+          <!-- Volumen / Tonelaje -->
+          <div [routerLink]="['/trends', 'volume']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+             <div class="flex items-center gap-3">
+                <mat-icon class="text-zinc-500 group-hover:text-white transition">fitness_center</mat-icon>
+                <div>
+                  <span class="block text-slate-300 text-sm font-bold">Tonelaje</span>
+                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">
+                    {{ metrics().totalVolume >= 1000
+                         ? (metrics().totalVolume / 1000 | number:'1.1-1') + 't'
+                         : (metrics().totalVolume | number:'1.0-0') + ' kg' }}
+                  </span>
+                </div>
+             </div>
+             <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
+          </div>
+
+          <!-- Calorías -->
+          <div [routerLink]="['/trends', 'calories']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+             <div class="flex items-center gap-3">
+                <mat-icon class="text-zinc-500 group-hover:text-white transition">local_fire_department</mat-icon>
+                <div>
+                  <span class="block text-slate-300 text-sm font-bold">Calorías</span>
+                  <span class="block text-orange-400 text-lg font-extrabold leading-none mt-0.5">~{{ metrics().estimatedCalories | number:'1.0-0' }}</span>
+                </div>
+             </div>
+             <mat-icon class="text-zinc-600 group-hover:text-[#ff6600]">chevron_right</mat-icon>
+          </div>
+
+          <!-- Series -->
+          <div [routerLink]="['/trends', 'sets']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+             <div class="flex items-center gap-3">
+                <mat-icon class="text-zinc-500 group-hover:text-white transition">repeat</mat-icon>
+                <div>
+                  <span class="block text-slate-300 text-sm font-bold">Series</span>
+                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">{{ metrics().totalSets }}</span>
+                </div>
+             </div>
+             <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
+          </div>
        </div>
     </div>
 

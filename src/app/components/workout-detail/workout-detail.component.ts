@@ -196,6 +196,15 @@ export class WorkoutDetailComponent implements OnInit {
            };
 
            await this.trainingHistoryService.addSession(session);
+
+           // Mark workout as completed
+           const updatedWorkout: Workout = {
+               ...workout,
+               isCompleted: true,
+               completedAt: new Date().toISOString(),
+               durationMinutes: Math.floor(this.sessionSeconds() / 60)
+           };
+           await this.workoutService.updateWorkout(updatedWorkout);
            
            // Clear temp session
            this.trainingSessionService.saveSession(null);

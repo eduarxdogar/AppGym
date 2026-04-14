@@ -8,6 +8,9 @@ export interface Workout {
   nivelDificultad: 'principiante' | 'intermedio' | 'avanzado'; 
   musculos?: string[];
   frequency?: number;
+  isCompleted?: boolean;
+  completedAt?: string;
+  durationMinutes?: number;
 }
 
 export type { Ejercicio };

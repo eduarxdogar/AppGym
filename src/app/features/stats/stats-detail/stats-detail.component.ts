@@ -33,6 +33,10 @@ export class StatsDetailComponent implements OnInit {
   public lineChartOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: {
+      duration: 1200,
+      easing: 'easeOutCubic'
+    },
     elements: {
       line: { tension: 0.4 },
       point: { radius: 4, hoverRadius: 6 }
@@ -50,6 +54,10 @@ export class StatsDetailComponent implements OnInit {
   public radarChartOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: {
+      duration: 1500,
+      easing: 'easeOutQuart'
+    },
     scales: {
         r: {
             angleLines: { color: 'rgba(255,255,255,0.1)' },

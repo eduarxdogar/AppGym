@@ -3,6 +3,7 @@ import { Workout } from '../../models/workout.model';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { environment } from '../../../environments/environment';
 import { WorkoutService } from './workout.service';
+import { MetricsService } from './metrics.service';
 
 export interface UserProfile {
   weight: number;
@@ -46,6 +47,7 @@ export class AiCoachService {
   private isConfigured = false;
   
   private workoutService = inject(WorkoutService);
+  private metricsService = inject(MetricsService);
   private chatSession: any = null;
 
   constructor() { 
@@ -159,9 +161,9 @@ export class AiCoachService {
   }
 
   /**
-   * Envía un mensaje de texto plano a la IA (Chat).
+   * Envía un mensaje de texto plano o con imagen a la IA (Chat).
    */
-  async chatWithCoach(message: string): Promise<string> {
+  async chatWithCoach(message: string, imageBase64?: string, mimeType?: string): Promise<string> {
     const activeModelInstance = this.getModel(false);
     if (!this.isConfigured || !activeModelInstance) {
         return "El AI Coach no está configurado. Por favor provee la API Key.";
@@ -169,7 +171,14 @@ export class AiCoachService {
 
     try {
         if (!this.chatSession) {
-            const contextText = "Eres el AI Coach de la app Tríada. Háblale al usuario en tono motivador, directo y científico. RESPONDE SOLO EN TEXTO/MARKDOWN, NUNCA EN JSON. El usuario actualmente tiene este plan de entrenamiento en su base de datos: " + JSON.stringify(this.workoutService.workouts()) + ". Usa esta información para responder sus dudas.";
+            const metrics = this.metricsService.weeklyMetrics();
+            const contextText = `Eres 'Tríada Coach', un entrenador personal de élite. Tu tono debe ser conciso, directo, motivador (estilo 'bro de gimnasio inteligente') y coloquial. NUNCA respondas con ensayos largos o viñetas excesivas. Usa respuestas cortas y al grano.
+Tu base de conocimiento es EXCLUSIVAMENTE el JSON de rutinas que te proporciono. NO inventes fechas, NO asumas entrenamientos que no están en el JSON.
+Si el usuario pregunta por 'tonelaje', debes sumar (Series x Repeticiones x Peso) de los ejercicios del día indicado, pero entrégale solo el número final o un resumen muy breve. Si pregunta por fatiga o qué hacer después, da 1 o 2 recomendaciones rápidas (ej. 'Come carbohidratos simples ahora mismo y estira los isquios').
+No uses títulos grandes (##) a menos que sea estrictamente necesario. Usa negritas para resaltar números importantes. Compórtate como en un chat de WhatsApp con un atleta avanzado.
+Esta es tu Verdad Absoluta (JSON de rutinas): ${JSON.stringify(this.workoutService.workouts())}
+Métricas calculadas de los últimos 7 días: Sesiones=${metrics.workoutsCount}, Tonelaje=${metrics.totalVolume}kg, Series=${metrics.totalSets}, Calorías estimadas=${metrics.estimatedCalories}kcal. Usa estos datos cuando el usuario pregunte por su progreso semanal. NO los recalcules manualmente, ya están calculados.`;
+
             this.chatSession = activeModelInstance.startChat({
                 history: [
                     {
@@ -178,13 +187,24 @@ export class AiCoachService {
                     },
                     {
                         role: "model",
-                        parts: [{ text: "¡Entendido! Soy tu Coach de Tríada, listo para mutar y organizar tu entrenamiento basado en tu plan de datos." }],
+                        parts: [{ text: "¡Entendido! Soy Tríada Coach. Vamos a darle, dime qué necesitas de tu plan." }],
                     },
                 ]
             });
         }
         
-        const result = await this.chatSession.sendMessage(message);
+        let result;
+        if (imageBase64 && mimeType) {
+            // Multimodal prompt
+            const parts = [
+                { text: message || "¿Qué ves en esta imagen?" },
+                { inlineData: { data: imageBase64, mimeType } }
+            ];
+            result = await this.chatSession.sendMessage(parts);
+        } else {
+            result = await this.chatSession.sendMessage(message);
+        }
+
         const response = await result.response;
         return response.text();
     } catch (err) {
