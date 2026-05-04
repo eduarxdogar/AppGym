@@ -50,3 +50,4 @@ Thumbs.db
 # Environments (Secretos)
 src/environments/environment.development.ts
 src/environments/environment.ts
+.firebase
