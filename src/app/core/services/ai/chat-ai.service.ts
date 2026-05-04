@@ -15,20 +15,19 @@ export class ChatAiService {
   private metricsService = inject(MetricsService);
   private cardioService = inject(CardioSessionService);
   
-  private chatSession: any = null;
+  private chatHistory: any[] = [];
 
   resetChat() {
-     this.chatSession = null;
+     this.chatHistory = [];
   }
 
   async chatWithCoach(message: string, imageBase64?: string, mimeType?: string): Promise<string> {
-    const activeModelInstance = this.baseAi.getModel(false);
-    if (!this.baseAi.isConfigured || !activeModelInstance) {
+    if (!this.baseAi.isConfigured) {
         return "El AI Coach no está configurado. Por favor provee la API Key.";
     }
 
     try {
-        if (!this.chatSession) {
+        if (this.chatHistory.length === 0) {
             const metrics = this.metricsService.weeklyMetrics();
             const userProfile = this.profileState.profile();
             
@@ -43,33 +42,24 @@ Rutinas activas: ${JSON.stringify(this.workoutService.workouts())}
 Sesiones cardio (7d): ${JSON.stringify(this.cardioService.cardioSessions())}
 Métricas semanales calculadas: Sesiones=${metrics.workoutsCount}, Tonelaje=${metrics.totalVolume}kg, Series=${metrics.totalSets}, Calorías estimadas=${metrics.estimatedCalories}kcal. Usa estos datos cuando el usuario pregunte por su progreso semanal. NO los recalcules manualmente.`;
 
-            this.chatSession = activeModelInstance.startChat({
-                history: [
-                    {
-                        role: "user",
-                        parts: [{ text: contextText }],
-                    },
-                    {
-                        role: "model",
-                        parts: [{ text: "¡Entendido! Soy Tríada Coach. Vamos a darle, dime qué necesitas de tu plan." }],
-                    },
-                ]
-            });
+            this.chatHistory.push({ role: "user", parts: [{ text: contextText }] });
+            this.chatHistory.push({ role: "model", parts: [{ text: "¡Entendido! Soy Tríada Coach. Vamos a darle, dime qué necesitas de tu plan." }] });
         }
         
-        let result;
-        if (imageBase64 && mimeType) {
-            const parts = [
-                { text: message || "¿Qué ves en esta imagen?" },
-                { inlineData: { data: imageBase64, mimeType } }
-            ];
-            result = await this.chatSession.sendMessage(parts);
-        } else {
-            result = await this.chatSession.sendMessage(message);
-        }
-
-        const response = await result.response;
-        return response.text();
+        let promptText = message || "¿Qué ves en esta imagen?";
+        this.chatHistory.push({ role: "user", parts: [{ text: promptText }] });
+        
+        const responseText = await this.baseAi.generateContent(
+            promptText, 
+            false, 
+            imageBase64, 
+            mimeType, 
+            // We pass a copy without the last user message, since prompt is sent separately
+            this.chatHistory.slice(0, this.chatHistory.length - 1)
+        );
+        
+        this.chatHistory.push({ role: "model", parts: [{ text: responseText }] });
+        return responseText;
     } catch (err) {
         console.error('Error al chatear con Coach:', err);
         return "Mi red neuronal falló, repite eso soldad@.";

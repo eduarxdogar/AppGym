@@ -9,8 +9,7 @@ export class BoxingAiService {
   private baseAi = inject(BaseAiService);
 
   async generateBoxingRoutine(level: string, durationMinutes: number): Promise<BoxingRoutine> {
-    const model = this.baseAi.getModel(true);
-    if (!this.baseAi.isConfigured || !model) {
+    if (!this.baseAi.isConfigured) {
       throw new Error('AI Coach no configurado');
     }
 
@@ -36,8 +35,8 @@ IMPORTANTE: Responde EXCLUSIVAMENTE con un JSON válido con esta estructura exac
   "cooldown": [ string ]
 }`;
 
-    const result = await model.generateContent(prompt);
-    const text = this.baseAi.cleanJson(result.response.text());
+    const resultText = await this.baseAi.generateContent(prompt, true);
+    const text = this.baseAi.cleanJson(resultText);
     return JSON.parse(text) as BoxingRoutine;
   }
 }

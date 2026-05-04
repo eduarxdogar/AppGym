@@ -12,8 +12,7 @@ export class NutritionAiService {
     profileData: { goal: string; weight: number; mealsPerDay: number; fastingProtocol: string; firstMealTime: string },
     targetCalories: number
   ): Promise<WeeklyDietPlan> {
-    const model = this.baseAi.getModel(true);
-    if (!this.baseAi.isConfigured || !model) {
+    if (!this.baseAi.isConfigured) {
       throw new Error('AI Coach no configurado');
     }
 
@@ -60,24 +59,20 @@ IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta 
 
 NOTA: El día de descanso debe tener ~15-20% menos calorías, priorizando proteína y grasas saludables sobre carbohidratos.`;
 
-    const result = await model.generateContent(prompt);
-    const text = this.baseAi.cleanJson(result.response.text());
+    const resultText = await this.baseAi.generateContent(prompt, true);
+    const text = this.baseAi.cleanJson(resultText);
     return JSON.parse(text) as WeeklyDietPlan;
   }
 
   async scanNutritionLabel(base64: string, mimeType: string): Promise<{ calories: number; protein: number; carbs: number; fats: number }> {
-    const model = this.baseAi.getModel(true);
-    if (!this.baseAi.isConfigured || !model) throw new Error('AI Coach no configurado');
+    if (!this.baseAi.isConfigured) throw new Error('AI Coach no configurado');
 
     const prompt = `Eres un experto en nutrición. Analiza la imagen de esta etiqueta nutricional y extrae los valores por porción (por 100g si no indica porción).
 Devuelve SOLO un JSON con estos campos exactos (usa solo números, sin unidades):
 { "calories": number, "protein": number, "carbs": number, "fats": number }`;
 
-    const result = await model.generateContent([
-      { text: prompt },
-      { inlineData: { data: base64, mimeType } }
-    ]);
-    const text = this.baseAi.cleanJson(result.response.text());
+    const textResult = await this.baseAi.generateContent(prompt, true, base64, mimeType);
+    const text = this.baseAi.cleanJson(textResult);
     return JSON.parse(text);
   }
 }

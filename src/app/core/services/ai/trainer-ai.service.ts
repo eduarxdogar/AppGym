@@ -29,8 +29,7 @@ export class TrainerAiService {
   public activeModel = this.baseAi.activeModel;
 
   async generateWorkout(userPrompt: string, userProfile: UserProfile): Promise<Workout> {
-    const activeModelInstance = this.baseAi.getModel(true);
-    if (!this.baseAi.isConfigured || !activeModelInstance) {
+    if (!this.baseAi.isConfigured) {
         return this.getFallbackWorkout(userProfile);
     }
 
@@ -39,10 +38,7 @@ export class TrainerAiService {
     const prompt = this.buildPrompt(userPrompt, userProfile, 'single');
     
     try {
-        const result = await activeModelInstance.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-        
+        const text = await this.baseAi.generateContent(prompt, true);
         const cleanText = this.baseAi.cleanJson(text);
         const workoutData = JSON.parse(cleanText);
         
@@ -59,8 +55,7 @@ export class TrainerAiService {
   }
 
   async generateWeeklyPlan(request: WeeklyPlanRequest): Promise<Workout[]> {
-    const activeModelInstance = this.baseAi.getModel(true);
-    if (!this.baseAi.isConfigured || !activeModelInstance) {
+    if (!this.baseAi.isConfigured) {
         return [];
     }
 
@@ -69,10 +64,7 @@ export class TrainerAiService {
     const prompt = this.buildPrompt(request.userPrompt, request.profile, 'weekly', request.daysToGenerate);
 
     try {
-      const result = await activeModelInstance.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
+      const text = await this.baseAi.generateContent(prompt, true);
       const cleanText = this.baseAi.cleanJson(text);
       const workoutsData: any[] = JSON.parse(cleanText); 
 
