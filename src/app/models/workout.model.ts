@@ -1,7 +1,7 @@
 import { Ejercicio } from './ejercicio.model';
 
 export interface Workout {
-  id: number;
+  id: string;
   fecha?: string; // Stored as string in JSON
   nombre: string;
   ejercicios: Ejercicio[]; 

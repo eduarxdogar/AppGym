@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { UiStateService } from '../../../core/services/ui-state.service';
 import { FormsModule } from '@angular/forms';
-import { AiCoachService } from '../../../core/services/ai-coach.service';
+import { ChatAiService } from '../../../core/services/ai/chat-ai.service';
 
 interface ChatMessage {
   role: 'user' | 'coach';
@@ -109,7 +109,7 @@ interface ChatMessage {
 })
 export class AiCoachDrawerComponent {
   uiState = inject(UiStateService);
-  private aiCoachService = inject(AiCoachService);
+  private aiCoachService = inject(ChatAiService);
 
   userMessage = '';
   isLoading = false;

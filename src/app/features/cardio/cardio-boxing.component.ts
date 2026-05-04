@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { AiCoachService, BoxingRoutine } from '../../core/services/ai-coach.service';
+import { BoxingAiService } from '../../core/services/ai/boxing-ai.service';
+import { BoxingRoutine } from '../../models/ai-requests.model';
 import { CardioSessionService } from '../../core/services/cardio-session.service';
 
 @Component({
@@ -161,7 +162,7 @@ import { CardioSessionService } from '../../core/services/cardio-session.service
   `
 })
 export class CardioBoxingComponent {
-  private aiCoach = inject(AiCoachService);
+  private aiCoach = inject(BoxingAiService);
   private cardioService = inject(CardioSessionService);
   private router = inject(Router);
 

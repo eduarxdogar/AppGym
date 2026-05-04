@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { UserProfile } from '../../models/user-profile.model';
-import { AiCoachService } from '../../core/services/ai-coach.service';
+import { InbodyAiService } from '../../core/services/ai/inbody-ai.service';
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const EQUIPMENT = ['Mancuernas', 'Barra', 'Máquinas', 'Bandas', 'Polea', 'Kettlebells', 'Calistenia'];
@@ -229,7 +229,7 @@ const EQUIPMENT = ['Mancuernas', 'Barra', 'Máquinas', 'Bandas', 'Polea', 'Kettl
 export class OnboardingComponent {
   private profileService = inject(UserProfileService);
   private profileState = inject(UserProfileStateService);
-  private aiCoach = inject(AiCoachService);
+  private aiCoach = inject(InbodyAiService);
   private router = inject(Router);
 
   step = signal(0);

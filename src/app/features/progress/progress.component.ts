@@ -21,7 +21,7 @@ export class ProgressComponent implements OnInit {
         next: (data: any[]) => {
             this.sesiones = data.map(session => ({
                 id: Number(session.id) || Date.now(),
-                workoutId: Number(session.workoutId),
+                workoutId: String(session.workoutId) || '',
                 nombre: session.name || session.nombre || 'Entrenamiento',
                 fechaInicio: new Date(session.startTime || session.fechaInicio),
                 fechaFin: session.endTime ? new Date(session.endTime) : undefined,

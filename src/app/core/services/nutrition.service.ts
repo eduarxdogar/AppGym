@@ -3,7 +3,7 @@ import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
 import { Auth } from '@angular/fire/auth';
 import { from, Observable, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { WeeklyDietPlan } from '../services/ai-coach.service';
+import { WeeklyDietPlan } from '../../models/ai-requests.model';
 
 @Injectable({
   providedIn: 'root'

@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { AiCoachService, WeeklyDietPlan, DayDietPlan } from '../../core/services/ai-coach.service';
+import { NutritionAiService } from '../../core/services/ai/nutrition-ai.service';
+import { WeeklyDietPlan, DayDietPlan } from '../../models/ai-requests.model';
 import { NutritionService } from '../../core/services/nutrition.service';
 
 interface ScannedFood {
@@ -236,7 +237,7 @@ type MealOverrides = Record<number, ScannedFood>; // key = meal index
   `
 })
 export class NutritionComponent implements OnInit {
-  private aiCoach = inject(AiCoachService);
+  private aiCoach = inject(NutritionAiService);
   private nutritionService = inject(NutritionService);
 
   // Form

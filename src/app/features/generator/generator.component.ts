@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
-import { AiCoachService } from '../../core/services/ai-coach.service';
+import { TrainerAiService } from '../../core/services/ai/trainer-ai.service';
 import { UserProfile } from '../../models/user-profile.model';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { Workout } from '../../models/workout.model';
@@ -22,7 +22,7 @@ import { MatIconModule } from '@angular/material/icon';
 export class GeneratorComponent {
   
   // Dependencies
-  public aiService = inject(AiCoachService);
+  public aiService = inject(TrainerAiService);
   private workoutService = inject(WorkoutService);
   private recoveryService = inject(RecoveryService);
   private profileState = inject(UserProfileStateService);

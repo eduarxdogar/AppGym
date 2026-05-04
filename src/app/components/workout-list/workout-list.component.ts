@@ -7,7 +7,7 @@ import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
-import { AiCoachService } from '../../core/services/ai-coach.service';
+
 import { RecoveryMonitorComponent } from '../../features/dashboard/components/recovery-monitor/recovery-monitor.component';
 
 @Component({
@@ -22,7 +22,7 @@ export class WorkoutListComponent implements OnInit {
   private workoutService = inject(WorkoutService);
   // Exponemos la signal del servicio directamente
   workouts = this.workoutService.workouts;
-  private aiCoachService = inject(AiCoachService);
+
   public router = inject(Router);
 
   // Datos Mock para el mapa de fatiga (luego vendrían de un servicio de historial)
@@ -46,18 +46,18 @@ export class WorkoutListComponent implements OnInit {
     this.router.navigate(['/generator']);
   }
 
-  editWorkout(id: number) {
+  editWorkout(id: string) {
     this.router.navigate(['/workouts', id]);
   }
 
-  deleteWorkout(id: number) {
+  deleteWorkout(id: string) {
     this.workoutService.deleteWorkout(id);
     // La signal se actualiza sola
   }
 
   addWorkout() {
     const newWorkout: Workout = {
-      id: Date.now(),
+      id: crypto.randomUUID(),
       fecha: new Date().toISOString(), 
       nombre: 'Nueva Rutina',
       ejercicios: [],

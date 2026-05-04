@@ -1,6 +1,6 @@
 export interface TrainingSession {
     id: number;
-    workoutId: number;
+    workoutId: string;
     nombre: string;
     fechaInicio: Date;
     fechaFin?: Date;

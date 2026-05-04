@@ -4,7 +4,10 @@ import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { WorkoutService } from '../../core/services/workout.service';
-import { AiCoachService, WeeklyPlanRequest, UserProfile } from '../../core/services/ai-coach.service';
+import { TrainerAiService } from '../../core/services/ai/trainer-ai.service';
+import { WeeklyPlanRequest } from '../../models/ai-requests.model';
+import { UserProfile } from '../../models/user-profile.model';
+import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { RecoveryService } from '../../core/services/recovery.service';
 import { ToastService } from '../../core/services/toast.service';
 
@@ -218,8 +221,9 @@ import { ToastService } from '../../core/services/toast.service';
 export class WeeklyPlanComponent {
   // Services
   private workoutService = inject(WorkoutService);
-  public aiService = inject(AiCoachService);
+  public aiService = inject(TrainerAiService);
   private recoveryService = inject(RecoveryService);
+  private profileState = inject(UserProfileStateService);
   private router = inject(Router);
   private toastService = inject(ToastService);
 
@@ -248,7 +252,7 @@ export class WeeklyPlanComponent {
   // Modal State
   showConfirmModal = signal<boolean>(false);
   pendingAction = signal<'delete' | 'reset' | null>(null);
-  pendingWorkoutId = signal<number | null>(null);
+  pendingWorkoutId = signal<string | null>(null);
 
   // AI State
   isGeneratingDay = signal<boolean>(false);
@@ -257,11 +261,11 @@ export class WeeklyPlanComponent {
     this.router.navigate(['/dashboard']);
   }
 
-  goToWorkout(id: number) {
+  goToWorkout(id: string) {
      this.router.navigate(['/workouts', id]);
   }
 
-  deleteWorkout(event: Event, id: number) {
+  deleteWorkout(event: Event, id: string) {
      event.stopPropagation();
      this.pendingAction.set('delete');
      this.pendingWorkoutId.set(id);
@@ -308,14 +312,17 @@ export class WeeklyPlanComponent {
           fatigueRecord[key] = val.percentage;
       });
 
+      const userProfile = this.profileState.profile();
       const profile: UserProfile = {
-         weight: 75, // Default for now
-         height: 180,
-         fatigueLevels: fatigueRecord,
-         availableDays: ['Cualquiera'], 
-         equipment: ['Gym Completo'],
-         fitnessLevel: 'Intermedio',
-         goal: 'hipertrofia'
+         ...(userProfile || {
+           weight: 75,
+           height: 180,
+           availableDays: ['Cualquiera'], 
+           equipment: ['Gym Completo'],
+           fitnessLevel: 'Intermedio',
+           goal: 'volumen'
+         }),
+         fatigueLevels: fatigueRecord
       };
 
       const prompt = "Genera un solo día de entrenamiento para complementar mi rutina actual. Analiza mi fatiga para no sobrecargar músculos exhaustos. Que sea variado e interesante.";
@@ -357,17 +364,21 @@ export class WeeklyPlanComponent {
          fatigueRecord[key] = val.percentage;
      });
 
+     const userProfile = this.profileState.profile();
      const request: WeeklyPlanRequest = {
         userPrompt: this.userGoal,
         daysToGenerate: this.daysPerWeek,
         profile: {
-           weight: 75, // Mock for now
-           height: 180,
-           fatigueLevels: fatigueRecord,
-           availableDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'], // Assumption
-           equipment: ['Gym Completo'],
+           ...(userProfile || {
+             weight: 75,
+             height: 180,
+             availableDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
+             equipment: ['Gym Completo'],
+             fitnessLevel: this.selectedLevel,
+             goal: 'volumen'
+           }),
            fitnessLevel: this.selectedLevel,
-           goal: 'hipertrofia' // Default
+           fatigueLevels: fatigueRecord
         }
      };
 
