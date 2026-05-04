@@ -4,16 +4,7 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/ge
 import { environment } from '../../../environments/environment';
 import { WorkoutService } from './workout.service';
 import { MetricsService } from './metrics.service';
-
-export interface UserProfile {
-  weight: number;
-  height: number;
-  fatigueLevels: Record<string, number>; // 'pecho': 80 (80% fatigado)
-  availableDays: string[]; // ['Lunes', 'Miercoles', 'Viernes']
-  equipment: string[]; // ['Mancuernas', 'Barra', 'Polea']
-  goal?: 'hipertrofia' | 'fuerza' | 'resistencia' | 'perdida_peso';
-  fitnessLevel?: 'Principiante' | 'Intermedio' | 'Avanzado';
-}
+import { UserProfile } from '../../models/user-profile.model';
 
 export interface WeeklyPlanRequest {
   userPrompt: string;

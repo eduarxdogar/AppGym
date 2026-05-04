@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
-import { AiCoachService, UserProfile } from '../../core/services/ai-coach.service';
+import { AiCoachService } from '../../core/services/ai-coach.service';
+import { UserProfile } from '../../models/user-profile.model';
+import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { Workout } from '../../models/workout.model';
 import { WorkoutService } from '../../core/services/workout.service';
 import { RecoveryService, MuscleStatus } from '../../core/services/recovery.service';
@@ -23,6 +25,7 @@ export class GeneratorComponent {
   public aiService = inject(AiCoachService);
   private workoutService = inject(WorkoutService);
   private recoveryService = inject(RecoveryService);
+  private profileState = inject(UserProfileStateService);
   private router = inject(Router);
 
   // State
@@ -56,6 +59,12 @@ export class GeneratorComponent {
   async generate() {
     if (!this.userPrompt().trim()) return;
 
+    const userProfile = this.profileState.profile();
+    if (!userProfile) {
+        this.errorMessage.set('Configura tu perfil primero.');
+        return;
+    }
+
     this.isLoading.set(true);
     this.generatedWorkout.set(null);
     this.errorMessage.set(null);
@@ -68,11 +77,8 @@ export class GeneratorComponent {
 
     // Create profile with REAL data
     const profile: UserProfile = {
-        weight: 75, // TODO: Get from UserService
-        height: 180, // TODO: Get from UserService
-        fatigueLevels: fatigueRecord,
-        availableDays: ['Hoy'],
-        equipment: ['Gym Completo']
+        ...userProfile,
+        fatigueLevels: fatigueRecord
     };
 
     // Call AI Service

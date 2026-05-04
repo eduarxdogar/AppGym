@@ -7,7 +7,7 @@ import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
-import { AiCoachService, UserProfile } from '../../core/services/ai-coach.service';
+import { AiCoachService } from '../../core/services/ai-coach.service';
 import { RecoveryMonitorComponent } from '../../features/dashboard/components/recovery-monitor/recovery-monitor.component';
 
 @Component({
