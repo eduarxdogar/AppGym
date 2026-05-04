@@ -344,9 +344,9 @@ export class WeeklyPlanComponent {
            await this.workoutService.addWorkout(newWorkout);
            this.toastService.showSuccess('✨ Nuevo día generado y agregado al plan.');
 
-      } catch (err) {
+      } catch (err: any) {
            console.error(err);
-           this.toastService.showError('Error al contactar a la IA. Revisa tu conexión.');
+           this.toastService.showError(err.message || 'Error al contactar a la IA. Revisa tu conexión.');
       } finally {
            this.isGeneratingDay.set(false);
       }
@@ -389,10 +389,10 @@ export class WeeklyPlanComponent {
            await this.workoutService.addWorkout(plan);
         }
         this.toastService.showSuccess('Plan semanal generado satisfactoriamente.');
-     } catch (err) {
+     } catch (err: any) {
         console.error(err);
-        this.errorMessage.set('Error generando el plan. Intenta nuevamente.');
-        this.toastService.showError('Ocurrió un error generando el plan.');
+        this.errorMessage.set(err.message || 'Error generando el plan. Intenta nuevamente.');
+        this.toastService.showError(err.message || 'Ocurrió un error generando el plan.');
      } finally {
         this.isLoading.set(false);
      }

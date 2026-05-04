@@ -59,9 +59,14 @@ IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta 
 
 NOTA: El día de descanso debe tener ~15-20% menos calorías, priorizando proteína y grasas saludables sobre carbohidratos.`;
 
-    const resultText = await this.baseAi.generateContent(prompt, true);
-    const text = this.baseAi.cleanJson(resultText);
-    return JSON.parse(text) as WeeklyDietPlan;
+    try {
+      const resultText = await this.baseAi.generateContent(prompt, true);
+      const text = this.baseAi.cleanJson(resultText);
+      return JSON.parse(text) as WeeklyDietPlan;
+    } catch (error: any) {
+      console.error('Error generating diet plan:', error);
+      throw error;
+    }
   }
 
   async scanNutritionLabel(base64: string, mimeType: string): Promise<{ calories: number; protein: number; carbs: number; fats: number }> {
@@ -71,8 +76,13 @@ NOTA: El día de descanso debe tener ~15-20% menos calorías, priorizando prote�
 Devuelve SOLO un JSON con estos campos exactos (usa solo números, sin unidades):
 { "calories": number, "protein": number, "carbs": number, "fats": number }`;
 
-    const textResult = await this.baseAi.generateContent(prompt, true, base64, mimeType);
-    const text = this.baseAi.cleanJson(textResult);
-    return JSON.parse(text);
+    try {
+      const textResult = await this.baseAi.generateContent(prompt, true, base64, mimeType);
+      const text = this.baseAi.cleanJson(textResult);
+      return JSON.parse(text);
+    } catch (error: any) {
+      console.error('Error scanning label:', error);
+      throw error;
+    }
   }
 }

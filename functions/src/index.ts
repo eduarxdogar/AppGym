@@ -11,7 +11,7 @@ interface GeminiPayload {
   history?: any[];
 }
 
-export const callGemini = onCall(async (request) => {
+export const callGemini = onCall({ cors: true, region: 'us-central1', timeoutSeconds: 300, memory: '1GiB' }, async (request) => {
   // 1. Validate Authentication
   if (!request.auth) {
     throw new HttpsError(
@@ -72,7 +72,7 @@ export const callGemini = onCall(async (request) => {
     
     return { text: result.response.text() };
   } catch (error: any) {
-    logger.error("Error al llamar a Gemini:", error);
-    throw new HttpsError("internal", error.message || "Error interno del servidor al contactar IA.");
+    logger.error("Gemini Error:", error);
+    throw new HttpsError("internal", error.message || "Error desconocido en Gemini");
   }
 });

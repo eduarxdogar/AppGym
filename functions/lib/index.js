@@ -4,7 +4,7 @@ exports.callGemini = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const generative_ai_1 = require("@google/generative-ai");
-exports.callGemini = (0, https_1.onCall)(async (request) => {
+exports.callGemini = (0, https_1.onCall)({ cors: true, region: 'us-central1', timeoutSeconds: 300, memory: '1GiB' }, async (request) => {
     // 1. Validate Authentication
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "El usuario debe estar autenticado para usar la IA.");
@@ -53,8 +53,8 @@ exports.callGemini = (0, https_1.onCall)(async (request) => {
         return { text: result.response.text() };
     }
     catch (error) {
-        logger.error("Error al llamar a Gemini:", error);
-        throw new https_1.HttpsError("internal", error.message || "Error interno del servidor al contactar IA.");
+        logger.error("Gemini Error:", error);
+        throw new https_1.HttpsError("internal", error.message || "Error desconocido en Gemini");
     }
 });
 //# sourceMappingURL=index.js.map

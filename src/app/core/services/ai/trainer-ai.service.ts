@@ -48,9 +48,9 @@ export class TrainerAiService {
             fecha: new Date().toISOString(),
             ejercicios: workoutData.ejercicios || []
         };
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error generating workout:', error);
-        return this.getFallbackWorkout(userProfile);
+        throw error;
     }
   }
 
@@ -87,9 +87,9 @@ export class TrainerAiService {
          };
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating weekly plan:', error);
-      return [];
+      throw error;
     }
   }
 

@@ -327,8 +327,8 @@ export class NutritionComponent implements OnInit {
       this.mealOverrides.set({});
       this.showForm.set(false);
       await this.nutritionService.savePlan(result);
-    } catch {
-      this.error.set('No se pudo generar el plan. Verifica tu API Key de Gemini.');
+    } catch (err: any) {
+      this.error.set(err.message || 'No se pudo generar el plan.');
     } finally {
       this.isLoading.set(false);
     }
@@ -348,8 +348,8 @@ export class NutritionComponent implements OnInit {
       try {
         const scanned = await this.aiCoach.scanNutritionLabel(base64, mimeType);
         this.mealOverrides.update(overrides => ({ ...overrides, [mealIndex]: scanned }));
-      } catch {
-        this.error.set('No se pudo leer la etiqueta. Intenta con una foto más clara.');
+      } catch (err: any) {
+        this.error.set(err.message || 'No se pudo leer la etiqueta. Intenta con una foto más clara.');
       } finally {
         this.scanningMealIndex.set(null);
       }
