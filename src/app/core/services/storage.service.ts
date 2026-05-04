@@ -1,4 +1,4 @@
-import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, where } from '@angular/fire/firestore';
 import { Observable, of } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
@@ -90,26 +90,15 @@ export class StorageService {
     );
   }
 
-  async saveHistory(session: any): Promise<void> {
-    const user = this.authService.currentUser();
-    if (!user) throw new Error('User must be authenticated');
-
-    try {
-      const historyCol = collection(this.firestore, 'workout_history');
-      // If session doesn't have ID, create one
-      const docId = session.id ? String(session.id) : doc(historyCol).id;
-      const docRef = doc(historyCol, docId);
-      
-      await setDoc(docRef, { ...session, id: docId, userId: user.uid }, { merge: true });
-    } catch (error) {
-      console.error('Error saving history:', error);
-      throw error;
-    }
-  }
-
-  // --- Legacy Methods (Empty) ---
+  /** @deprecated */
   getItem<T>(key: string): T | null { return null; }
-  setItem<T>(key: string, value: T): void {}
-  removeItem(key: string): void {}
-  clear(): void {}
+
+  /** @deprecated */
+  setItem<T>(key: string, value: T): void { }
+
+  /** @deprecated */
+  removeItem(key: string): void { }
+
+  /** @deprecated */
+  clear(): void { }
 }
