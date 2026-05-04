@@ -1,5 +1,7 @@
 import { Injectable, inject, Signal, computed } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { StorageService } from './storage.service';
 import { Workout } from '../../models/workout.model';
 
@@ -25,7 +27,15 @@ export class RecoveryService {
   ];
 
   // Signal reactivo del historial de entrenamientos (Realizadas)
-  private history = toSignal(this.storageService.getHistory(), { initialValue: [] });
+  private history = toSignal(
+      this.storageService.getHistory().pipe(
+          catchError(err => {
+              console.warn('Recovery service caught history error:', err);
+              return of([]);
+          })
+      ), 
+      { initialValue: [] }
+  );
 
   /**
    * Signal computado que retorna el estado de recuperación de cada músculo

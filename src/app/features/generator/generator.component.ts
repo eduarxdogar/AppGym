@@ -20,7 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
 export class GeneratorComponent {
   
   // Dependencies
-  private aiService = inject(AiCoachService);
+  public aiService = inject(AiCoachService);
   private workoutService = inject(WorkoutService);
   private recoveryService = inject(RecoveryService);
   private router = inject(Router);
@@ -29,6 +29,7 @@ export class GeneratorComponent {
   userPrompt = signal<string>('');
   isLoading = signal<boolean>(false);
   generatedWorkout = signal<Workout | null>(null);
+  errorMessage = signal<string | null>(null);
 
   // Real Data Signals
   recoveryStatus = this.recoveryService.muscleRecoveryStatus; // Signal<Map<string, MuscleStatus>>
@@ -57,6 +58,7 @@ export class GeneratorComponent {
 
     this.isLoading.set(true);
     this.generatedWorkout.set(null);
+    this.errorMessage.set(null);
 
     // Convert Map to plain object record for AI
     const fatigueRecord: Record<string, number> = {};
@@ -79,7 +81,7 @@ export class GeneratorComponent {
         this.generatedWorkout.set(workout);
     } catch (err) {
         console.error(err);
-        alert('Ocurrió un error generando la rutina. Por favor intenta de nuevo.');
+        this.errorMessage.set('Ocurrió un error generando la rutina. Por favor intenta de nuevo.');
     } finally {
         this.isLoading.set(false);
     }

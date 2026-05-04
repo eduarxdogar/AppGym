@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Injectable, signal, inject } from '@angular/core';
 import { Workout } from '../../models/workout.model';
-import { Ejercicio } from '../../models/ejercicio.model';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { environment } from '../../../environments/environment';
+import { WorkoutService } from './workout.service';
+import { MetricsService } from './metrics.service';
 
 export interface UserProfile {
   weight: number;
@@ -21,67 +21,110 @@ export interface WeeklyPlanRequest {
   daysToGenerate: number;
 }
 
+export interface DayDietPlan {
+  totalCalories: number;
+  macros: { protein: string; carbs: string; fats: string };
+  meals: Array<{
+    name: string;
+    time: string;
+    foods: Array<{ item: string; amount: string; calories: number }>;
+  }>;
+}
+
+/** Plan de 2 días base: entrenamiento y descanso */
+export interface WeeklyDietPlan {
+  trainingDay: DayDietPlan;
+  restDay: DayDietPlan;
+}
+
+/** Alias de compatibilidad */
+export type DietPlan = WeeklyDietPlan;
+
+export interface BoxingRoutine {
+  title: string;
+  totalDuration: number;
+  warmup: string[];
+  rounds: Array<{
+    roundNumber: number;
+    duration: string;
+    instructions: string;
+    focus: 'Cardio' | 'Technique' | 'Power';
+  }>;
+  cooldown: string[];
+}
+
 const SYSTEM_PROMPT = `
-Eres un entrenador olímpico de élite, experto en biomecánica, periodización y programación de fuerza (PhD).
-Tu objetivo es generar la rutina de entrenamiento PERFECTA para el usuario, basándote en su perfil, fatiga muscular reciente y equipamiento disponible.
+Eres un ENTRENADOR PERSONAL DE ÉLITE y EXPERTO EN BIOMECÁNICA, HIPERTROFIA Y FITNESS CIENTÍFICO.
+Tu objetivo es generar la rutina de entrenamiento PERFECTA y DEFINITIVA para el usuario, basándote estrictamente en la evidencia científica, su perfil biométrico, fatiga muscular reciente y equipamiento disponible.
 
-REGLAS DE NIVEL DE FIITNESS:
-1. Principiante: Prioriza máquinas, técnica básica, bajo volumen (2-3 series por ejercicio), ejercicios full-body o torso/pierna, repeticiones moderadas-altas.
-2. Intermedio: Introduce pesos libres compuestos, RPE/RIR, divisiones (Push/Pull/Legs o Upper/Lower), volumen moderado (3-4 series), sobrecarga progresiva clara.
-3. Avanzado: Técnicas de intensidad (Drop sets, Rest-pause, Myo-reps), especialización, alto volumen, periodización ondulante, gestión de fatiga precisa.
+TU TONO DEBE SER: Altamente motivador, directo, estructurado y profesional (estilo "coach agresivo pero científico"). No des excusas, da resultados.
 
-Reglas Generales:
-1. Prioriza la seguridad y la técnica siempre.
-2. Si un músculo está fatigado (>70%), NO lo entrenes directamente, enfócate en antagonistas o descanso activo.
-3. Para planes semanales, asegura una distribución lógica de volumen y recuperación.
+REGLAS DE NIVEL DE FITNESS Y PROGRAMACIÓN:
+1. Principiante: Prioriza aprendizaje motor, máquinas estabilizadas, técnica básica, bajo volumen (2-3 series por ejercicio), rutinas full-body o torso/pierna, repeticiones moderadas-altas (10-15) dejando siempre un RIR 2-3 en el tanque.
+2. Intermedio: Introduce pesos libres compuestos pesados, gestión de RPE/RIR estricta, divisiones (Push/Pull/Legs o Upper/Lower), volumen moderado (3-4 series), sobrecarga progresiva programada.
+3. Avanzado: Implementa técnicas de alta intensidad (Drop sets, Rest-pause, Myo-reps), especialización de puntos débiles, alto volumen, periodización ondulante, y gestión milimétrica de la fatiga.
+
+REGLAS DE ORO:
+1. BIOMECÁNICA PRIMERO: Prioriza la seguridad y la maximización del torque en el músculo objetivo por encima del peso.
+2. GESTIÓN DE FATIGA: Si un músculo está fatigado (>70%), ESTÁ ESTRICTAMENTE PROHIBIDO entrenarlo directamente de forma pesada; enfócate en sus antagonistas, estabilizadores o prescribe descanso activo.
+3. COHESIÓN: Para planes semanales, asegura una distribución perfecta del volumen total para evitar sobreentrenamiento y favorecer la supercompensación.
 `;
 
 @Injectable({
   providedIn: 'root'
 })
 export class AiCoachService {
-  private genAI: GoogleGenerativeAI;
-  private model: any;
+  private genAI: GoogleGenerativeAI | null = null;
+  public activeModel = signal<'gemini-2.5-flash' | 'gemini-2.5-pro'>('gemini-2.5-flash');
+  private isConfigured = false;
+  
+  private workoutService = inject(WorkoutService);
+  private metricsService = inject(MetricsService);
+  private chatSession: any = null;
 
   constructor() { 
     const key = environment.geminiApiKey;
-    console.log('AI Coach initialized. API Key ends with:', key ? key.slice(-4) : 'NO_KEY');
     
-    this.genAI = new GoogleGenerativeAI(key);
-    this.model = this.genAI.getGenerativeModel({ 
-        model: "gemini-flash-latest",
+    if (!key || key.includes('PEGAR_AQUI') || key === '') {
+        console.warn("⚠️ Falta configurar la API Key de Gemini en environment.ts. AI Coach desactivado.");
+        this.isConfigured = false;
+        return;
+    }
+
+    console.log('AI Coach initialized. API Key ends with:', environment.geminiApiKey.slice(-4));
+    this.isConfigured = true;
+    this.genAI = new GoogleGenerativeAI(environment.geminiApiKey);
+  }
+
+  private getModel(isJson: boolean = true) {
+     if (!this.genAI) return null;
+     return this.genAI.getGenerativeModel({ 
+        model: this.activeModel(),
         safetySettings: [
-            {
-                category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-                threshold: HarmBlockThreshold.BLOCK_NONE,
-            },
-            {
-                category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                threshold: HarmBlockThreshold.BLOCK_NONE,
-            },
-            {
-                category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                threshold: HarmBlockThreshold.BLOCK_NONE,
-            },
-            {
-                category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                threshold: HarmBlockThreshold.BLOCK_NONE,
-            },
+            { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+            { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+            { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+            { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
         ],
-        generationConfig: { responseMimeType: "application/json" }
-    });
+        generationConfig: isJson ? { responseMimeType: "application/json" } : undefined
+     });
   }
 
   /**
    * Genera una rutina personalizada usando Gemini API.
    */
   async generateWorkout(userPrompt: string, userProfile: UserProfile): Promise<Workout> {
+    const activeModelInstance = this.getModel(true);
+    if (!this.isConfigured || !activeModelInstance) {
+        return this.getFallbackWorkout(userProfile);
+    }
+
     console.log('AI Coach: Generating single workout...', { userPrompt });
 
     const prompt = this.buildPrompt(userPrompt, userProfile, 'single');
     
     try {
-        const result = await this.model.generateContent(prompt);
+        const result = await activeModelInstance.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
         
@@ -96,7 +139,8 @@ export class AiCoachService {
         };
     } catch (error) {
         console.error('Error generating workout:', error);
-        throw error;
+        // Fallback en lugar de romperse para que UI pueda manejarlo suavemente
+        return this.getFallbackWorkout(userProfile);
     }
   }
 
@@ -104,12 +148,17 @@ export class AiCoachService {
    * Genera un plan semanal completo.
    */
   async generateWeeklyPlan(request: WeeklyPlanRequest): Promise<Workout[]> {
+    const activeModelInstance = this.getModel(true);
+    if (!this.isConfigured || !activeModelInstance) {
+        return [];
+    }
+
     console.log('AI Coach: Generating weekly plan...', request);
 
     const prompt = this.buildPrompt(request.userPrompt, request.profile, 'weekly', request.daysToGenerate);
 
     try {
-      const result = await this.model.generateContent(prompt);
+      const result = await activeModelInstance.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
       
@@ -138,9 +187,218 @@ export class AiCoachService {
 
     } catch (error) {
       console.error('Error generating weekly plan:', error);
-      throw error;
+      // Retornar fallback vacio o un error manejado
+      return [];
     }
   }
+
+  /**
+   * Envía un mensaje de texto plano o con imagen a la IA (Chat).
+   */
+  async chatWithCoach(message: string, imageBase64?: string, mimeType?: string): Promise<string> {
+    const activeModelInstance = this.getModel(false);
+    if (!this.isConfigured || !activeModelInstance) {
+        return "El AI Coach no está configurado. Por favor provee la API Key.";
+    }
+
+    try {
+        if (!this.chatSession) {
+            const metrics = this.metricsService.weeklyMetrics();
+            const contextText = `Eres 'Tríada Coach', un entrenador personal de élite. Tu tono debe ser conciso, directo, motivador (estilo 'bro de gimnasio inteligente') y coloquial. NUNCA respondas con ensayos largos o viñetas excesivas. Usa respuestas cortas y al grano.
+Tu base de conocimiento es EXCLUSIVAMENTE el JSON de rutinas que te proporciono. NO inventes fechas, NO asumas entrenamientos que no están en el JSON.
+Si el usuario pregunta por 'tonelaje', debes sumar (Series x Repeticiones x Peso) de los ejercicios del día indicado, pero entrégale solo el número final o un resumen muy breve. Si pregunta por fatiga o qué hacer después, da 1 o 2 recomendaciones rápidas (ej. 'Come carbohidratos simples ahora mismo y estira los isquios').
+No uses títulos grandes (##) a menos que sea estrictamente necesario. Usa negritas para resaltar números importantes. Compórtate como en un chat de WhatsApp con un atleta avanzado.
+Esta es tu Verdad Absoluta (JSON de rutinas): ${JSON.stringify(this.workoutService.workouts())}
+Métricas calculadas de los últimos 7 días: Sesiones=${metrics.workoutsCount}, Tonelaje=${metrics.totalVolume}kg, Series=${metrics.totalSets}, Calorías estimadas=${metrics.estimatedCalories}kcal. Usa estos datos cuando el usuario pregunte por su progreso semanal. NO los recalcules manualmente, ya están calculados.`;
+
+            this.chatSession = activeModelInstance.startChat({
+                history: [
+                    {
+                        role: "user",
+                        parts: [{ text: contextText }],
+                    },
+                    {
+                        role: "model",
+                        parts: [{ text: "¡Entendido! Soy Tríada Coach. Vamos a darle, dime qué necesitas de tu plan." }],
+                    },
+                ]
+            });
+        }
+        
+        let result;
+        if (imageBase64 && mimeType) {
+            // Multimodal prompt
+            const parts = [
+                { text: message || "¿Qué ves en esta imagen?" },
+                { inlineData: { data: imageBase64, mimeType } }
+            ];
+            result = await this.chatSession.sendMessage(parts);
+        } else {
+            result = await this.chatSession.sendMessage(message);
+        }
+
+        const response = await result.response;
+        return response.text();
+    } catch (err) {
+        console.error('Error al chatear con Coach:', err);
+        return "Mi red neuronal falló, repite eso soldad@.";
+    }
+  }
+
+  /**
+   * Genera un plan nutricional diário usando Gemini.
+   */
+  async generateDietPlan(
+    profileData: { goal: string; weight: number; mealsPerDay: number; fastingProtocol: string; firstMealTime: string },
+    targetCalories: number
+  ): Promise<WeeklyDietPlan> {
+    const model = this.getModel(true);
+    if (!this.isConfigured || !model) {
+      throw new Error('AI Coach no configurado');
+    }
+
+    const fastingNote = profileData.fastingProtocol !== 'Sin Ayuno'
+      ? `El usuario practica Ayuno Intermitente ${profileData.fastingProtocol}. Su primera comida es a las ${profileData.firstMealTime}. Ajusta la distribución de las comidas para que cuadren EXCLUSIVAMENTE dentro de su ventana de alimentación, consolidando las calorías si es necesario. NO incluyas comidas fuera de esa ventana.`
+      : 'El usuario NO practica ayuno intermitente. Distribuye las comidas a lo largo del día de forma balanceada.';
+
+    const prompt = `Eres un Nutricionista Deportivo de élite especializado en cronobiología y rendimiento deportivo. Genera un plan de alimentación para ${profileData.goal}.
+
+Datos del usuario:
+- Objetivo: ${profileData.goal}
+- Peso corporal: ${profileData.weight} kg
+- Calorías objetivo (día de entrenamiento): ${targetCalories} kcal
+- Número de comidas dentro de la ventana: ${profileData.mealsPerDay}
+- Protocolo de ayuno: ${profileData.fastingProtocol}
+
+INSTRUCCIONES DE AYUNO: ${fastingNote}
+
+IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta (2 planes base):
+{
+  "trainingDay": {
+    "totalCalories": number,
+    "macros": { "protein": string, "carbs": string, "fats": string },
+    "meals": [
+      {
+        "name": string,
+        "time": string,
+        "foods": [ { "item": string, "amount": string, "calories": number } ]
+      }
+    ]
+  },
+  "restDay": {
+    "totalCalories": number,
+    "macros": { "protein": string, "carbs": string, "fats": string },
+    "meals": [
+      {
+        "name": string,
+        "time": string,
+        "foods": [ { "item": string, "amount": string, "calories": number } ]
+      }
+    ]
+  }
+}
+
+NOTA: El día de descanso debe tener ~15-20% menos calorías, priorizando proteína y grasas saludables sobre carbohidratos.`;
+
+    const result = await model.generateContent(prompt);
+    const text = this.cleanJson(result.response.text());
+    return JSON.parse(text) as WeeklyDietPlan;
+  }
+
+  /**
+   * Genera una rutina de boxeo y cardio usando Gemini.
+   */
+  async generateBoxingRoutine(level: string, durationMinutes: number): Promise<BoxingRoutine> {
+    const model = this.getModel(true);
+    if (!this.isConfigured || !model) {
+      throw new Error('AI Coach no configurado');
+    }
+
+    const prompt = `Eres un Entrenador de Boxeo y Acondicionamiento Físico de élite. Genera una rutina de shadow boxing y trabajo de pies.
+
+Sesión solicitada:
+- Nivel del atleta: ${level}
+- Duración total deseada: ${durationMinutes} minutos
+
+IMPORTANTE: Responde EXCLUSIVAMENTE con un JSON válido con esta estructura exacta:
+{
+  "title": string,
+  "totalDuration": number,
+  "warmup": [ string ],
+  "rounds": [
+    {
+      "roundNumber": number,
+      "duration": string,
+      "instructions": string,
+      "focus": "Cardio" | "Technique" | "Power"
+    }
+  ],
+  "cooldown": [ string ]
+}`;
+
+    const result = await model.generateContent(prompt);
+    const text = this.cleanJson(result.response.text());
+    return JSON.parse(text) as BoxingRoutine;
+  }
+
+  /**
+   * Escanea una etiqueta nutricional desde una imagen y extrae los macros.
+   */
+  async scanNutritionLabel(base64: string, mimeType: string): Promise<{ calories: number; protein: number; carbs: number; fats: number }> {
+    const model = this.getModel(true);
+    if (!this.isConfigured || !model) throw new Error('AI Coach no configurado');
+
+    const prompt = `Eres un experto en nutrición. Analiza la imagen de esta etiqueta nutricional y extrae los valores por porción (por 100g si no indica porción).
+Devuelve SOLO un JSON con estos campos exactos (usa solo números, sin unidades):
+{ "calories": number, "protein": number, "carbs": number, "fats": number }`;
+
+    const result = await model.generateContent([
+      { text: prompt },
+      { inlineData: { data: base64, mimeType } }
+    ]);
+    const text = this.cleanJson(result.response.text());
+    return JSON.parse(text);
+  }
+
+  /**
+   * Analiza un reporte InBody para extraer composición corporal.
+   */
+  async scanInBodyReport(base64: string, mimeType: string): Promise<{ muscleKg?: number; fatPercent?: number; bmr?: number }> {
+    const model = this.getModel(true);
+    if (!this.isConfigured || !model) throw new Error('AI Coach no configurado');
+
+    const prompt = `Analiza este reporte InBody o de composición corporal. Extrae los valores principales.
+Devuelve SOLO un JSON con estos campos (usa null si no encuentras el valor):
+{ "muscleKg": number | null, "fatPercent": number | null, "bmr": number | null }`;
+
+    const result = await model.generateContent([
+      { text: prompt },
+      { inlineData: { data: base64, mimeType } }
+    ]);
+    const text = this.cleanJson(result.response.text());
+    return JSON.parse(text);
+  }
+
+   private getFallbackWorkout(userProfile: UserProfile): Workout {
+       return {
+           id: Date.now(),
+           nombre: 'AI Coach no configurado',
+           nivelDificultad: (userProfile.fitnessLevel?.toLowerCase() as "principiante" | "intermedio" | "avanzado") || 'intermedio',
+           fecha: new Date().toISOString(),
+           musculos: ['General'],
+           ejercicios: [{
+              id: 1,
+              nombre: 'Descanso activo',
+              grupoMuscular: 'todo el cuerpo',
+              tipo: 'aislado',
+              series: 1,
+              repeticiones: 1,
+              descanso: '0s',
+              pesokg: 0,
+              notas: 'Falta configurar la llave de la IA. Ve a las variables de entorno para insertarla.'
+           }]
+        };
+   }
 
   private cleanJson(text: string): string {
     return text.replace(/^```json\s*/, '').replace(/\s*```$/, '');

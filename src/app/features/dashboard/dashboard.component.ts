@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { WorkoutService } from '../../core/services/workout.service';
 import { RecoveryService } from '../../core/services/recovery.service';
 import { AuthService } from '../../core/services/auth.service';
+import { MetricsService } from '../../core/services/metrics.service';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 
 @Component({
@@ -27,11 +28,13 @@ export class DashboardComponent {
   private workoutService = inject(WorkoutService);
   private recoveryService = inject(RecoveryService);
   private router = inject(Router);
-  private authService = inject(AuthService); // Inject Auth
+  private authService = inject(AuthService);
+  private metricsService = inject(MetricsService);
 
   // Signals
   workouts = this.workoutService.workouts;
   muscleStatus = this.recoveryService.getMuscleRecoveryStatus();
+  metrics = this.metricsService.weeklyMetrics;
 
   // Expose User for Template
   currentUser = this.authService.currentUser;
@@ -42,8 +45,15 @@ export class DashboardComponent {
     if (all.length === 0) return null;
     // Asumimos que la última creada es la "próxima" o la más relevante por ahora
     // En el futuro, esto podría ser "la rutina de hoy" basada en un calendario.
-    return all[0]; 
+    return all[0];
   });
+
+  // Mock data for target muscles
+  mockTargetMuscles = [
+    { name: 'Cuádriceps', percentage: 65 },
+    { name: 'Pecho', percentage: 90 },
+    { name: 'Tríceps', percentage: 45 }
+  ];
 
   // Computed: Promedio de recuperación global (0-100)
   globalRecoveryScore = computed(() => {

@@ -234,9 +234,63 @@
 
             </div>
 
+            <!-- Botón Añadir Ejercicio Manual -->
+            <button (click)="openAddExerciseModal()" class="w-full mt-6 py-4 border-2 border-dashed border-zinc-700 hover:border-[#CCFF00] hover:bg-zinc-800/50 rounded-2xl flex items-center justify-center gap-3 text-zinc-400 hover:text-[#CCFF00] transition-all font-bold text-sm tracking-widest uppercase outline-none focus:ring-2 focus:ring-[#CCFF00]">
+                <mat-icon>add_circle_outline</mat-icon> Añadir Ejercicio Manual
+            </button>
+
         </div>
 
     </ng-container>
+
+    <!-- Modal: Confirmation (Exit/Save) -->
+    <div *ngIf="showExitModal()" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div class="bg-[#151921] border border-zinc-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+           <div class="flex items-center gap-3 text-red-500 mb-4">
+              <div class="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                 <mat-icon>warning</mat-icon>
+              </div>
+              <h3 class="text-lg font-bold text-white tracking-wide">
+                 {{ pendingExitAction() === 'save' ? 'Finalizar Sesión' : 'Salir del Entrenamiento' }}
+              </h3>
+           </div>
+           
+           <p class="text-sm text-zinc-400 mb-8">
+              {{ pendingExitAction() === 'save' ? '¿Estás seguro que deseas guardar este entrenamiento y finalizar la sesión activa?' : '¿Seguro que deseas salir sin guardar? Perderás el progreso de esta sesión.' }}
+           </p>
+
+           <div class="flex gap-3 justify-end mt-4">
+              <button (click)="cancelExitModal()" class="px-5 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 font-bold tracking-wider text-xs hover:bg-zinc-800 transition">
+                 CANCELAR
+              </button>
+              <button (click)="confirmExitModal()" class="px-5 py-2.5 rounded-xl bg-red-500/20 text-red-500 border border-red-500/30 font-bold tracking-wider text-xs hover:bg-red-500 hover:text-white transition shadow-[0_0_15px_rgba(239,68,68,0.2)] hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]">
+                 CONFIRMAR
+              </button>
+           </div>
+        </div>
+    </div>
+
+    <!-- Modal: Añadir Ejercicio -->
+    <div *ngIf="showAddExerciseModal()" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div class="bg-[#151921] border border-[#CCFF00]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+           <h3 class="text-lg font-bold text-white tracking-wide mb-4">
+              Añadir Ejercicio
+           </h3>
+           
+           <input type="text" [(ngModel)]="newExerciseName" 
+                  class="w-full bg-[#0B0E14] border border-zinc-700 rounded-xl p-3 text-sm text-white focus:border-[#CCFF00] mb-6 focus:ring-1 focus:ring-[#CCFF00] transition outline-none"
+                  placeholder="Ej: Press de Banca Inclinado">
+
+           <div class="flex gap-3 justify-end mt-4">
+              <button (click)="closeAddExerciseModal()" class="px-5 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 font-bold tracking-wider text-xs hover:bg-zinc-800 transition">
+                 CANCELAR
+              </button>
+              <button (click)="saveNewExercise()" class="px-5 py-2.5 rounded-xl bg-[#CCFF00] text-black font-bold tracking-wider text-xs hover:bg-[#bce600] transition flex items-center gap-2">
+                 <mat-icon class="text-sm">add</mat-icon> AÑADIR
+              </button>
+           </div>
+        </div>
+    </div>
 
   </div>
 </div>

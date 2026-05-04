@@ -38,14 +38,32 @@
             <span class="flex items-center gap-1 text-[#CCFF00]"><mat-icon class="text-sm h-4 w-4">bar_chart</mat-icon> {{ nextWorkout()?.nivelDificultad | titlecase }}</span>
           </div>
 
-          <!-- Thumbnails (Placeholders) -->
-          <div class="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide">
-            <div class="h-12 w-12 rounded bg-zinc-800 flex-shrink-0 border border-zinc-700 hover:border-[#CCFF00] transition" *ngFor="let i of [1,2,3,4]"></div>
+          <!-- Músculos a entrenar -->
+          <div class="mb-6">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Músculos a entrenar</h3>
+            <div class="flex gap-4 overflow-x-auto snap-x scrollbar-hide pb-2">
+               <!-- Card -->
+               <div *ngFor="let m of mockTargetMuscles" class="bg-[#1A1E26] rounded-xl p-4 flex-shrink-0 flex items-center gap-4 snap-start border border-zinc-800">
+                  <div class="relative h-12 w-12 flex-shrink-0">
+                     <svg class="h-full w-full rotate-[-90deg]" viewBox="0 0 36 36">
+                        <circle cx="18" cy="18" r="15.9155" fill="none" class="stroke-zinc-800" stroke-width="4"></circle>
+                        <circle cx="18" cy="18" r="15.9155" fill="none" class="stroke-[#CCFF00]" stroke-width="4" [attr.stroke-dasharray]="m.percentage + ', 100'" stroke-linecap="round"></circle>
+                     </svg>
+                     <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
+                        {{ m.percentage }}%
+                     </div>
+                  </div>
+                  <div>
+                     <p class="text-sm font-bold text-white">{{ m.name }}</p>
+                     <p class="text-[10px] text-slate-500 uppercase tracking-wide">Foco</p>
+                  </div>
+               </div>
+            </div>
           </div>
 
           <!-- Actions -->
           <div class="flex items-center gap-4">
-            <button class="h-12 w-12 rounded-full bg-[#CCFF00] text-black flex items-center justify-center shadow-[0_0_15px_rgba(204,255,0,0.4)] hover:scale-110 transition-transform">
+            <button [routerLink]="['/workouts', nextWorkout()?.id]" class="h-12 w-12 rounded-full bg-[#CCFF00] text-black flex items-center justify-center shadow-[0_0_15px_rgba(204,255,0,0.4)] hover:scale-110 transition-transform">
               <mat-icon>play_arrow</mat-icon>
             </button>
             <button class="h-10 w-10 rounded-full bg-zinc-800 text-slate-300 flex items-center justify-center border border-zinc-700 hover:bg-zinc-700 transition"
@@ -53,7 +71,7 @@
               <mat-icon class="scale-75">refresh</mat-icon>
             </button>
             <div class="flex-grow"></div>
-            <button class="text-xs text-slate-500 hover:text-white transition flex items-center gap-1">
+            <button routerLink="/weekly-plan" class="text-xs text-slate-500 hover:text-white transition flex items-center gap-1">
                DETAILS <mat-icon class="text-sm">arrow_forward</mat-icon>
             </button>
           </div>
@@ -83,8 +101,8 @@
             <mat-icon class="text-zinc-600 text-sm group-hover:text-white transition">arrow_forward</mat-icon>
          </div>
          <div>
-            <!-- Using a static count or dynamic if available, keeping strictly to the plan request "Tu Plan Semanal" feel -->
-            <span class="text-2xl font-bold text-white">3</span> 
+            <!-- Using dynamic count from workout service signal -->
+            <span class="text-2xl font-bold text-white">{{ workouts().length || 0 }}</span> 
             <p class="text-xs text-slate-500 font-medium mt-1 uppercase tracking-wide">Tu Plan Semanal</p>
          </div>
       </div>
@@ -139,13 +157,13 @@
           </button>
 
           <!-- Cardio -->
-          <button class="flex flex-col items-center justify-center gap-2 bg-[#151921] border border-zinc-800 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-400/5 transition group">
+          <button [routerLink]="['/cardio']" class="flex flex-col items-center justify-center gap-2 bg-[#151921] border border-zinc-800 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-400/5 transition group">
              <mat-icon class="text-blue-400 group-hover:scale-110 transition">directions_run</mat-icon>
              <span class="text-[10px] font-bold text-slate-300">CARDIO</span>
           </button>
 
-          <!-- Nutrition (Placeholder) -->
-          <button class="flex flex-col items-center justify-center gap-2 bg-[#151921] border border-zinc-800 rounded-xl p-4 hover:border-pink-500 hover:bg-pink-500/5 transition group">
+          <!-- Nutrition -->
+          <button [routerLink]="['/nutrition']" class="flex flex-col items-center justify-center gap-2 bg-[#151921] border border-zinc-800 rounded-xl p-4 hover:border-pink-500 hover:bg-pink-500/5 transition group">
              <mat-icon class="text-pink-500 group-hover:scale-110 transition">restaurant</mat-icon>
              <span class="text-[10px] font-bold text-slate-300">NUTRITION</span>
           </button>
@@ -170,45 +188,61 @@
     <!-- SECTION: TRENDS -->
     <div>
        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xs font-bold text-slate-500 tracking-widest uppercase">Tendencias</h3>
-          <button class="text-xs text-zinc-400 flex items-center gap-1 hover:text-white transition group">
-             Últimos 7 días <mat-icon class="text-xs group-hover:translate-y-0.5 transition-transform">keyboard_arrow_down</mat-icon>
-          </button>
+          <h3 class="text-xs font-bold text-slate-500 tracking-widest uppercase">Tendencias · Últimos 7 días</h3>
        </div>
        
        <div class="grid grid-cols-2 gap-3">
-          <!-- Item 1 -->
-           <div [routerLink]="['/trends', 'workouts']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                 <mat-icon class="text-zinc-500 group-hover:text-white transition">event_note</mat-icon>
-                 <span class="text-slate-300 text-sm font-bold">Entrenamientos</span>
-              </div>
-              <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
-           </div>
-          <!-- Item 2 -->
-           <div [routerLink]="['/trends', 'volume']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                 <mat-icon class="text-zinc-500 group-hover:text-white transition">fitness_center</mat-icon>
-                 <span class="text-slate-300 text-sm font-bold">Volumen</span>
-              </div>
-              <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
-           </div>
-          <!-- Item 3 -->
-            <div [routerLink]="['/trends', 'calories']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                 <mat-icon class="text-zinc-500 group-hover:text-white transition">local_fire_department</mat-icon>
-                 <span class="text-slate-300 text-sm font-bold">Calorías</span>
-              </div>
-              <mat-icon class="text-zinc-600 group-hover:text-[#ff6600]">chevron_right</mat-icon>
-           </div>
-          <!-- Item 4 -->
-           <div [routerLink]="['/trends', 'sets']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
-              <div class="flex items-center gap-3">
-                 <mat-icon class="text-zinc-500 group-hover:text-white transition">repeat</mat-icon>
-                 <span class="text-slate-300 text-sm font-bold">Series</span>
-              </div>
-              <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
-           </div>
+          <!-- Entrenamientos -->
+          <div [routerLink]="['/trends', 'workouts']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+             <div class="flex items-center gap-3">
+                <mat-icon class="text-zinc-500 group-hover:text-white transition">event_note</mat-icon>
+                <div>
+                  <span class="block text-slate-300 text-sm font-bold">Sesiones</span>
+                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">{{ metrics().workoutsCount }}</span>
+                </div>
+             </div>
+             <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
+          </div>
+
+          <!-- Volumen / Tonelaje -->
+          <div [routerLink]="['/trends', 'volume']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+             <div class="flex items-center gap-3">
+                <mat-icon class="text-zinc-500 group-hover:text-white transition">fitness_center</mat-icon>
+                <div>
+                  <span class="block text-slate-300 text-sm font-bold">Tonelaje</span>
+                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">
+                    {{ metrics().totalVolume >= 1000
+                         ? (metrics().totalVolume / 1000 | number:'1.1-1') + 't'
+                         : (metrics().totalVolume | number:'1.0-0') + ' kg' }}
+                  </span>
+                </div>
+             </div>
+             <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
+          </div>
+
+          <!-- Calorías -->
+          <div [routerLink]="['/trends', 'calories']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+             <div class="flex items-center gap-3">
+                <mat-icon class="text-zinc-500 group-hover:text-white transition">local_fire_department</mat-icon>
+                <div>
+                  <span class="block text-slate-300 text-sm font-bold">Calorías</span>
+                  <span class="block text-orange-400 text-lg font-extrabold leading-none mt-0.5">~{{ metrics().estimatedCalories | number:'1.0-0' }}</span>
+                </div>
+             </div>
+             <mat-icon class="text-zinc-600 group-hover:text-[#ff6600]">chevron_right</mat-icon>
+          </div>
+
+          <!-- Series -->
+          <div [routerLink]="['/trends', 'sets']" class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:bg-[#1a1f29] transition cursor-pointer group">
+             <div class="flex items-center gap-3">
+                <mat-icon class="text-zinc-500 group-hover:text-white transition">repeat</mat-icon>
+                <div>
+                  <span class="block text-slate-300 text-sm font-bold">Series</span>
+                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">{{ metrics().totalSets }}</span>
+                </div>
+             </div>
+             <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
+          </div>
        </div>
     </div>
 
