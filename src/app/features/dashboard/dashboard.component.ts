@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,6 +13,7 @@ import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component
   standalone: true,
   imports: [CommonModule, RouterModule, MatIconModule, UiButtonComponent],
   templateUrl: './dashboard.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host { display: block; }
     /* Utilitarios personalizados si Tailwind no alcanza para efectos específicos */

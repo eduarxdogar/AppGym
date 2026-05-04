@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
+import { Firestore, doc, setDoc, docData } from '@angular/fire/firestore';
 import { Auth } from '@angular/fire/auth';
 import { from, Observable, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 import { WeeklyDietPlan } from '../../models/ai-requests.model';
 
 @Injectable({
@@ -20,17 +20,16 @@ export class NutritionService {
     await setDoc(ref, { plan, updatedAt: new Date().toISOString() });
   }
 
-  /** Recupera el plan nutricional guardado, o null si no existe. */
   getPlan(): Observable<WeeklyDietPlan | null> {
     const uid = this.auth.currentUser?.uid;
     if (!uid) return of(null);
     const ref = doc(this.firestore, `nutrition_plans/${uid}`);
-    return from(getDoc(ref)).pipe(
-      switchMap(snap => {
-        if (snap.exists()) {
-          return of((snap.data() as any).plan as WeeklyDietPlan);
+    return docData(ref).pipe(
+      map(data => {
+        if (data && data['plan']) {
+          return data['plan'] as WeeklyDietPlan;
         }
-        return of(null);
+        return null;
       })
     );
   }
