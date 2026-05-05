@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { UiStateService } from '../../../core/services/ui-state.service';
@@ -44,7 +44,7 @@ interface ChatMessage {
       <!-- Messages Area -->
       <div class="flex-1 overflow-y-auto p-5 pb-24 space-y-6 scrollbar-hide">
          
-         <div *ngFor="let msg of messages" class="flex gap-3" [ngClass]="{'flex-row-reverse': msg.role === 'user'}">
+         <div *ngFor="let msg of messages()" class="flex gap-3" [ngClass]="{'flex-row-reverse': msg.role === 'user'}">
              <div *ngIf="msg.role === 'coach'" class="h-8 w-8 rounded-full bg-[#151921] border border-zinc-700 flex-shrink-0 flex items-center justify-center">
                  <mat-icon class="text-zinc-400 text-sm">smart_toy</mat-icon>
              </div>
@@ -113,12 +113,14 @@ export class AiCoachDrawerComponent {
 
   userMessage = '';
   isLoading = false;
-  messages: ChatMessage[] = [
-    {
-      role: 'coach',
-      text: '¡Hola! Soy tu AI Coach. Estoy conectado y monitoreando tu progreso. ¿Qué quieres mutar hoy?'
+  // Bind directly to the service's messages signal for persistence
+  messages = computed(() => {
+    const msgs = this.aiCoachService.messages();
+    if (msgs.length === 0) {
+      return [{ role: 'coach', text: '¡Hola! Soy tu AI Coach. Estoy conectado y monitoreando tu progreso. ¿Qué quieres mutar hoy?' } as any];
     }
-  ];
+    return msgs;
+  });
 
   selectedImage = signal<string | null>(null);
   selectedImageMimeType = '';
@@ -168,19 +170,13 @@ export class AiCoachDrawerComponent {
     // UI Feedback
     this.userMessage = '';
     this.removeImage();
-    this.messages.push({ role: 'user', text: txt || 'Imagen enviada' });
     this.isLoading = true;
 
     try {
       const response = await this.aiCoachService.chatWithCoach(txt, cleanBase64, mimeType);
-      // Clean up response if it has raw quotes
-      let cleanResponse = response.trim();
-      if (cleanResponse.startsWith('"') && cleanResponse.endsWith('"')) {
-          cleanResponse = cleanResponse.substring(1, cleanResponse.length - 1);
-      }
-      this.messages.push({ role: 'coach', text: cleanResponse });
+      // The service already pushes to the signal array, so we don't need to manually push here!
     } catch (err) {
-      this.messages.push({ role: 'coach', text: "Error de conexión con mis circuitos." });
+      console.error(err);
     } finally {
       this.isLoading = false;
     }

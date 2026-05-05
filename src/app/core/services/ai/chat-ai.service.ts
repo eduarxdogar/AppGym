@@ -124,12 +124,18 @@ Cardio (7d): ${JSON.stringify(this.cardioService.cardioSessions())}`;
       const promptText = message || '¿Qué ves en esta imagen?';
       this.chatHistory.push({ role: 'user', parts: [{ text: promptText }] });
 
+      // Ensure the history array being sent to Gemini API starts with 'user'
+      let historyToSend = this.chatHistory.slice(0, this.chatHistory.length - 1);
+      while (historyToSend.length > 0 && historyToSend[0].role !== 'user') {
+        historyToSend.shift();
+      }
+
       const responseText = await this.baseAi.generateContent(
         promptText,
         false,
         imageBase64,
         mimeType,
-        this.chatHistory.slice(0, this.chatHistory.length - 1)
+        historyToSend
       );
 
       this.chatHistory.push({ role: 'model', parts: [{ text: responseText }] });

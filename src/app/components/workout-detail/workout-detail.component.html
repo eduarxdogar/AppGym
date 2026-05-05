@@ -173,14 +173,22 @@
             <div *ngFor="let ex of workout.ejercicios; let i = index" class="animate-in slide-in-from-bottom-4 duration-500">
                 
                 <!-- Exercise Header -->
-                <div class="flex items-center gap-4 mb-4">
+                <div class="flex items-center gap-4 mb-4 relative">
                     <div class="h-14 w-14 rounded-lg bg-zinc-800 overflow-hidden border border-zinc-700">
-                        <img [src]="'https://placehold.co/100x100/222/555?text=' + ex.nombre.substring(0,1)" class="w-full h-full object-cover">
+                        <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" alt="Exercise" class="w-full h-full object-cover">
                     </div>
-                    <div>
-                        <h3 class="text-xl font-bold text-white leading-tight">{{ ex.nombre }}</h3>
+                    <div class="flex-1 pr-10">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-xl font-bold text-white leading-tight">{{ ex.nombre }}</h3>
+                            <button (click)="openExerciseDetail(ex)" class="text-zinc-500 hover:text-[#CCFF00] min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors">
+                                <mat-icon class="text-xl">info</mat-icon>
+                            </button>
+                        </div>
                         <p class="text-xs text-[#CCFF00] mt-1">{{ ex.series }} Sets Objetivo</p>
                     </div>
+                    <button (click)="deleteExercise(i)" class="absolute right-0 top-0 text-zinc-600 hover:text-red-500 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors">
+                        <mat-icon>delete</mat-icon>
+                    </button>
                 </div>
 
                 <!-- Sets Table -->
@@ -244,10 +252,18 @@
                         </div>
                     </div>
 
-                    <!-- Add Set Button -->
-                    <button (click)="addSet(i)" class="w-full py-3 bg-[#151921] hover:bg-zinc-800 text-zinc-400 hover:text-[#CCFF00] text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
-                        <mat-icon class="text-sm">add</mat-icon> Añadir Serie
-                    </button>
+                    <!-- Actions Footer -->
+                    <div class="flex items-center divide-x divide-zinc-800 border-t border-zinc-800">
+                        <button (click)="addSet(i)" class="flex-1 py-3 bg-[#151921] hover:bg-zinc-800 text-zinc-400 hover:text-[#CCFF00] text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[44px]">
+                            <mat-icon class="text-sm">add</mat-icon> Set
+                        </button>
+                        <button (click)="addDropSet(i)" class="flex-1 py-3 bg-[#151921] hover:bg-zinc-800 text-zinc-400 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[44px]">
+                            <mat-icon class="text-sm">trending_down</mat-icon> Drop
+                        </button>
+                        <button (click)="openSuperserieModal(i)" class="flex-1 py-3 bg-[#151921] hover:bg-zinc-800 text-zinc-400 hover:text-blue-400 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[44px]">
+                            <mat-icon class="text-sm">link</mat-icon> Super
+                        </button>
+                    </div>
 
                 </div>
 
