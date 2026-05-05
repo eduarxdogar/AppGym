@@ -12,7 +12,7 @@ export class BaseAiService {
   constructor() {}
 
   public async generateContent(prompt: string, isJson: boolean = true, imageBase64?: string, mimeType?: string, history?: any[]): Promise<string> {
-    const callGemini = httpsCallable(this.functions, 'callGemini');
+    const callGemini = httpsCallable(this.functions, 'callGemini', { timeout: 300000 });
     try {
         const result = await callGemini({
             prompt,

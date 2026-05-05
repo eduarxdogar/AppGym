@@ -60,9 +60,9 @@ Métricas semanales calculadas: Sesiones=${metrics.workoutsCount}, Tonelaje=${me
         
         this.chatHistory.push({ role: "model", parts: [{ text: responseText }] });
         return responseText;
-    } catch (err) {
+    } catch (err: any) {
         console.error('Error al chatear con Coach:', err);
-        return "Mi red neuronal falló, repite eso soldad@.";
+        throw new Error(err.message || 'Error al contactar al Coach. Intenta de nuevo.');
     }
   }
 }

@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild, input, effect, inject, computed, signal }
 import { ActivatedRoute, Router } from '@angular/router';
 import { Firestore, collection, doc } from '@angular/fire/firestore';
 import { Workout } from '../../models/workout.model';
+import { Ejercicio } from '../../models/ejercicio.model';
 import { WorkoutService } from '../../core/services/workout.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -11,19 +12,21 @@ import { TrainingHistoryService } from '../../core/services/training-history.ser
 import { TimerComponent } from '../../features/timer/timer.component';
 import { TrainingSession } from '../../models/training-session.model';
 import { FormsModule } from '@angular/forms';
-
+import { ExerciseImageService } from '../../core/services/exercise-image.service';
+import { SafeUrlPipe } from '../../shared/pipes/safe-url.pipe';
 import { WorkoutSession, WorkoutSessionExercise, WorkoutSessionSet } from '../../models/workout-session.model';
 
 interface WorkoutSet {
   reps: number;
   weight: number;
   completed: boolean;
+  isDropset?: boolean;
 }
 
 @Component({
   selector: 'app-workout-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, FormsModule, TimerComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, FormsModule, TimerComponent, SafeUrlPipe],
   templateUrl: './workout-detail.component.html',
 })
 export class WorkoutDetailComponent implements OnInit {
@@ -33,7 +36,22 @@ export class WorkoutDetailComponent implements OnInit {
   public router = inject(Router);
   private trainingSessionService = inject(TrainingSessionService);
   private trainingHistoryService = inject(TrainingHistoryService);
-  private firestore = inject(Firestore); // Correct injection context
+  private firestore = inject(Firestore);
+  public exerciseImgService = inject(ExerciseImageService);
+
+  // Exercise Detail Modal
+  selectedExercise = signal<Ejercicio | null>(null);
+  showExerciseModal = signal<boolean>(false);
+
+  openExerciseDetail(ex: Ejercicio) {
+    this.selectedExercise.set(ex);
+    this.showExerciseModal.set(true);
+  }
+
+  closeExerciseModal() {
+    this.showExerciseModal.set(false);
+    this.selectedExercise.set(null);
+  }
 
   // --- SIGNALS ---
   workout = computed(() => {
@@ -80,6 +98,11 @@ export class WorkoutDetailComponent implements OnInit {
   showTimer = false; 
   expandedIndex: number | null = null;
   @ViewChild('restTimer') restTimer!: TimerComponent;
+
+  // --- Edit-in-place state ---
+  editingExerciseIndex = signal<number | null>(null);
+  superserieSourceIndex = signal<number | null>(null);
+  showSuperserieModal = signal<boolean>(false);
   
   // Computed for UI
   sessionTimeFormatted = computed(() => {
@@ -222,20 +245,28 @@ export class WorkoutDetailComponent implements OnInit {
   addSet(index: number) {
       const map = new Map(this.activeSets());
       const current = map.get(index) || [];
-      // Copy last set values active
       const last = current.length > 0 ? current[current.length-1] : { reps: 0, weight: 0, completed: false };
-      
-      current.push({ ...last, completed: false });
+      current.push({ ...last, completed: false, isDropset: false });
       map.set(index, current);
       this.activeSets.set(map);
   }
 
+  addDropSet(exIndex: number) {
+      const map = new Map(this.activeSets());
+      const current = map.get(exIndex) || [];
+      const last = current.length > 0 ? current[current.length-1] : { reps: 0, weight: 0, completed: false };
+      // Drop set: 80% del peso, +3-4 reps
+      const dropWeight = Math.round((last.weight || 0) * 0.8);
+      current.push({ reps: (last.reps || 10) + 3, weight: dropWeight, completed: false, isDropset: true });
+      map.set(exIndex, current);
+      this.activeSets.set(map);
+      this.persistWorkoutChanges();
+  }
+
   deleteSet(exIndex: number, setIndex: number) {
-      if(!confirm('¿Eliminar esta serie?')) return;
-      
       const map = new Map(this.activeSets());
       const sets = map.get(exIndex);
-      if(sets && sets.length > 0) {
+      if(sets && sets.length > 1) {
           sets.splice(setIndex, 1);
           map.set(exIndex, sets);
           this.activeSets.set(map);
@@ -296,6 +327,77 @@ export class WorkoutDetailComponent implements OnInit {
           });
       });
       return total;
+  }
+
+  // --- EXERCISE CRUD (Edit-in-place + Persist) ---
+
+  /** Toggles the inline edit mode for a specific exercise */
+  toggleEditExercise(index: number) {
+      this.editingExerciseIndex.update(prev => prev === index ? null : index);
+  }
+
+  /** Updates a field on an exercise and immediately persists to Firestore */
+  async updateExerciseField(exIndex: number, field: keyof Pick<Ejercicio, 'nombre' | 'series' | 'repeticiones' | 'pesokg'>, value: string | number) {
+      const w = this.workout();
+      if (!w) return;
+      const updatedEjercicios = [...w.ejercicios];
+      const ex = { ...updatedEjercicios[exIndex] };
+      // Type-safe assignment per field
+      if (field === 'nombre' && typeof value === 'string') ex.nombre = value;
+      if (field === 'series' && typeof value === 'number') {
+          ex.series = value;
+          // Re-sync local activeSets to match new series count
+          const map = new Map(this.activeSets());
+          const existing = map.get(exIndex) || [];
+          if (value > existing.length) {
+              const last = existing[existing.length - 1] ?? { reps: ex.repeticiones, weight: ex.pesokg ?? 0, completed: false };
+              for (let i = existing.length; i < value; i++) existing.push({ ...last, completed: false });
+          } else {
+              existing.splice(value);
+          }
+          map.set(exIndex, existing);
+          this.activeSets.set(map);
+      }
+      if (field === 'repeticiones' && typeof value === 'number') ex.repeticiones = value;
+      if (field === 'pesokg' && typeof value === 'number') ex.pesokg = value;
+      updatedEjercicios[exIndex] = ex;
+      await this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
+  }
+
+  /** Open superset modal for a given source exercise */
+  openSuperserieModal(sourceIndex: number) {
+      this.superserieSourceIndex.set(sourceIndex);
+      this.showSuperserieModal.set(true);
+  }
+
+  closeSuperserieModal() {
+      this.showSuperserieModal.set(false);
+      this.superserieSourceIndex.set(null);
+  }
+
+  /** Links two exercises as a superset and persists */
+  async linkSuperset(targetIndex: number) {
+      const sourceIndex = this.superserieSourceIndex();
+      const w = this.workout();
+      if (sourceIndex === null || !w || sourceIndex === targetIndex) return;
+      const updatedEjercicios = [...w.ejercicios];
+      const source = { ...updatedEjercicios[sourceIndex] };
+      source.tipos = 'super-serie';
+      source.superSetEjercicio = updatedEjercicios[targetIndex];
+      updatedEjercicios[sourceIndex] = source;
+      await this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
+      this.closeSuperserieModal();
+  }
+
+  /** Saves the current workout state to Firestore */
+  async persistWorkoutChanges(overrideWorkout?: Workout): Promise<void> {
+      const w = overrideWorkout ?? this.workout();
+      if (!w) return;
+      try {
+          await this.workoutService.updateWorkout(w);
+      } catch (err) {
+          console.error('Error persisting workout changes:', err);
+      }
   }
 
   goBack(): void {

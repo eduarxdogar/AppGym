@@ -75,7 +75,7 @@
                      (click)="toggleExpand(i)">
                     
                     <div class="h-20 w-20 flex-shrink-0 rounded-xl bg-zinc-800 overflow-hidden relative border border-zinc-700">
-                        <img [src]="'https://placehold.co/150x150/222/555?text=' + ex.nombre.substring(0,1)" alt="Exercise" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                        <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" alt="Exercise" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
                     </div>
                     <div class="flex-1 min-w-0 pr-8">
                          <h4 class="text-white font-bold text-base mb-1 truncate leading-tight">{{ ex.nombre }}</h4>
@@ -178,7 +178,7 @@
 
                     <!-- Rows -->
                     <div *ngFor="let set of getSetsForExercise(i); let sIndex = index" 
-                         class="grid grid-cols-10 gap-2 px-4 py-3 items-center border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-colors"
+                         class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 items-center border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-colors"
                          [ngClass]="{'opacity-50': set.completed, 'bg-green-900/10': set.completed}">
                         
                         <!-- Set Number -->
@@ -191,14 +191,14 @@
                         <!-- KG Input -->
                         <div class="col-span-3">
                             <input type="number" [(ngModel)]="set.weight" 
-                                   class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-sm py-2 transition-colors outline-none"
+                                   class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none"
                                    placeholder="0">
                         </div>
 
                         <!-- Reps Input -->
                         <div class="col-span-3">
                             <input type="number" [(ngModel)]="set.reps" 
-                                   class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-sm py-2 transition-colors outline-none"
+                                   class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none"
                                    placeholder="0">
                         </div>
 
@@ -243,6 +243,40 @@
 
     </ng-container>
 
+
+    <!-- Modal: Superserie -->
+    <div *ngIf="showSuperserieModal()" class="fixed inset-0 z-[125] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+         (click)="closeSuperserieModal()">
+        <div class="bg-[#151921] border border-purple-700/50 rounded-t-3xl sm:rounded-2xl w-full max-w-sm shadow-2xl animate-in slide-in-from-bottom-4 duration-300"
+             (click)="$event.stopPropagation()">
+            <div class="p-5">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="h-9 w-9 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
+                        <mat-icon class="text-purple-400">link</mat-icon>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Crear Superserie</h3>
+                        <p class="text-xs text-zinc-500">Selecciona el 2do ejercicio a vincular</p>
+                    </div>
+                    <button (click)="closeSuperserieModal()" class="ml-auto text-zinc-500 hover:text-white">
+                        <mat-icon>close</mat-icon>
+                    </button>
+                </div>
+                <div class="space-y-2 max-h-64 overflow-y-auto">
+                    <button *ngFor="let ex of workout.ejercicios; let idx = index"
+                            [disabled]="idx === superserieSourceIndex()"
+                            (click)="linkSuperset(idx)"
+                            class="w-full text-left px-4 py-3 rounded-xl border transition-all"
+                            [ngClass]="idx === superserieSourceIndex()
+                                ? 'border-zinc-800 bg-zinc-900 opacity-40 cursor-not-allowed'
+                                : 'border-zinc-700 bg-zinc-900 hover:border-purple-500 hover:bg-purple-500/10 cursor-pointer'">
+                        <p class="text-sm font-bold text-white truncate">{{ ex.nombre }}</p>
+                        <p class="text-xs text-zinc-500">{{ ex.grupoMuscular }}</p>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Modal: Confirmation (Exit/Save) -->
     <div *ngIf="showExitModal()" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
         <div class="bg-[#151921] border border-zinc-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
@@ -269,8 +303,119 @@
            </div>
         </div>
     </div>
+    <!-- Modal: Exercise Detail -->
+    <div *ngIf="showExerciseModal() && selectedExercise() as ex"
+         class="fixed inset-0 z-[130] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+         (click)="closeExerciseModal()">
 
-    <!-- Modal: Añadir Ejercicio -->
+        <div class="bg-[#151921] border border-zinc-700 rounded-t-3xl sm:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300"
+             (click)="$event.stopPropagation()">
+
+            <!-- Video / Thumbnail Header -->
+            <div class="relative w-full bg-zinc-900 rounded-t-3xl sm:rounded-t-2xl overflow-hidden" style="aspect-ratio: 16/9">
+                <ng-container *ngIf="exerciseImgService.getExerciseVideoUrl(ex.nombre) as videoUrl; else thumbnailView">
+                    <iframe [src]="videoUrl | safeUrl"
+                            class="w-full h-full"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen>
+                    </iframe>
+                </ng-container>
+                <ng-template #thumbnailView>
+                    <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)"
+                         [alt]="ex.nombre"
+                         class="w-full h-full object-cover opacity-60"
+                         (error)="$any($event.target).src='https://placehold.co/640x360/0B0E14/CCFF00?text=' + ex.nombre">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="h-14 w-14 rounded-full bg-black/60 border border-white/20 flex items-center justify-center">
+                            <mat-icon class="text-white text-3xl">play_circle_outline</mat-icon>
+                        </div>
+                    </div>
+                </ng-template>
+                <!-- Close button -->
+                <button (click)="closeExerciseModal()"
+                        class="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/60 border border-white/20 flex items-center justify-center text-white hover:bg-black/80 transition">
+                    <mat-icon class="text-sm">close</mat-icon>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="p-5 space-y-5">
+
+                <!-- Title + Badge -->
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-white leading-tight">{{ ex.nombre }}</h2>
+                        <p class="text-xs text-zinc-500 mt-1 uppercase tracking-widest">{{ ex.grupoMuscular }}</p>
+                    </div>
+                    <span class="flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                          [ngClass]="ex.tipo === 'compuesto'
+                            ? 'bg-[#CCFF00]/10 text-[#CCFF00] border-[#CCFF00]/30'
+                            : 'bg-blue-500/10 text-blue-400 border-blue-500/30'">
+                        {{ ex.tipo || 'ejercicio' }}
+                    </span>
+                </div>
+
+                <!-- Stats Row -->
+                <div class="grid grid-cols-4 gap-2">
+                    <div class="bg-zinc-900 rounded-xl p-3 text-center">
+                        <span class="block text-lg font-black text-[#CCFF00]">{{ ex.series }}</span>
+                        <span class="block text-[10px] text-zinc-500 uppercase mt-0.5">Series</span>
+                    </div>
+                    <div class="bg-zinc-900 rounded-xl p-3 text-center">
+                        <span class="block text-lg font-black text-white">{{ ex.repeticiones }}</span>
+                        <span class="block text-[10px] text-zinc-500 uppercase mt-0.5">Reps</span>
+                    </div>
+                    <div class="bg-zinc-900 rounded-xl p-3 text-center">
+                        <span class="block text-lg font-black text-white">{{ ex.pesokg || '-' }}</span>
+                        <span class="block text-[10px] text-zinc-500 uppercase mt-0.5">KG</span>
+                    </div>
+                    <div class="bg-zinc-900 rounded-xl p-3 text-center">
+                        <span class="block text-lg font-black text-white">{{ ex.rir ?? '-' }}</span>
+                        <span class="block text-[10px] text-zinc-500 uppercase mt-0.5">RIR</span>
+                    </div>
+                </div>
+
+                <!-- Rest Time -->
+                <div *ngIf="ex.descanso" class="flex items-center gap-3 bg-zinc-900 rounded-xl p-3">
+                    <mat-icon class="text-zinc-400">timer</mat-icon>
+                    <div>
+                        <p class="text-xs text-zinc-500 uppercase tracking-wider">Descanso entre series</p>
+                        <p class="text-white font-bold text-sm">{{ ex.descanso }}</p>
+                    </div>
+                </div>
+
+                <!-- Technical Notes -->
+                <div *ngIf="ex.notas" class="bg-[#CCFF00]/5 border border-[#CCFF00]/20 rounded-xl p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <mat-icon class="text-[#CCFF00] text-sm">tips_and_updates</mat-icon>
+                        <span class="text-xs font-bold text-[#CCFF00] uppercase tracking-wider">Técnica del Coach</span>
+                    </div>
+                    <p class="text-zinc-300 text-sm leading-relaxed">{{ ex.notas }}</p>
+                </div>
+
+                <!-- Muscle Image -->
+                <div class="flex items-center gap-4 bg-zinc-900 rounded-xl p-4">
+                    <img [src]="exerciseImgService.getMuscleImage(ex.grupoMuscular)"
+                         [alt]="ex.grupoMuscular"
+                         class="h-20 w-20 object-contain opacity-80"
+                         (error)="$any($event.target).style.display='none'">
+                    <div>
+                        <p class="text-xs text-zinc-500 uppercase tracking-wider mb-1">Músculo objetivo</p>
+                        <p class="text-white font-bold">{{ ex.grupoMuscular }}</p>
+                    </div>
+                </div>
+
+                <!-- Close CTA -->
+                <button (click)="closeExerciseModal()"
+                        class="w-full py-3 rounded-xl border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 font-bold text-sm uppercase tracking-wider transition">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+
     <div *ngIf="showAddExerciseModal()" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
         <div class="bg-[#151921] border border-[#CCFF00]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
            <h3 class="text-lg font-bold text-white tracking-wide mb-4">
