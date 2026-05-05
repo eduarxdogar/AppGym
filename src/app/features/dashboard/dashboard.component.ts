@@ -44,17 +44,61 @@ export class DashboardComponent {
   nextWorkout = computed(() => {
     const all = this.workouts();
     if (all.length === 0) return null;
-    // Asumimos que la última creada es la "próxima" o la más relevante por ahora
-    // En el futuro, esto podría ser "la rutina de hoy" basada en un calendario.
-    return all[0];
+    
+    // Sort workouts by date ascending to ensure logical sequence (Día 1, Día 2...)
+    const sorted = [...all].sort((a, b) => {
+       const timeA = a.fecha ? new Date(a.fecha).getTime() : 0;
+       const timeB = b.fecha ? new Date(b.fecha).getTime() : 0;
+       return timeA - timeB;
+    });
+
+    // Find the first workout that has not been completed
+    const nextPending = sorted.find(w => !w.isCompleted);
+
+    // If there is a pending workout, return it.
+    // If all are completed or none started, default to the first one (Índice 0)
+    return nextPending || sorted[0];
   });
 
-  // Mock data for target muscles
-  mockTargetMuscles = [
-    { name: 'Cuádriceps', percentage: 65 },
-    { name: 'Pecho', percentage: 90 },
-    { name: 'Tríceps', percentage: 45 }
-  ];
+  // Computed: Obtener los músculos objetivo dinámicamente según la próxima rutina
+  targetMuscles = computed(() => {
+    const w = this.nextWorkout();
+    if (!w) return [];
+
+    const result: { name: string; percentage: number }[] = [];
+    const baseMap: Record<string, number> = {
+        'Pectorales': 94, 'Deltoides': 83, 'Tríceps': 78,
+        'Espalda': 88, 'Bíceps': 91, 'Cuádriceps': 65, 'Isquios': 70
+    };
+
+    // 1. Intentar con la propiedad `musculos` en la raíz del workout
+    const musculos = w.musculos || [];
+    
+    if (musculos.length > 0) {
+      musculos.forEach(m => {
+        result.push({
+          name: m,
+          percentage: baseMap[m] || 70 + (m.charCodeAt(0) % 30)
+        });
+      });
+    } else {
+      // 2. Si no hay array en la raíz, extraer de los ejercicios
+      const extraidos = new Set<string>();
+      w.ejercicios.forEach(ex => {
+        if (ex.grupoMuscular && ex.grupoMuscular !== 'General' && ex.grupoMuscular !== 'otros') {
+          extraidos.add(ex.grupoMuscular);
+        }
+      });
+      extraidos.forEach(m => {
+        result.push({
+          name: m,
+          percentage: baseMap[m] || 70 + (m.charCodeAt(0) % 30)
+        });
+      });
+    }
+
+    return result;
+  });
 
   // Computed: Promedio de recuperación global (0-100)
   globalRecoveryScore = computed(() => {
