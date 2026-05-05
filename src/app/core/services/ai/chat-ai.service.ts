@@ -1,68 +1,171 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { BaseAiService } from './base-ai.service';
 import { UserProfileStateService } from '../user-profile-state.service';
 import { WorkoutService } from '../workout.service';
 import { MetricsService } from '../metrics.service';
 import { CardioSessionService } from '../cardio-session.service';
+import { StorageService, ChatMessage } from '../storage.service';
+import { ExerciseImageService } from '../exercise-image.service';
+import { Workout } from '../../../models/workout.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatAiService {
-  private baseAi = inject(BaseAiService);
+  private baseAi       = inject(BaseAiService);
   private profileState = inject(UserProfileStateService);
-  private workoutService = inject(WorkoutService);
-  private metricsService = inject(MetricsService);
-  private cardioService = inject(CardioSessionService);
-  
-  private chatHistory: any[] = [];
+  private workoutService  = inject(WorkoutService);
+  private metricsService  = inject(MetricsService);
+  private cardioService   = inject(CardioSessionService);
+  private storageService  = inject(StorageService);
+  private imgService      = inject(ExerciseImageService);
+
+  /** Currently active workout context for the coach */
+  private activeWorkoutId = signal<string | null>(null);
+  private chatHistory: { role: string; parts: { text: string }[] }[] = [];
+
+  /** Persisted messages loaded from Firestore */
+  readonly messages = signal<ChatMessage[]>([]);
 
   resetChat() {
-     this.chatHistory = [];
+    this.chatHistory = [];
+    this.messages.set([]);
+    this.activeWorkoutId.set(null);
   }
 
-  async chatWithCoach(message: string, imageBase64?: string, mimeType?: string): Promise<string> {
+  /** Call this when entering a workout execution view */
+  setActiveWorkout(workoutId: string) {
+    if (this.activeWorkoutId() === workoutId) return;
+    this.activeWorkoutId.set(workoutId);
+    this.chatHistory = [];          // Reset history to re-inject new context
+    this.loadChatHistory(workoutId);
+  }
+
+  loadChatHistory(workoutId: string) {
+    if (!workoutId) return;
+    this.storageService.getChatHistory(workoutId).subscribe({
+      next: (msgs) => {
+        this.messages.set(msgs || []);
+        if (msgs && msgs.length > 0) {
+          this.chatHistory = msgs.map(m => ({
+            role: m.role === 'coach' ? 'model' : 'user',
+            parts: [{ text: m.text }]
+          }));
+        } else {
+          this.chatHistory = [];
+        }
+      },
+      error: (err) => {
+        console.error('Error loading chat history:', err);
+        this.messages.set([]);
+        this.chatHistory = [];
+      }
+    });
+  }
+
+  async chatWithCoach(
+    message: string,
+    imageBase64?: string,
+    mimeType?: string,
+    targetWorkoutId?: string
+  ): Promise<string> {
     if (!this.baseAi.isConfigured) {
-        return "El AI Coach no está configurado. Por favor provee la API Key.";
+      return 'El AI Coach no está configurado. Por favor provee la API Key.';
     }
 
+    const workoutId = targetWorkoutId ?? this.activeWorkoutId();
+
     try {
-        if (this.chatHistory.length === 0) {
-            const metrics = this.metricsService.weeklyMetrics();
-            const userProfile = this.profileState.profile();
-            
-            const contextText = `Eres 'Tríada Coach', un entrenador personal de élite. Tu tono debe ser conciso, directo, motivador (estilo 'bro de gimnasio inteligente') y coloquial. NUNCA respondas con ensayos largos o viñetas excesivas. Usa respuestas cortas y al grano.
-Tu base de conocimiento es EXCLUSIVAMENTE el historial y estado que te proporciono. NO inventes fechas, NO asumas entrenamientos que no están detallados aquí.
-Si el usuario pregunta por 'tonelaje', debes sumar (Series x Repeticiones x Peso) de los ejercicios del día indicado, pero entrégale solo el número final o un resumen muy breve. Si pregunta por fatiga o qué hacer después, da 1 o 2 recomendaciones rápidas.
-No uses títulos grandes (##) a menos que sea estrictamente necesario. Usa negritas para resaltar números importantes. Compórtate como en un chat de WhatsApp con un atleta avanzado.
+      // --- Inject context on first turn ---
+      if (this.chatHistory.length === 0) {
+        const metrics     = this.metricsService.weeklyMetrics();
+        const userProfile = this.profileState.profile();
 
-PERFIL BIOMÉTRICO: Peso=${userProfile?.weight}kg, Altura=${userProfile?.height}cm, Nivel=${userProfile?.fitnessLevel}, Objetivo=${userProfile?.goal}
-InBody: Músculo=${userProfile?.inbodyData?.muscleKg || 'N/A'}kg, Grasa=${userProfile?.inbodyData?.fatPercent || 'N/A'}%
-Rutinas activas: ${JSON.stringify(this.workoutService.workouts())}
-Sesiones cardio (7d): ${JSON.stringify(this.cardioService.cardioSessions())}
-Métricas semanales calculadas: Sesiones=${metrics.workoutsCount}, Tonelaje=${metrics.totalVolume}kg, Series=${metrics.totalSets}, Calorías estimadas=${metrics.estimatedCalories}kcal. Usa estos datos cuando el usuario pregunte por su progreso semanal. NO los recalcules manualmente.`;
+        // Find the active / target workout for deep context
+        const allWorkouts = this.workoutService.workouts();
+        const activeWorkout: Workout | undefined = workoutId
+          ? allWorkouts.find(w => w.id === workoutId)
+          : allWorkouts.find(w => w.status === 'active');
 
-            this.chatHistory.push({ role: "user", parts: [{ text: contextText }] });
-            this.chatHistory.push({ role: "model", parts: [{ text: "¡Entendido! Soy Tríada Coach. Vamos a darle, dime qué necesitas de tu plan." }] });
-        }
-        
-        let promptText = message || "¿Qué ves en esta imagen?";
-        this.chatHistory.push({ role: "user", parts: [{ text: promptText }] });
-        
-        const responseText = await this.baseAi.generateContent(
-            promptText, 
-            false, 
-            imageBase64, 
-            mimeType, 
-            // We pass a copy without the last user message, since prompt is sent separately
-            this.chatHistory.slice(0, this.chatHistory.length - 1)
-        );
-        
-        this.chatHistory.push({ role: "model", parts: [{ text: responseText }] });
-        return responseText;
+        const workoutContext = activeWorkout
+          ? `\nRUTINA ACTIVA AHORA MISMO:
+Nombre: "${activeWorkout.nombre}"
+Músculos objetivo: ${(activeWorkout.musculos || []).join(', ')}
+Ejercicios de HOY:
+${activeWorkout.ejercicios.map((e, i) => `  ${i+1}. ${e.nombre} - ${e.series}x${e.repeticiones} @ ${e.pesokg || 0}kg [${e.grupoMuscular}]`).join('\n')}
+ESTA RUTINA ES TU PRIORIDAD. Cuando el usuario pregunte "qué toca hoy" o "cómo hago X", responde SIEMPRE en el contexto de ESTA rutina.`
+          : `\nNo hay rutina activa ahora mismo. Historial de rutinas disponible.`;
+
+        const contextText = `Eres "Coach Tríada", un entrenador personal de Medellín con 15 años de experiencia. Hablas como un profe de gimnasio: directo, técnico y motivador. NUNCA digas "como IA" o "mi red neuronal". Si el usuario pregunta algo médico serio, remítelo a un profesional.
+
+REGLAS DE RESPUESTA:
+- Sé conciso (máximo 3-4 párrafos cortos).
+- Usa negritas para resaltar números clave.
+- Si explicas la técnica de un ejercicio, al FINAL siempre agrega: "Acordate que en la tarjeta del ejercicio tenés el botón ⓘ para ver el video de la técnica."
+- NUNCA inventes datos que no estén en el contexto.
+
+PERFIL DEL ATLETA:
+- Peso: ${userProfile?.weight}kg | Altura: ${userProfile?.height}cm | Nivel: ${userProfile?.fitnessLevel} | Objetivo: ${userProfile?.goal}
+- InBody — Músculo: ${userProfile?.inbodyData?.muscleKg || 'N/A'}kg | Grasa: ${userProfile?.inbodyData?.fatPercent || 'N/A'}%
+
+MÉTRICAS SEMANA ACTUAL:
+- Sesiones: ${metrics.workoutsCount} | Tonelaje: ${metrics.totalVolume}kg | Series totales: ${metrics.totalSets} | Calorías: ${metrics.estimatedCalories}kcal
+${workoutContext}
+
+HISTORIAL COMPLETO DE RUTINAS (para contexto de fatiga/progresión):
+${JSON.stringify(allWorkouts.map(w => ({ nombre: w.nombre, fecha: w.fecha, isCompleted: w.isCompleted, musculos: w.musculos })))}
+Cardio (7d): ${JSON.stringify(this.cardioService.cardioSessions())}`;
+
+        this.chatHistory.push({ role: 'user', parts: [{ text: contextText }] });
+        this.chatHistory.push({ role: 'model', parts: [{ text: '¡Listo! Soy Coach Tríada. Ya tengo tu contexto completo. ¿Qué necesitás?' }] });
+      }
+
+      // --- Build user message ---
+      const promptText = message || '¿Qué ves en esta imagen?';
+      this.chatHistory.push({ role: 'user', parts: [{ text: promptText }] });
+
+      const responseText = await this.baseAi.generateContent(
+        promptText,
+        false,
+        imageBase64,
+        mimeType,
+        this.chatHistory.slice(0, this.chatHistory.length - 1)
+      );
+
+      this.chatHistory.push({ role: 'model', parts: [{ text: responseText }] });
+
+      // --- Persist to Firestore if we have a workoutId ---
+      if (workoutId) {
+        const now = new Date().toISOString();
+        const userMsg: ChatMessage = {
+          id: `${Date.now()}_u`,
+          workoutId,
+          role: 'user',
+          text: promptText,
+          timestamp: now
+        };
+        const coachMsg: ChatMessage = {
+          id: `${Date.now()}_c`,
+          workoutId,
+          role: 'coach',
+          text: responseText,
+          timestamp: new Date().toISOString()
+        };
+        await this.storageService.saveChatMessage(workoutId, userMsg);
+        await this.storageService.saveChatMessage(workoutId, coachMsg);
+
+        // Update local signal for UI reactivity
+        this.messages.update(msgs => [...msgs, userMsg, coachMsg]);
+      }
+
+      return responseText;
     } catch (err: any) {
-        console.error('Error al chatear con Coach:', err);
-        throw new Error(err.message || 'Error al contactar al Coach. Intenta de nuevo.');
+      console.error('Error al chatear con Coach:', err);
+      const errorMessage = err?.message || '';
+      if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
+        return 'Paciencia, fiera. Estoy recuperando el aliento. Intentá de nuevo en unos segundos.';
+      }
+      return 'Tengo un fallo técnico ahora mismo, mostro. Probá de nuevo más tarde.';
     }
   }
 }

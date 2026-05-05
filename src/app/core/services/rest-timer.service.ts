@@ -1,0 +1,78 @@
+import { Injectable, signal, computed, OnDestroy } from '@angular/core';
+
+/** Durations available for rest timer, in seconds */
+export const REST_PRESETS_SECONDS = [60, 90, 120, 180] as const;
+export type RestPreset = (typeof REST_PRESETS_SECONDS)[number];
+
+@Injectable({
+  providedIn: 'root'
+})
+export class RestTimerService implements OnDestroy {
+  // Total duration chosen by the user
+  readonly durationSeconds = signal<number>(90);
+
+  // Seconds remaining (counts down)
+  readonly remaining = signal<number>(90);
+
+  // Whether the timer is actively running
+  readonly isRunning = signal<boolean>(false);
+
+  private intervalId: ReturnType<typeof setInterval> | null = null;
+
+  // Formatted MM:SS string
+  readonly formatted = computed<string>(() => {
+    const t = this.remaining();
+    const m = Math.floor(t / 60);
+    const s = t % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  });
+
+  readonly progress = computed<number>(() => {
+    const dur = this.durationSeconds();
+    if (dur === 0) return 0;
+    return Math.max(0, Math.min(1, this.remaining() / dur));
+  });
+
+  /** Start or resume the timer */
+  start(durationSeconds?: number) {
+    if (durationSeconds !== undefined) {
+      this.durationSeconds.set(durationSeconds);
+      this.remaining.set(durationSeconds);
+    }
+    if (this.isRunning()) return; // already running
+    this.isRunning.set(true);
+    this.intervalId = setInterval(() => {
+      const r = this.remaining();
+      if (r <= 0) {
+        this.stop();
+      } else {
+        this.remaining.update(v => v - 1);
+      }
+    }, 1000);
+  }
+
+  /** Pause without resetting */
+  pause() {
+    this.isRunning.set(false);
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
+
+  /** Stop and reset to full duration */
+  stop() {
+    this.pause();
+    this.remaining.set(this.durationSeconds());
+  }
+
+  /** Quick-start with a preset duration */
+  quickStart(seconds: number) {
+    this.stop();
+    this.start(seconds);
+  }
+
+  ngOnDestroy() {
+    if (this.intervalId) clearInterval(this.intervalId);
+  }
+}

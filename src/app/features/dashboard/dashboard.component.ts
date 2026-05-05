@@ -45,6 +45,10 @@ export class DashboardComponent {
     const all = this.workouts();
     if (all.length === 0) return null;
     
+    // Check if there is an explicitly active workout right now
+    const active = all.find(w => w.status === 'active');
+    if (active) return active;
+
     // Sort workouts by date ascending to ensure logical sequence (Día 1, Día 2...)
     const sorted = [...all].sort((a, b) => {
        const timeA = a.fecha ? new Date(a.fecha).getTime() : 0;
@@ -56,8 +60,8 @@ export class DashboardComponent {
     const nextPending = sorted.find(w => !w.isCompleted);
 
     // If there is a pending workout, return it.
-    // If all are completed or none started, default to the first one (Índice 0)
-    return nextPending || sorted[0];
+    // If all are completed, return null or an empty marker instead of day 1 to avoid confusion
+    return nextPending || null;
   });
 
   // Computed: Obtener los músculos objetivo dinámicamente según la próxima rutina

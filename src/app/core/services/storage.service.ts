@@ -1,8 +1,16 @@
 import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
-import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, where } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, where, orderBy } from '@angular/fire/firestore';
 import { Observable, of } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
+
+export interface ChatMessage {
+  id: string;
+  workoutId: string;
+  role: 'user' | 'coach';
+  text: string;
+  timestamp: string; // ISO string
+}
 
 @Injectable({
   providedIn: 'root'
@@ -107,9 +115,33 @@ export class StorageService {
     }
   }
 
-  // --- Legacy Methods (Empty) ---
+  // --- LEGACY METHODS ---
   getItem<T>(key: string): T | null { return null; }
   setItem<T>(key: string, value: T): void {}
   removeItem(key: string): void {}
   clear(): void {}
+
+  // --- CHAT HISTORY (sub-collection per workout) ---
+
+  async saveChatMessage(workoutId: string, message: ChatMessage): Promise<void> {
+    const user = this.authService.currentUser();
+    if (!user) return;
+    const chatCol = collection(this.firestore, 'workouts', workoutId, 'chat_history');
+    const docRef = doc(chatCol, message.id);
+    await setDoc(docRef, { ...message, userId: user.uid });
+  }
+
+  getChatHistory(workoutId: string): Observable<ChatMessage[]> {
+    return this.authService.authState$.pipe(
+      switchMap(user => {
+        if (!user) return of([]);
+        return runInInjectionContext(this.injector, () => {
+          const chatCol = collection(this.firestore, 'workouts', workoutId, 'chat_history');
+          const q = query(chatCol, orderBy('timestamp', 'asc'));
+          return collectionData(q, { idField: 'id' }) as Observable<ChatMessage[]>;
+        });
+      }),
+      catchError(() => of([]))
+    );
+  }
 }

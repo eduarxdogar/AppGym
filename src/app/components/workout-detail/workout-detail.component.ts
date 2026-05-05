@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, input, effect, inject, computed, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Firestore, collection, doc } from '@angular/fire/firestore';
-import { Workout } from '../../models/workout.model';
+import { Router } from '@angular/router';
+import { Firestore, collection, doc, deleteField } from '@angular/fire/firestore';
+import { Workout, ActiveSetState } from '../../models/workout.model';
 import { Ejercicio } from '../../models/ejercicio.model';
 import { WorkoutService } from '../../core/services/workout.service';
 import { CommonModule } from '@angular/common';
@@ -9,12 +9,12 @@ import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { TrainingSessionService } from '../../core/services/training-session.service';
 import { TrainingHistoryService } from '../../core/services/training-history.service';
-import { TimerComponent } from '../../features/timer/timer.component';
-import { TrainingSession } from '../../models/training-session.model';
 import { FormsModule } from '@angular/forms';
 import { ExerciseImageService } from '../../core/services/exercise-image.service';
 import { SafeUrlPipe } from '../../shared/pipes/safe-url.pipe';
-import { WorkoutSession, WorkoutSessionExercise, WorkoutSessionSet } from '../../models/workout-session.model';
+import { ChatAiService } from '../../core/services/ai/chat-ai.service';
+import { RestTimerService, REST_PRESETS_SECONDS } from '../../core/services/rest-timer.service';
+import { WorkoutSession, WorkoutSessionExercise } from '../../models/workout-session.model';
 
 interface WorkoutSet {
   reps: number;
@@ -26,18 +26,23 @@ interface WorkoutSet {
 @Component({
   selector: 'app-workout-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, FormsModule, TimerComponent, SafeUrlPipe],
+  imports: [CommonModule, RouterModule, MatIconModule, FormsModule, SafeUrlPipe],
   templateUrl: './workout-detail.component.html',
 })
 export class WorkoutDetailComponent implements OnInit {
   id = input.required<string>();
   
-  private workoutService = inject(WorkoutService);
-  public router = inject(Router);
+  private workoutService        = inject(WorkoutService);
+  public  router                = inject(Router);
   private trainingSessionService = inject(TrainingSessionService);
   private trainingHistoryService = inject(TrainingHistoryService);
-  private firestore = inject(Firestore);
-  public exerciseImgService = inject(ExerciseImageService);
+  private firestore             = inject(Firestore);
+  public  exerciseImgService    = inject(ExerciseImageService);
+  public  chatService           = inject(ChatAiService);
+  public  restTimer             = inject(RestTimerService);
+
+  /** Expose presets for template */
+  readonly restPresets = REST_PRESETS_SECONDS;
 
   // Exercise Detail Modal
   selectedExercise = signal<Ejercicio | null>(null);
@@ -79,55 +84,57 @@ export class WorkoutDetailComponent implements OnInit {
 
   // Active Mode State
   isActive = signal<boolean>(false);
-  activeSets = signal<Map<number, WorkoutSet[]>>(new Map()); // Key: Exercise Index
+  activeSets = signal<Map<number, WorkoutSet[]>>(new Map());
 
-  // Global Timer State (Session)
+  // Global session timer (seconds elapsed)
   sessionSeconds = signal<number>(0);
-  sessionInterval: any;
-  
-  // Rest Timer State
-  isResting = signal<boolean>(false); // Toggles Modal
+  private sessionInterval: ReturnType<typeof setInterval> | null = null;
 
   // --- Modals State ---
-  showExitModal = signal<boolean>(false);
-  pendingExitAction = signal<'exit' | 'save' | null>(null);
-  
-  showAddExerciseModal = signal<boolean>(false);
-  newExerciseName = signal<string>('');
-  
-  showTimer = false; 
+  showExitModal         = signal<boolean>(false);
+  pendingExitAction     = signal<'exit' | 'save' | null>(null);
+  showAddExerciseModal  = signal<boolean>(false);
+  newExerciseName       = signal<string>('');
+  showRestModal         = signal<boolean>(false);
   expandedIndex: number | null = null;
-  @ViewChild('restTimer') restTimer!: TimerComponent;
 
   // --- Edit-in-place state ---
-  editingExerciseIndex = signal<number | null>(null);
+  editingExerciseIndex  = signal<number | null>(null);
   superserieSourceIndex = signal<number | null>(null);
-  showSuperserieModal = signal<boolean>(false);
+  showSuperserieModal   = signal<boolean>(false);
   
   // Computed for UI
   sessionTimeFormatted = computed(() => {
     const totalSeconds = this.sessionSeconds();
-    const hrs = Math.floor(totalSeconds / 3600);
+    const hrs  = Math.floor(totalSeconds / 3600);
     const mins = Math.floor((totalSeconds % 3600) / 60);
     const secs = totalSeconds % 60;
-    
-    // Format: "MM:SS" or "HH:MM:SS"
-    const pad = (n: number) => n < 10 ? '0'+n : n;
-    if (hrs > 0) return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
-    return `${pad(mins)}:${pad(secs)}`;
+    const pad  = (n: number) => n < 10 ? '0'+n : String(n);
+    return hrs > 0
+      ? `${pad(hrs)}:${pad(mins)}:${pad(secs)}`
+      : `${pad(mins)}:${pad(secs)}`;
   });
 
   constructor() {
-    // Initialize sets when workout loads
+    // Initialize or restore sets when workout loads
     effect(() => {
         const w = this.workout();
-        if (w && this.activeSets().size === 0) {
+        if (!w) return;
+
+        // Restore persisted session state if present
+        if (w.status === 'active' && !this.isActive()) {
+            this.restoreActiveSession(w);
+        } else if (this.activeSets().size === 0) {
             this.initializeSets(w);
         }
     }, { allowSignalWrites: true });
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    const wid = this.id();
+    // Always set active workout context for the coach (loads persisted chat history)
+    this.chatService.setActiveWorkout(wid);
+  }
 
   initializeSets(w: Workout) {
       const initialMap = new Map<number, WorkoutSet[]>();
@@ -146,6 +153,30 @@ export class WorkoutDetailComponent implements OnInit {
       this.activeSets.set(initialMap);
   }
 
+  /** Restore in-progress session from Firestore persisted state */
+  private restoreActiveSession(w: Workout) {
+      this.isActive.set(true);
+
+      // Restore elapsed time
+      const elapsed = w.activeStartTime
+          ? Math.max(0, Math.floor((Date.now() - new Date(w.activeStartTime).getTime()) / 1000))
+          : 0;
+      this.sessionSeconds.set(elapsed);
+      this.startSessionTimer(elapsed); // non-zero → won't reset to 0
+
+      // Restore sets state or fall back to init
+      if (w.activeSetsState && Object.keys(w.activeSetsState).length > 0) {
+          const restoredMap = new Map<number, WorkoutSet[]>();
+          Object.entries(w.activeSetsState).forEach(([key, sets]) => {
+              restoredMap.set(Number(key), sets as WorkoutSet[]);
+          });
+          this.activeSets.set(restoredMap);
+      } else {
+          this.initializeSets(w);
+      }
+      this.trainingSessionService.startSession(w);
+  }
+
   // --- ACTIONS ---
 
   toggleExpand(index: number) {
@@ -154,14 +185,16 @@ export class WorkoutDetailComponent implements OnInit {
 
   iniciarRutina() {
     const w = this.workout();
-    if (w) {
-      this.isActive.set(true); // Switch UI to Active Mode
-      this.showTimer = true;
-      
-      this.startSessionTimer(); // Global timer starts at 0
-
-      this.trainingSessionService.startSession(w);
-    }
+    if (!w) return;
+    this.isActive.set(true);
+    this.startSessionTimer();
+    this.trainingSessionService.startSession(w);
+    // Persist active status + startTime to Firestore
+    this.persistWorkoutChanges({
+        ...w,
+        status: 'active',
+        activeStartTime: new Date().toISOString()
+    });
   }
 
   finalizarRutina() {
@@ -171,21 +204,18 @@ export class WorkoutDetailComponent implements OnInit {
 
   async finalizeSession() {
       this.isActive.set(false);
-      this.showTimer = false;
+      if (this.sessionInterval) { clearInterval(this.sessionInterval); this.sessionInterval = null; }
+      this.restTimer.stop();
+      this.showRestModal.set(false);
       
-      if (this.sessionInterval) clearInterval(this.sessionInterval);
-      this.stopRestTimer();
-      
-      // Save Session Logic
       const workout = this.workout();
-      const startTime = this.trainingSessionService.getCurrentSession()?.fechaInicio || new Date(); // Fallback
+      const startTime = this.trainingSessionService.getCurrentSession()?.fechaInicio || new Date();
       
       if (workout) {
-           // Map active sets to WorkoutSession structure
            const sessionExercises: WorkoutSessionExercise[] = workout.ejercicios.map((ex, index) => {
                const sets = this.activeSets().get(index) || [];
                return {
-                   exerciseId: ex.id || index, // Use index if ID missing
+                   exerciseId: ex.id || index,
                    name: ex.nombre,
                    targetSets: ex.series || 0,
                    sets: sets.map(s => ({
@@ -196,7 +226,6 @@ export class WorkoutDetailComponent implements OnInit {
                };
            });
 
-           // Collect muscle groups
            const muscles = new Set<string>();
            workout.musculos?.forEach(m => muscles.add(m));
            workout.ejercicios.forEach(ex => {
@@ -204,7 +233,7 @@ export class WorkoutDetailComponent implements OnInit {
            });
 
            const session: WorkoutSession = {
-               id: doc(collection(this.firestore, 'dummy')).id, // Use class property
+               id: doc(collection(this.firestore, 'dummy')).id,
                userId: '', 
                workoutId: workout.id,
                name: workout.nombre,
@@ -220,16 +249,17 @@ export class WorkoutDetailComponent implements OnInit {
 
            await this.trainingHistoryService.addSession(session);
 
-           // Mark workout as completed
+           // Mark workout as completed and clear active session fields
            const updatedWorkout: Workout = {
                ...workout,
                isCompleted: true,
                completedAt: new Date().toISOString(),
-               durationMinutes: Math.floor(this.sessionSeconds() / 60)
+               durationMinutes: Math.floor(this.sessionSeconds() / 60),
+               status: 'completed',
+               activeSetsState: deleteField() as any,
+               activeStartTime: deleteField() as any
            };
            await this.workoutService.updateWorkout(updatedWorkout);
-           
-           // Clear temp session
            this.trainingSessionService.saveSession(null);
       }
       
@@ -279,42 +309,72 @@ export class WorkoutDetailComponent implements OnInit {
       if(sets && sets[setIndex]) {
           sets[setIndex].completed = !sets[setIndex].completed;
           map.set(exIndex, sets);
-          this.activeSets.set(map); // Trigger update
-
-          // Optional: Start Rest Timer automatically if completed
-          if(sets[setIndex].completed) {
-              // this.startRestTimer(); // Uncomment if auto-start desired
-          }
+          this.activeSets.set(map);
+          // Persist checks in real-time
+          this.persistSetsState();
       }
+  }
+
+  /** Serializes activeSets Map to a plain Record for Firestore and persists */
+  private async persistSetsState(): Promise<void> {
+      const w = this.workout();
+      if (!w || !this.isActive()) return;
+      const setsRecord: Record<number, WorkoutSet[]> = {};
+      this.activeSets().forEach((sets, key) => { setsRecord[key] = sets; });
+      await this.persistWorkoutChanges({ ...w, activeSetsState: setsRecord });
   }
 
   // --- GLOBAL TIMER ---
   
-  startSessionTimer() {
+  startSessionTimer(fromSecond: number = 0) {
       if (this.sessionInterval) clearInterval(this.sessionInterval);
-      this.sessionSeconds.set(0);
+      if (fromSecond === 0) this.sessionSeconds.set(0);
       this.sessionInterval = setInterval(() => {
           this.sessionSeconds.update(v => v + 1);
       }, 1000);
   }
 
-  // --- REST TIMER ---
+  // --- REST TIMER (delegated to RestTimerService) ---
 
-  openRestTimer() {
-      this.isResting.set(true);
-      // Wait for ViewChild
-      setTimeout(() => {
-          if (this.restTimer) this.restTimer.start();
-      }, 50);
+  openRestModal(seconds?: number) {
+      if (seconds) this.restTimer.quickStart(seconds);
+      else if (!this.restTimer.isRunning()) this.restTimer.start();
+      this.showRestModal.set(true);
   }
 
-  closeRestTimer() {
-      this.isResting.set(false);
-      if (this.restTimer) this.restTimer.pause();
+  closeRestModal() {
+      this.showRestModal.set(false);
+      // Timer keeps running in the service — no pause on close
   }
 
-  stopRestTimer() {
-      this.closeRestTimer();
+  // --- CANCEL SESSION ---
+
+  /** Cancels the active session: clears Firestore status and navigates back */
+  async cancelActiveSession(): Promise<void> {
+      const w = this.workout();
+      if (this.sessionInterval) { clearInterval(this.sessionInterval); this.sessionInterval = null; }
+      this.restTimer.stop();
+      this.isActive.set(false);
+      if (w) {
+          await this.persistWorkoutChanges({
+              ...w,
+              status: 'idle',
+              activeStartTime: deleteField() as any,
+              activeSetsState: deleteField() as any
+          });
+      }
+      this.trainingSessionService.saveSession(null);
+      this.router.navigate(['/dashboard']);
+  }
+
+  // --- LIFECYCLE ---
+
+  ngOnDestroy(): void {
+      if (this.sessionInterval) {
+          clearInterval(this.sessionInterval);
+          this.sessionInterval = null;
+      }
+      // We don't stop restTimer service here because it's global and should persist across views
   }
 
   // --- HELPERS ---
@@ -387,6 +447,23 @@ export class WorkoutDetailComponent implements OnInit {
       updatedEjercicios[sourceIndex] = source;
       await this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
       this.closeSuperserieModal();
+  }
+
+  /** Deletes an exercise from the workout and persists to Firestore */
+  async deleteExercise(exIndex: number): Promise<void> {
+      const w = this.workout();
+      if (!w) return;
+      const updatedEjercicios = [...w.ejercicios];
+      updatedEjercicios.splice(exIndex, 1);
+      // Re-map activeSets: shift keys above deleted index
+      const newMap = new Map<number, WorkoutSet[]>();
+      this.activeSets().forEach((sets, key) => {
+          if (key < exIndex) newMap.set(key, sets);
+          else if (key > exIndex) newMap.set(key - 1, sets);
+          // key === exIndex is dropped
+      });
+      this.activeSets.set(newMap);
+      await this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
   }
 
   /** Saves the current workout state to Firestore */
