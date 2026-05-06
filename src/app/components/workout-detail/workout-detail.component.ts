@@ -1,11 +1,10 @@
-import { Component, OnInit, ViewChild, input, effect, inject, computed, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit, OnDestroy, input, effect, inject, computed, signal } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
 import { Firestore, collection, doc, deleteField } from '@angular/fire/firestore';
-import { Workout, ActiveSetState } from '../../models/workout.model';
+import { Workout } from '../../models/workout.model';
 import { Ejercicio } from '../../models/ejercicio.model';
 import { WorkoutService } from '../../core/services/workout.service';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { TrainingSessionService } from '../../core/services/training-session.service';
 import { TrainingHistoryService } from '../../core/services/training-history.service';
@@ -31,18 +30,18 @@ interface WorkoutSet {
   imports: [CommonModule, RouterModule, MatIconModule, FormsModule, SafeUrlPipe, DragDropModule],
   templateUrl: './workout-detail.component.html',
 })
-export class WorkoutDetailComponent implements OnInit {
+export class WorkoutDetailComponent implements OnInit, OnDestroy {
   id = input.required<string>();
   
-  private workoutService        = inject(WorkoutService);
-  public  router                = inject(Router);
-  private trainingSessionService = inject(TrainingSessionService);
-  private trainingHistoryService = inject(TrainingHistoryService);
-  private firestore             = inject(Firestore);
-  public  exerciseImgService    = inject(ExerciseImageService);
-  public  exerciseService       = inject(ExerciseService);
-  public  chatService           = inject(ChatAiService);
-  public  restTimer             = inject(RestTimerService);
+  private readonly workoutService        = inject(WorkoutService);
+  public  readonly router                = inject(Router);
+  private readonly trainingSessionService = inject(TrainingSessionService);
+  private readonly trainingHistoryService = inject(TrainingHistoryService);
+  private readonly firestore             = inject(Firestore);
+  public  readonly exerciseImgService    = inject(ExerciseImageService);
+  public  readonly exerciseService       = inject(ExerciseService);
+  public  readonly chatService           = inject(ChatAiService);
+  public  readonly restTimer             = inject(RestTimerService);
 
   /** Expose presets for template */
   readonly restPresets = REST_PRESETS_SECONDS;
@@ -79,8 +78,8 @@ export class WorkoutDetailComponent implements OnInit {
     };
 
     (w.musculos || []).forEach(m => {
-        // Use predefined map or stable random based on char code to ensure consistency without true random
-        percentages[m] = baseMap[m] || 70 + (m.charCodeAt(0) % 30); 
+        // Use predefined map or stable random based on code point to ensure consistency
+        percentages[m] = baseMap[m] || 70 + ((m.codePointAt(0) || 0) % 30); 
     });
     return percentages;
   });
@@ -298,7 +297,7 @@ export class WorkoutDetailComponent implements OnInit {
   addSet(index: number) {
       const map = new Map(this.activeSets());
       const current = map.get(index) || [];
-      const last = current.length > 0 ? current[current.length-1] : { reps: 0, weight: 0, completed: false };
+      const last = current.at(-1) ?? { reps: 0, weight: 0, completed: false };
       current.push({ ...last, completed: false, isDropset: false });
       map.set(index, current);
       this.activeSets.set(map);
@@ -307,7 +306,7 @@ export class WorkoutDetailComponent implements OnInit {
   addDropSet(exIndex: number) {
       const map = new Map(this.activeSets());
       const current = map.get(exIndex) || [];
-      const last = current.length > 0 ? current[current.length-1] : { reps: 0, weight: 0, completed: false };
+      const last = current.at(-1) ?? { reps: 0, weight: 0, completed: false };
       // Drop set (FST-7 style): Math.floor(weight * 0.8), Math.floor(reps + 3)
       const dropWeight = Math.floor((last.weight || 0) * 0.8);
       const newReps = Math.floor((last.reps || 10) + 3);
@@ -330,7 +329,7 @@ export class WorkoutDetailComponent implements OnInit {
   toggleSetComplete(exIndex: number, setIndex: number) {
       const map = new Map(this.activeSets());
       const sets = map.get(exIndex);
-      if(sets && sets[setIndex]) {
+      if(sets?.[setIndex]) {
           sets[setIndex].completed = !sets[setIndex].completed;
           map.set(exIndex, sets);
           this.activeSets.set(map);
@@ -434,7 +433,7 @@ export class WorkoutDetailComponent implements OnInit {
           const map = new Map(this.activeSets());
           const existing = map.get(exIndex) || [];
           if (value > existing.length) {
-              const last = existing[existing.length - 1] ?? { reps: ex.repeticiones, weight: ex.pesokg ?? 0, completed: false };
+              const last = existing.at(-1) ?? { reps: ex.repeticiones, weight: ex.pesokg ?? 0, completed: false };
               for (let i = existing.length; i < value; i++) existing.push({ ...last, completed: false });
           } else {
               existing.splice(value);
@@ -586,21 +585,25 @@ export class WorkoutDetailComponent implements OnInit {
 
       const w = this.workout();
       if(w) {
-          const wObj = Object.assign({}, w);
-          // Insert minimal exercise
-          wObj.ejercicios.push({
-              id: Date.now(),
-              nombre: name,
-              grupoMuscular: 'General',
-              tipo: 'aislado',
-              series: 3,
-              repeticiones: 10,
-              descanso: '60s',
-              pesokg: 0,
-              notas: 'Agregado manualmente'
-          });
-
-          // Re-initialize active set just for this new index
+          const wObj = { 
+            ...w, 
+            ejercicios: [
+                ...w.ejercicios,
+                {
+                    id: Date.now(),
+                    nombre: name,
+                    grupoMuscular: 'General',
+                    tipo: 'aislado' as 'aislado' | 'compuesto',
+                    series: 3,
+                    repeticiones: 10,
+                    descanso: '60s',
+                    pesokg: 0,
+                    notas: 'Agregado manualmente'
+                }
+            ]
+          };
+          
+          this.persistWorkoutChanges(wObj);
           const newIndex = wObj.ejercicios.length - 1;
           const map = new Map(this.activeSets());
           
@@ -621,9 +624,10 @@ export class WorkoutDetailComponent implements OnInit {
   getVideoEmbedUrl(videoUrl: string | undefined): string {
     if (!videoUrl) return '';
     let videoId = '';
-    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const match = videoUrl.match(regex);
-    if (match && match[1]) videoId = match[1];
+    // Simple and low-complexity regex for YouTube IDs
+    const regex = /(?:v=|\/embed\/|\/v\/|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/;
+    const match = regex.exec(videoUrl);
+    videoId = match?.[1] || '';
     return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
   }
 }

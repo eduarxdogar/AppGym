@@ -12,13 +12,13 @@ import { Workout } from '../../../models/workout.model';
   providedIn: 'root'
 })
 export class ChatAiService {
-  private baseAi       = inject(BaseAiService);
-  private profileState = inject(UserProfileStateService);
-  private workoutService  = inject(WorkoutService);
-  private metricsService  = inject(MetricsService);
-  private cardioService   = inject(CardioSessionService);
-  private storageService  = inject(StorageService);
-  private imgService      = inject(ExerciseImageService);
+  private readonly baseAi       = inject(BaseAiService);
+  private readonly profileState = inject(UserProfileStateService);
+  private readonly workoutService  = inject(WorkoutService);
+  private readonly metricsService  = inject(MetricsService);
+  private readonly cardioService   = inject(CardioSessionService);
+  private readonly storageService  = inject(StorageService);
+  private readonly imgService      = inject(ExerciseImageService);
 
   /** Currently active workout context for the coach */
   private activeWorkoutId = signal<string | null>(null);
@@ -116,8 +116,10 @@ HISTORIAL COMPLETO DE RUTINAS (para contexto de fatiga/progresión):
 ${JSON.stringify(allWorkouts.map(w => ({ nombre: w.nombre, fecha: w.fecha, isCompleted: w.isCompleted, musculos: w.musculos })))}
 Cardio (7d): ${JSON.stringify(this.cardioService.cardioSessions())}`;
 
-        this.chatHistory.push({ role: 'user', parts: [{ text: contextText }] });
-        this.chatHistory.push({ role: 'model', parts: [{ text: '¡Listo! Soy Coach Tríada. Ya tengo tu contexto completo. ¿Qué necesitás?' }] });
+        this.chatHistory.push(
+            { role: 'user', parts: [{ text: contextText }] },
+            { role: 'model', parts: [{ text: '¡Listo! Soy Coach Tríada. Ya tengo tu contexto completo. ¿Qué necesitás?' }] }
+        );
       }
 
       // --- Build user message ---
@@ -125,7 +127,7 @@ Cardio (7d): ${JSON.stringify(this.cardioService.cardioSessions())}`;
       this.chatHistory.push({ role: 'user', parts: [{ text: promptText }] });
 
       // Ensure the history array being sent to Gemini API starts with 'user'
-      let historyToSend = this.chatHistory.slice(0, this.chatHistory.length - 1);
+      let historyToSend = this.chatHistory.slice(0, -1);
       while (historyToSend.length > 0 && historyToSend[0].role !== 'user') {
         historyToSend.shift();
       }
@@ -160,8 +162,8 @@ Cardio (7d): ${JSON.stringify(this.cardioService.cardioSessions())}`;
         await this.storageService.saveChatMessage(workoutId, userMsg);
         await this.storageService.saveChatMessage(workoutId, coachMsg);
 
-        // Update local signal for UI reactivity
-        this.messages.update(msgs => [...msgs, userMsg, coachMsg]);
+        // We don't manually update this.messages signal here because 
+        // loadChatHistory has a real-time subscription to getChatHistory
       }
 
       return responseText;

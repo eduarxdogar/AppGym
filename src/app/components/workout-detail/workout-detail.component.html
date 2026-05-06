@@ -32,7 +32,9 @@
         <div class="px-5 pt-2 pb-6 space-y-8">
            
             <!-- 2. Trainer Banner -->
-            <div class="bg-[#151921] rounded-2xl p-5 border border-zinc-800 flex items-center gap-4 relative overflow-hidden group cursor-pointer hover:border-zinc-700 transition-all">
+            <div class="bg-[#151921] rounded-2xl p-5 border border-zinc-800 flex items-center gap-4 relative overflow-hidden group cursor-pointer hover:border-zinc-700 transition-all"
+                 role="button"
+                 tabindex="0">
                <div class="absolute -right-10 -top-10 w-32 h-32 bg-blue-500/10 blur-[50px] rounded-full pointer-events-none"></div>
                <div class="h-10 w-10 rounded-lg bg-white/10 flex items-center justify-center text-white">
                    <mat-icon>sports_gymnastics</mat-icon>
@@ -52,7 +54,7 @@
                 <div class="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x">
                     <div *ngFor="let m of workout.musculos" class="snap-start flex-shrink-0 bg-[#151921] rounded-xl p-3 w-[140px] border border-zinc-800 flex flex-col items-center gap-2 group hover:border-[#CCFF00]/50 transition-colors">
                         <div class="h-16 w-16 bg-zinc-800 rounded-full flex items-center justify-center overflow-hidden border border-zinc-700 relative">
-                            <img [src]="'https://placehold.co/100x100/1c1c1c/CCFF00?text=' + m.substring(0,2).toUpperCase()" class="opacity-80 group-hover:opacity-100 transition-opacity" alt="Muscle">
+                            <img [src]="'https://placehold.co/100x100/1c1c1c/CCFF00?text=' + m.substring(0,2).toUpperCase()" class="opacity-80 group-hover:opacity-100 transition-opacity" [alt]="m">
                         </div>
                         <div class="text-center w-full">
                             <p class="text-white font-bold text-sm truncate w-full">{{ m }}</p>
@@ -72,7 +74,10 @@
                 
                 <div *ngFor="let ex of workout.ejercicios; let i = index" 
                      class="bg-[#151921] p-3 rounded-2xl flex items-center gap-4 relative group hover:bg-[#1a1f29] transition-colors cursor-pointer border border-transparent hover:border-zinc-800"
-                     (click)="toggleExpand(i)">
+                     (click)="toggleExpand(i)"
+                     role="button"
+                     tabindex="0"
+                     (keydown.enter)="toggleExpand(i)">
                     
                     <div class="h-20 w-20 flex-shrink-0 rounded-xl bg-zinc-800 overflow-hidden relative border border-zinc-700">
                         <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" alt="Exercise" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
@@ -107,9 +112,12 @@
 
         <!-- REST TIMER OVERLAY (Delegated to Service) -->
         <div *ngIf="showRestModal()" class="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center animate-fadeIn"
-             (click)="closeRestModal()">
+             (click)="closeRestModal()"
+             role="dialog"
+             aria-modal="true">
              <div class="relative bg-[#151921] border border-zinc-800 p-8 rounded-3xl flex flex-col items-center gap-6 shadow-2xl w-full max-w-xs mx-4"
-                  (click)="$event.stopPropagation()">
+                  (click)="$event.stopPropagation()"
+                  role="document">
                  <button (click)="closeRestModal()" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors">
                      <mat-icon>close</mat-icon>
                  </button>
@@ -170,7 +178,8 @@
 
         <div class="p-4 space-y-6 pb-32 no-scrollbar" cdkDropList (cdkDropListDropped)="drop($event)">
             
-            <div *ngFor="let ex of workout.ejercicios; let i = index" cdkDrag class="bg-[#151921]/50 p-2 sm:p-4 rounded-2xl border border-transparent hover:border-zinc-800 transition-all">
+            <div *ngFor="let ex of workout.ejercicios; let i = index" cdkDrag class="bg-[#151921]/50 p-2 sm:p-4 rounded-2xl border border-transparent hover:border-zinc-800 transition-all"
+                 role="listitem">
                 
                 <!-- Main Exercise Header -->
                 <div class="flex items-center gap-2 sm:gap-4 mb-4 relative">
@@ -308,9 +317,12 @@
 
     <!-- Modal: Superserie -->
     <div *ngIf="showSuperserieModal()" class="fixed inset-0 z-[125] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
-         (click)="closeSuperserieModal()">
+         (click)="closeSuperserieModal()"
+         role="dialog"
+         aria-modal="true">
         <div class="bg-[#151921] border border-purple-700/50 rounded-t-3xl sm:rounded-2xl w-full max-w-sm shadow-2xl animate-in slide-in-from-bottom-4 duration-300"
-             (click)="$event.stopPropagation()">
+             (click)="$event.stopPropagation()"
+             role="document">
             <div class="p-5">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="h-9 w-9 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
@@ -368,17 +380,20 @@
     <!-- Modal: Exercise Detail -->
     <div *ngIf="showExerciseModal() && selectedExercise() as ex" 
          class="fixed inset-0 z-[130] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
-         (click)="closeExerciseModal()">
+         (click)="closeExerciseModal()"
+         role="dialog"
+         aria-modal="true">
 
         <div class="bg-[#151921] border border-zinc-700 rounded-t-3xl sm:rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300"
-             (click)="$event.stopPropagation()">
+             (click)="$event.stopPropagation()"
+             role="document">
 
             <!-- Video / Thumbnail Header (Fixed) -->
             <div class="relative w-full bg-zinc-900 rounded-t-3xl sm:rounded-t-2xl overflow-hidden flex-none" style="aspect-ratio: 16/9">
                 <ng-container *ngIf="exerciseImgService.getExerciseVideoUrl(ex.nombre) as videoUrl; else thumbnailView">
                     <iframe [src]="videoUrl | safeUrl"
-                            class="w-full h-full"
-                            frameborder="0"
+                            class="w-full h-full border-0"
+                            title="Video de técnica de ejercicio"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen>
                     </iframe>
@@ -514,7 +529,7 @@
                             (click)="supersetSelectedMuscle.set(m)"
                             class="bg-zinc-900 border border-zinc-800 hover:border-purple-500 hover:bg-purple-500/10 rounded-xl p-3 flex flex-col items-center gap-2 transition-all group">
                         <div class="h-12 w-12 rounded-lg bg-[#151921] p-1 group-hover:scale-110 transition-transform">
-                            <img [src]="exerciseImgService.getMuscleImage(m)" class="w-full h-full object-contain opacity-80 group-hover:opacity-100">
+                            <img [src]="exerciseImgService.getMuscleImage(m)" class="w-full h-full object-contain opacity-80 group-hover:opacity-100" [alt]="m">
                         </div>
                         <span class="text-[10px] font-bold text-zinc-400 group-hover:text-purple-400 uppercase tracking-wider text-center line-clamp-1">{{ m }}</span>
                     </button>
@@ -536,7 +551,7 @@
                             (click)="linkSupersetFromCatalog(ex)"
                             class="w-full bg-[#151921] border border-zinc-800 hover:border-purple-500 rounded-xl p-3 flex items-center gap-4 transition-all text-left group">
                         <div class="h-10 w-10 rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden flex-shrink-0">
-                            <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" class="w-full h-full object-cover opacity-70 group-hover:opacity-100">
+                            <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" class="w-full h-full object-cover opacity-70 group-hover:opacity-100" [alt]="ex.nombre">
                         </div>
                         <div>
                             <p class="text-sm font-bold text-zinc-300 group-hover:text-white">{{ ex.nombre }}</p>
