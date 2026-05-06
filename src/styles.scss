@@ -23,15 +23,27 @@ body {
   /* Rounded XL */
 }
 
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-}
+
+  .custom-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #CCFF00 transparent;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #CCFF00;
+      border-radius: 10px;
+    }
+  }
+
 
 /* CDK Drag & Drop Styles for smoother UX */
 .cdk-drag-preview {
