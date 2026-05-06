@@ -11,10 +11,12 @@ import { TrainingSessionService } from '../../core/services/training-session.ser
 import { TrainingHistoryService } from '../../core/services/training-history.service';
 import { FormsModule } from '@angular/forms';
 import { ExerciseImageService } from '../../core/services/exercise-image.service';
+import { ExerciseService } from '../../core/services/exercise.service';
 import { SafeUrlPipe } from '../../shared/pipes/safe-url.pipe';
 import { ChatAiService } from '../../core/services/ai/chat-ai.service';
 import { RestTimerService, REST_PRESETS_SECONDS } from '../../core/services/rest-timer.service';
 import { WorkoutSession, WorkoutSessionExercise } from '../../models/workout-session.model';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 
 interface WorkoutSet {
   reps: number;
@@ -26,7 +28,7 @@ interface WorkoutSet {
 @Component({
   selector: 'app-workout-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, FormsModule, SafeUrlPipe],
+  imports: [CommonModule, RouterModule, MatIconModule, FormsModule, SafeUrlPipe, DragDropModule],
   templateUrl: './workout-detail.component.html',
 })
 export class WorkoutDetailComponent implements OnInit {
@@ -38,6 +40,7 @@ export class WorkoutDetailComponent implements OnInit {
   private trainingHistoryService = inject(TrainingHistoryService);
   private firestore             = inject(Firestore);
   public  exerciseImgService    = inject(ExerciseImageService);
+  public  exerciseService       = inject(ExerciseService);
   public  chatService           = inject(ChatAiService);
   public  restTimer             = inject(RestTimerService);
 
@@ -100,9 +103,29 @@ export class WorkoutDetailComponent implements OnInit {
 
   // --- Edit-in-place state ---
   editingExerciseIndex  = signal<number | null>(null);
+  
+  // Superserie Modal State
   superserieSourceIndex = signal<number | null>(null);
   showSuperserieModal   = signal<boolean>(false);
-  
+  supersetSearchQuery = signal<string>('');
+  supersetSelectedMuscle = signal<string | null>(null);
+
+  supersetMuscleGroups = computed(() => {
+      const all = this.exerciseService.getAll();
+      const groups = new Set(all.map(e => e.grupoMuscular));
+      return Array.from(groups).filter(Boolean);
+  });
+
+  filteredSupersetExercises = computed(() => {
+      let exs = this.exerciseService.getAll();
+      const muscle = this.supersetSelectedMuscle();
+      const q = this.supersetSearchQuery().toLowerCase();
+
+      if (muscle) exs = exs.filter(e => e.grupoMuscular === muscle);
+      if (q) exs = exs.filter(e => e.nombre.toLowerCase().includes(q));
+      
+      return exs;
+  });
   // Computed for UI
   sessionTimeFormatted = computed(() => {
     const totalSeconds = this.sessionSeconds();
@@ -285,9 +308,10 @@ export class WorkoutDetailComponent implements OnInit {
       const map = new Map(this.activeSets());
       const current = map.get(exIndex) || [];
       const last = current.length > 0 ? current[current.length-1] : { reps: 0, weight: 0, completed: false };
-      // Drop set: 80% del peso, +3-4 reps
-      const dropWeight = Math.round((last.weight || 0) * 0.8);
-      current.push({ reps: (last.reps || 10) + 3, weight: dropWeight, completed: false, isDropset: true });
+      // Drop set (FST-7 style): Math.floor(weight * 0.8), Math.floor(reps + 3)
+      const dropWeight = Math.floor((last.weight || 0) * 0.8);
+      const newReps = Math.floor((last.reps || 10) + 3);
+      current.push({ reps: newReps, weight: dropWeight, completed: false, isDropset: true });
       map.set(exIndex, current);
       this.activeSets.set(map);
       this.persistWorkoutChanges();
@@ -424,9 +448,38 @@ export class WorkoutDetailComponent implements OnInit {
       await this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
   }
 
+  /** Handles Drag and Drop reordering of exercises */
+  drop(event: CdkDragDrop<Ejercicio[]>) {
+      const w = this.workout();
+      if (!w) return;
+      if (event.previousIndex === event.currentIndex) return;
+
+      const updatedEjercicios = [...w.ejercicios];
+      moveItemInArray(updatedEjercicios, event.previousIndex, event.currentIndex);
+
+      // Map the activeSets indices to match the new array order
+      const currentMap = this.activeSets();
+      const newMap = new Map<number, WorkoutSet[]>();
+      
+      const indices = Array.from({length: w.ejercicios.length}, (_, i) => i);
+      moveItemInArray(indices, event.previousIndex, event.currentIndex);
+      
+      for (let newIndex = 0; newIndex < indices.length; newIndex++) {
+          const oldIndex = indices[newIndex];
+          if (currentMap.has(oldIndex)) {
+              newMap.set(newIndex, currentMap.get(oldIndex)!);
+          }
+      }
+      
+      this.activeSets.set(newMap);
+      this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
+  }
+
   /** Open superset modal for a given source exercise */
   openSuperserieModal(sourceIndex: number) {
       this.superserieSourceIndex.set(sourceIndex);
+      this.supersetSearchQuery.set('');
+      this.supersetSelectedMuscle.set(null);
       this.showSuperserieModal.set(true);
   }
 
@@ -435,7 +488,21 @@ export class WorkoutDetailComponent implements OnInit {
       this.superserieSourceIndex.set(null);
   }
 
-  /** Links two exercises as a superset and persists */
+  /** Links an exercise from the catalog as a superset to the source exercise */
+  async linkSupersetFromCatalog(targetExercise: Ejercicio) {
+      const sourceIndex = this.superserieSourceIndex();
+      const w = this.workout();
+      if (sourceIndex === null || !w) return;
+      const updatedEjercicios = [...w.ejercicios];
+      const source = { ...updatedEjercicios[sourceIndex] };
+      source.tipos = 'super-serie';
+      source.superSetEjercicio = targetExercise;
+      updatedEjercicios[sourceIndex] = source;
+      await this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
+      this.closeSuperserieModal();
+  }
+
+  /** (Legacy) Links two exercises already in the workout */
   async linkSuperset(targetIndex: number) {
       const sourceIndex = this.superserieSourceIndex();
       const w = this.workout();

@@ -168,13 +168,17 @@
              </div>
         </div>
 
-        <div class="p-4 space-y-6 pb-32">
+        <div class="p-4 space-y-6 pb-32 no-scrollbar" cdkDropList (cdkDropListDropped)="drop($event)">
             
-            <div *ngFor="let ex of workout.ejercicios; let i = index" class="animate-in slide-in-from-bottom-4 duration-500">
+            <div *ngFor="let ex of workout.ejercicios; let i = index" cdkDrag class="bg-[#151921]/50 p-2 sm:p-4 rounded-2xl border border-transparent hover:border-zinc-800 transition-all">
                 
-                <!-- Exercise Header -->
-                <div class="flex items-center gap-4 mb-4 relative">
-                    <div class="h-14 w-14 rounded-lg bg-zinc-800 overflow-hidden border border-zinc-700">
+                <!-- Main Exercise Header -->
+                <div class="flex items-center gap-2 sm:gap-4 mb-4 relative">
+                    <!-- Drag Handle -->
+                    <div cdkDragHandle class="text-zinc-600 hover:text-white cursor-grab active:cursor-grabbing flex items-center justify-center -ml-1 sm:ml-0 p-1">
+                        <mat-icon>drag_indicator</mat-icon>
+                    </div>
+                    <div class="h-14 w-14 rounded-lg bg-zinc-800 overflow-hidden border border-zinc-700 relative z-10 flex-shrink-0">
                         <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" alt="Exercise" class="w-full h-full object-cover">
                     </div>
                     <div class="flex-1 pr-10">
@@ -189,6 +193,27 @@
                     <button (click)="deleteExercise(i)" class="absolute right-0 top-0 text-zinc-600 hover:text-red-500 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors">
                         <mat-icon>delete</mat-icon>
                     </button>
+                </div>
+
+                <!-- Superset Connector & Secondary Exercise -->
+                <div *ngIf="ex.superSetEjercicio" class="flex flex-col relative pl-7 mb-4 -mt-2">
+                    <!-- Visual Connector Line -->
+                    <div class="absolute left-[27px] top-[-10px] bottom-6 w-0.5 bg-purple-500/50"></div>
+                    
+                    <div class="flex items-center gap-4 relative z-10 mt-2">
+                        <div class="h-12 w-12 rounded-lg bg-zinc-800 overflow-hidden border-2 border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.3)]">
+                            <img [src]="exerciseImgService.getExerciseThumbnail(ex.superSetEjercicio.nombre)" alt="Superset Exercise" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-purple-500/20 text-purple-400 text-[8px] font-black uppercase px-2 py-0.5 rounded tracking-widest border border-purple-500/30">Super</span>
+                                <h3 class="text-lg font-bold text-zinc-300 leading-tight">{{ ex.superSetEjercicio.nombre }}</h3>
+                                <button (click)="openExerciseDetail(ex.superSetEjercicio)" class="text-zinc-500 hover:text-purple-400 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors">
+                                    <mat-icon class="text-lg">info</mat-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Sets Table -->
@@ -208,11 +233,13 @@
                          class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 items-center border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-colors"
                          [ngClass]="{'opacity-50': set.completed, 'bg-green-900/10': set.completed}">
                         
-                        <!-- Set Number -->
-                        <div class="col-span-1 flex justify-center">
-                            <div class="h-6 w-6 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
+                        <!-- Set Number / Drop Badge -->
+                        <div class="col-span-1 flex flex-col items-center justify-center relative">
+                            <div class="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
+                                 [ngClass]="set.isDropset ? 'bg-orange-500/20 text-orange-500 border border-orange-500/50' : 'bg-zinc-700 text-zinc-300'">
                                 {{ sIndex + 1 }}
                             </div>
+                            <span *ngIf="set.isDropset" class="absolute -bottom-3 text-[8px] font-black text-orange-500 tracking-tighter uppercase">Drop</span>
                         </div>
 
                         <!-- KG Input -->
@@ -451,6 +478,77 @@
     </div>
 
 
+    <!-- PRO SUPERSERIE MODAL -->
+    <div *ngIf="showSuperserieModal()" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div class="bg-[#151921] border border-purple-500/30 rounded-2xl w-full max-w-lg shadow-2xl scale-100 animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+            
+            <!-- Header -->
+            <div class="p-5 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50 rounded-t-2xl">
+                <div>
+                    <h3 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+                        <mat-icon class="text-purple-500">link</mat-icon> Vincular Superserie
+                    </h3>
+                    <p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Busca o filtra por músculo</p>
+                </div>
+                <button (click)="closeSuperserieModal()" class="text-zinc-500 hover:text-white transition-colors">
+                    <mat-icon>close</mat-icon>
+                </button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="p-4 border-b border-zinc-800 relative bg-[#0B0E14]">
+                <mat-icon class="absolute left-7 top-1/2 -translate-y-1/2 text-zinc-500 text-lg">search</mat-icon>
+                <input type="text" [(ngModel)]="supersetSearchQuery" 
+                       class="w-full bg-[#151921] border border-zinc-700 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition outline-none placeholder:text-zinc-600"
+                       placeholder="Buscar ejercicio específico...">
+            </div>
+
+            <!-- Content Area (Scrollable without scrollbar) -->
+            <div class="flex-1 overflow-y-auto p-4 no-scrollbar">
+                
+                <!-- STEP 1: Muscle Grid (if no muscle selected and no search) -->
+                <div *ngIf="!supersetSelectedMuscle() && !supersetSearchQuery()" class="grid grid-cols-3 sm:grid-cols-4 gap-3 animate-in fade-in">
+                    <button *ngFor="let m of supersetMuscleGroups()" 
+                            (click)="supersetSelectedMuscle.set(m)"
+                            class="bg-zinc-900 border border-zinc-800 hover:border-purple-500 hover:bg-purple-500/10 rounded-xl p-3 flex flex-col items-center gap-2 transition-all group">
+                        <div class="h-12 w-12 rounded-lg bg-[#151921] p-1 group-hover:scale-110 transition-transform">
+                            <img [src]="exerciseImgService.getMuscleImage(m)" class="w-full h-full object-contain opacity-80 group-hover:opacity-100">
+                        </div>
+                        <span class="text-[10px] font-bold text-zinc-400 group-hover:text-purple-400 uppercase tracking-wider text-center line-clamp-1">{{ m }}</span>
+                    </button>
+                </div>
+
+                <!-- STEP 2: Exercise List -->
+                <div *ngIf="supersetSelectedMuscle() || supersetSearchQuery()" class="space-y-2 animate-in slide-in-from-right-4">
+                    
+                    <div *ngIf="supersetSelectedMuscle()" class="flex items-center gap-2 mb-4 bg-purple-500/10 p-2 rounded-lg border border-purple-500/20">
+                        <button (click)="supersetSelectedMuscle.set(null)" class="text-purple-400 hover:text-purple-300 flex items-center justify-center p-1 bg-[#151921] rounded-md border border-purple-500/30">
+                            <mat-icon class="text-sm">arrow_back</mat-icon>
+                        </button>
+                        <span class="text-xs font-bold text-purple-400 uppercase tracking-widest">{{ supersetSelectedMuscle() }}</span>
+                    </div>
+
+                    <p *ngIf="filteredSupersetExercises().length === 0" class="text-center text-zinc-500 text-sm py-8 font-mono">No se encontraron ejercicios</p>
+
+                    <button *ngFor="let ex of filteredSupersetExercises()"
+                            (click)="linkSupersetFromCatalog(ex)"
+                            class="w-full bg-[#151921] border border-zinc-800 hover:border-purple-500 rounded-xl p-3 flex items-center gap-4 transition-all text-left group">
+                        <div class="h-10 w-10 rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden flex-shrink-0">
+                            <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" class="w-full h-full object-cover opacity-70 group-hover:opacity-100">
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-zinc-300 group-hover:text-white">{{ ex.nombre }}</p>
+                            <p class="text-[10px] text-zinc-600 uppercase tracking-widest">{{ ex.grupoMuscular }}</p>
+                        </div>
+                        <mat-icon class="ml-auto text-zinc-600 group-hover:text-purple-500 transition-colors">add_link</mat-icon>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD EXERCISE MODAL -->
     <div *ngIf="showAddExerciseModal()" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
         <div class="bg-[#151921] border border-[#CCFF00]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
            <h3 class="text-lg font-bold text-white tracking-wide mb-4">

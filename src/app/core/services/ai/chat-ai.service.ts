@@ -171,7 +171,7 @@ Cardio (7d): ${JSON.stringify(this.cardioService.cardioSessions())}`;
       if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
         return 'Paciencia, fiera. Estoy recuperando el aliento. Intentá de nuevo en unos segundos.';
       }
-      return 'Tengo un fallo técnico ahora mismo, mostro. Probá de nuevo más tarde.';
+      return '¡Ey fiera! Hubo un calambre en el sistema. Dame un respiro y volvé a intentar.';
     }
   }
 }
