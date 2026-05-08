@@ -109,11 +109,10 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   supersetSearchQuery = signal<string>('');
   supersetSelectedMuscle = signal<string | null>(null);
 
-  supersetMuscleGroups = computed(() => {
-      const all = this.exerciseService.getAll();
-      const groups = new Set(all.map(e => e.grupoMuscular));
-      return Array.from(groups).filter(Boolean);
-  });
+  supersetMuscleGroups = signal<string[]>([
+      'Pecho', 'Espalda', 'Bíceps', 'Tríceps', 'Hombros', 
+      'Cuádriceps', 'Isquios', 'Pantorrilla', 'Core'
+  ]);
 
   filteredSupersetExercises = computed(() => {
       let exs = this.exerciseService.getAll();
@@ -306,10 +305,10 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   addDropSet(exIndex: number) {
       const map = new Map(this.activeSets());
       const current = map.get(exIndex) || [];
-      const last = current.at(-1) ?? { reps: 0, weight: 0, completed: false };
-      // Drop set (FST-7 style): Math.floor(weight * 0.8), Math.floor(reps + 3)
+      const last = current.at(-1) ?? { reps: 10, weight: 0, completed: false };
+      // Biomechanical Drop Set formula: -20% weight, +4 reps
       const dropWeight = Math.floor((last.weight || 0) * 0.8);
-      const newReps = Math.floor((last.reps || 10) + 3);
+      const newReps = (last.reps || 10) + 4;
       current.push({ reps: newReps, weight: dropWeight, completed: false, isDropset: true });
       map.set(exIndex, current);
       this.activeSets.set(map);
@@ -499,6 +498,22 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       updatedEjercicios[sourceIndex] = source;
       await this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
       this.closeSuperserieModal();
+  }
+
+  /** Removes the superset link from an exercise without deleting it */
+  async unlinkSuperset(exIndex: number, event?: Event): Promise<void> {
+      if (event) {
+          event.stopPropagation();
+      }
+      const w = this.workout();
+      if (!w) return;
+      const updatedEjercicios = [...w.ejercicios];
+      const ex = { ...updatedEjercicios[exIndex] };
+      // Nullify to ensure UI updates instantly and Firestore removes the data
+      ex.superSetEjercicio = null as any;
+      ex.tipos = 'aislado' as any;
+      updatedEjercicios[exIndex] = ex;
+      await this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
   }
 
   /** (Legacy) Links two exercises already in the workout */

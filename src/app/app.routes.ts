@@ -28,7 +28,7 @@ export const routes: Routes = [
         { path: 'onboarding', loadComponent: () => import('./features/onboarding/onboarding.component').then(m => m.OnboardingComponent) },
         { path: 'recovery', redirectTo: 'recovery-detail', pathMatch: 'full' },
         { path: 'workouts', loadComponent: () => import('./components/workout-list/workout-list.component').then(m => m.WorkoutListComponent) },
-        { path: 'workouts/:id', loadComponent: () => import('./components/workout-detail/workout-detail.component').then(m => m.WorkoutDetailComponent) },
+        { path: 'workouts/:id', loadComponent: () => import('./features/workout-detail/workout-detail.component').then(m => m.WorkoutDetailComponent) },
         { path: 'calendar', loadComponent: () => import('./features/calendar/calendar.component').then(m => m.CalendarComponent) },
         { path: 'timer', loadComponent: () => import('./features/timer/timer.component').then(m => m.TimerComponent) },
         { path: 'workout/:id/edit', loadComponent: () => import('./components/workout-edit/workout-edit.component').then(m => m.WorkoutEditComponent) },
