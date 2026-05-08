@@ -468,10 +468,10 @@
     </div>
 
 
-    <!-- PRO SUPERSERIE MODAL -->
-    <div *ngIf="showSuperserieModal()" 
+    <!-- PRO CATALOG MODAL (Superset / Add Manual) -->
+    <div *ngIf="showCatalogModal()" 
          class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
-         (click)="closeSuperserieModal()"
+         (click)="closeCatalogModal()"
          role="dialog"
          aria-modal="true">
         <div class="bg-[#151921] border border-purple-500/30 rounded-t-3xl sm:rounded-2xl w-full max-w-lg shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 flex flex-col"
@@ -483,11 +483,14 @@
             <div class="p-5 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50 rounded-t-2xl">
                 <div>
                     <h3 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
-                        <mat-icon class="text-purple-500">link</mat-icon> Vincular Superserie
+                        <mat-icon [ngClass]="catalogModalMode() === 'superset' ? 'text-purple-500' : 'text-[#CCFF00]'">
+                            {{ catalogModalMode() === 'superset' ? 'link' : 'add_circle' }}
+                        </mat-icon> 
+                        {{ catalogModalMode() === 'superset' ? 'Vincular Superserie' : 'Añadir Ejercicio' }}
                     </h3>
                     <p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Busca o filtra por músculo</p>
                 </div>
-                <button (click)="closeSuperserieModal()" class="text-zinc-500 hover:text-white transition-colors">
+                <button (click)="closeCatalogModal()" class="text-zinc-500 hover:text-white transition-colors">
                     <mat-icon>close</mat-icon>
                 </button>
             </div>
@@ -525,11 +528,15 @@
                         <span class="text-xs font-bold text-purple-400 uppercase tracking-widest">{{ supersetSelectedMuscle() }}</span>
                     </div>
 
-                    <p *ngIf="filteredSupersetExercises().length === 0" class="text-center text-zinc-500 text-sm py-8 font-mono">No se encontraron ejercicios</p>
+                    <div *ngIf="filteredSupersetExercises().length === 0" class="text-center text-zinc-500 text-sm py-8 font-mono flex flex-col items-center gap-2">
+                        <mat-icon class="text-zinc-700 text-4xl mb-2">construction</mat-icon>
+                        <p>No se encontraron ejercicios.</p>
+                        <p class="text-xs">Pronto añadiremos más ejercicios de esta disciplina.</p>
+                    </div>
 
                     <button *ngFor="let ex of filteredSupersetExercises()"
-                            (click)="linkSupersetFromCatalog(ex)"
-                            class="w-full bg-[#151921] border border-zinc-800 hover:border-purple-500 rounded-xl p-3 flex items-center gap-4 transition-all text-left group">
+                            (click)="selectExerciseFromCatalog(ex)"
+                            class="w-full bg-[#151921] border border-zinc-800 hover:border-[#CCFF00]/50 rounded-xl p-3 flex items-center gap-4 transition-all text-left group">
                         <div class="h-10 w-10 rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden flex-shrink-0">
                             <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" class="w-full h-full object-cover opacity-70 group-hover:opacity-100" [alt]="ex.nombre">
                         </div>
@@ -537,7 +544,9 @@
                             <p class="text-sm font-bold text-zinc-300 group-hover:text-white">{{ ex.nombre }}</p>
                             <p class="text-[10px] text-zinc-600 uppercase tracking-widest">{{ ex.grupoMuscular }}</p>
                         </div>
-                        <mat-icon class="ml-auto text-zinc-600 group-hover:text-purple-500 transition-colors">add_link</mat-icon>
+                        <mat-icon class="ml-auto text-zinc-600 group-hover:text-[#CCFF00] transition-colors">
+                            {{ catalogModalMode() === 'superset' ? 'add_link' : 'add' }}
+                        </mat-icon>
                     </button>
                 </div>
 
@@ -545,27 +554,5 @@
         </div>
     </div>
 
-    <!-- ADD EXERCISE MODAL -->
-    <div *ngIf="showAddExerciseModal()" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-        <div class="bg-[#151921] border border-[#CCFF00]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
-           <h3 class="text-lg font-bold text-white tracking-wide mb-4">
-              Añadir Ejercicio
-           </h3>
-           
-           <input type="text" [(ngModel)]="newExerciseName" 
-                  class="w-full bg-[#0B0E14] border border-zinc-700 rounded-xl p-3 text-sm text-white focus:border-[#CCFF00] mb-6 focus:ring-1 focus:ring-[#CCFF00] transition outline-none"
-                  placeholder="Ej: Press de Banca Inclinado">
-
-           <div class="flex gap-3 justify-end mt-4">
-              <button (click)="closeAddExerciseModal()" class="px-5 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 font-bold tracking-wider text-xs hover:bg-zinc-800 transition">
-                 CANCELAR
-              </button>
-              <button (click)="saveNewExercise()" class="px-5 py-2.5 rounded-xl bg-[#CCFF00] text-black font-bold tracking-wider text-xs hover:bg-[#bce600] transition flex items-center gap-2">
-                 <mat-icon class="text-sm">add</mat-icon> AÑADIR
-              </button>
-           </div>
-        </div>
     </div>
-
   </div>
-</div>

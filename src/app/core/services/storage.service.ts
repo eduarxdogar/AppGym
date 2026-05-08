@@ -47,6 +47,21 @@ export class StorageService {
     );
   }
 
+  private sanitizeData(obj: any): any {
+    if (obj === undefined) return null;
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.sanitizeData(item));
+    }
+    const cleanObj: any = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        cleanObj[key] = this.sanitizeData(obj[key]);
+      }
+    }
+    return cleanObj;
+  }
+
   async saveWorkout(workout: any): Promise<void> {
     const user = this.authService.currentUser();
     if (!user) {
@@ -56,7 +71,8 @@ export class StorageService {
     try {
       const workoutsCol = collection(this.firestore, 'workouts');
       const docRef = doc(workoutsCol, String(workout.id));
-      await setDoc(docRef, { ...workout, userId: user.uid }, { merge: true });
+      const safeWorkout = this.sanitizeData({ ...workout, userId: user.uid });
+      await setDoc(docRef, safeWorkout, { merge: true });
     } catch (error) {
       console.error('Error saving workout:', error);
       throw error;
@@ -108,7 +124,8 @@ export class StorageService {
       const docId = session.id ? String(session.id) : doc(historyCol).id;
       const docRef = doc(historyCol, docId);
       
-      await setDoc(docRef, { ...session, id: docId, userId: user.uid }, { merge: true });
+      const safeSession = this.sanitizeData({ ...session, id: docId, userId: user.uid });
+      await setDoc(docRef, safeSession, { merge: true });
     } catch (error) {
       console.error('Error saving history:', error);
       throw error;

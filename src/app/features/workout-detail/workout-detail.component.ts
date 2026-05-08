@@ -103,9 +103,10 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   // --- Edit-in-place state ---
   editingExerciseIndex  = signal<number | null>(null);
   
-  // Superserie Modal State
+  // Catalog Modal State
+  catalogModalMode = signal<'superset' | 'add-manual' | null>(null);
+  showCatalogModal = signal<boolean>(false);
   superserieSourceIndex = signal<number | null>(null);
-  showSuperserieModal   = signal<boolean>(false);
   supersetSearchQuery = signal<string>('');
   supersetSelectedMuscle = signal<string | null>(null);
 
@@ -478,26 +479,78 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       this.superserieSourceIndex.set(sourceIndex);
       this.supersetSearchQuery.set('');
       this.supersetSelectedMuscle.set(null);
-      this.showSuperserieModal.set(true);
+      this.catalogModalMode.set('superset');
+      this.showCatalogModal.set(true);
   }
 
-  closeSuperserieModal() {
-      this.showSuperserieModal.set(false);
+  openAddExerciseModal() {
+      this.supersetSearchQuery.set('');
+      this.supersetSelectedMuscle.set(null);
+      this.catalogModalMode.set('add-manual');
+      this.showCatalogModal.set(true);
+  }
+
+  closeCatalogModal() {
+      this.showCatalogModal.set(false);
+      this.catalogModalMode.set(null);
       this.superserieSourceIndex.set(null);
   }
 
-  /** Links an exercise from the catalog as a superset to the source exercise */
-  async linkSupersetFromCatalog(targetExercise: Ejercicio) {
-      const sourceIndex = this.superserieSourceIndex();
+  async selectExerciseFromCatalog(targetExercise: Ejercicio) {
+      const mode = this.catalogModalMode();
       const w = this.workout();
-      if (sourceIndex === null || !w) return;
-      const updatedEjercicios = [...w.ejercicios];
-      const source = { ...updatedEjercicios[sourceIndex] };
-      source.tipos = 'super-serie';
-      source.superSetEjercicio = targetExercise;
-      updatedEjercicios[sourceIndex] = source;
-      await this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
-      this.closeSuperserieModal();
+      if (!w) return;
+
+      // Sanitización profunda / Deep copy para romper referencias y evitar undefined
+      const safeTarget = JSON.parse(JSON.stringify(targetExercise)) as Ejercicio;
+      safeTarget.notas = safeTarget.notas || 'Sin instrucciones adicionales.';
+      safeTarget.videoUrl = safeTarget.videoUrl || '';
+      safeTarget.tipo = safeTarget.tipo || 'aislado';
+
+      if (mode === 'superset') {
+          const sourceIndex = this.superserieSourceIndex();
+          if (sourceIndex === null) return;
+          const updatedEjercicios = [...w.ejercicios];
+          const source = { ...updatedEjercicios[sourceIndex] };
+          source.tipos = 'super-serie';
+          source.superSetEjercicio = safeTarget;
+          updatedEjercicios[sourceIndex] = source;
+          await this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
+          this.closeCatalogModal();
+      } else if (mode === 'add-manual') {
+          const newExercise: Ejercicio = {
+             ...safeTarget,
+             id: Date.now()
+          };
+          const wObj = { 
+            ...w, 
+            ejercicios: [
+                ...w.ejercicios,
+                newExercise
+            ]
+          };
+          
+          await this.persistWorkoutChanges(wObj);
+          
+          const newIndex = wObj.ejercicios.length - 1;
+          const map = new Map(this.activeSets());
+          
+          const targetSets = newExercise.series || 3;
+          const sets: WorkoutSet[] = [];
+          for(let i=0; i<targetSets; i++) {
+              sets.push({ reps: newExercise.repeticiones || 10, weight: 0, completed: false });
+          }
+          // IMPORTANT: Ensure at least one set is initialized to avoid UI/Data undefined bugs
+          if (sets.length === 0) {
+              sets.push({ reps: 10, weight: 0, completed: false });
+          }
+          
+          map.set(newIndex, sets);
+          this.activeSets.set(map);
+
+          this.closeCatalogModal();
+          this.expandedIndex = newIndex; // Auto expand to let the user see it
+      }
   }
 
   /** Removes the superset link from an exercise without deleting it */
@@ -527,7 +580,7 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       source.superSetEjercicio = updatedEjercicios[targetIndex];
       updatedEjercicios[sourceIndex] = source;
       await this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
-      this.closeSuperserieModal();
+      this.closeCatalogModal();
   }
 
   /** Deletes an exercise from the workout and persists to Firestore */
@@ -585,56 +638,7 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       this.pendingExitAction.set(null);
   }
 
-  openAddExerciseModal() {
-      this.newExerciseName.set('');
-      this.showAddExerciseModal.set(true);
-  }
 
-  closeAddExerciseModal() {
-      this.showAddExerciseModal.set(false);
-  }
-
-  saveNewExercise() {
-      const name = this.newExerciseName().trim();
-      if (!name) return;
-
-      const w = this.workout();
-      if(w) {
-          const wObj = { 
-            ...w, 
-            ejercicios: [
-                ...w.ejercicios,
-                {
-                    id: Date.now(),
-                    nombre: name,
-                    grupoMuscular: 'General',
-                    tipo: 'aislado' as 'aislado' | 'compuesto',
-                    series: 3,
-                    repeticiones: 10,
-                    descanso: '60s',
-                    pesokg: 0,
-                    notas: 'Agregado manualmente'
-                }
-            ]
-          };
-          
-          this.persistWorkoutChanges(wObj);
-          const newIndex = wObj.ejercicios.length - 1;
-          const map = new Map(this.activeSets());
-          
-          const targetSets = 3;
-          const sets: WorkoutSet[] = [];
-          for(let i=0; i<targetSets; i++) {
-              sets.push({ reps: 10, weight: 0, completed: false });
-          }
-          
-          map.set(newIndex, sets);
-          this.activeSets.set(map);
-
-          this.closeAddExerciseModal();
-          this.expandedIndex = newIndex; // Auto expand to let the user see it
-      }
-  }
 
   getVideoEmbedUrl(videoUrl: string | undefined): string {
     if (!videoUrl) return '';
