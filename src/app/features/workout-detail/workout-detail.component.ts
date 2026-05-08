@@ -17,11 +17,19 @@ import { RestTimerService, REST_PRESETS_SECONDS } from '../../core/services/rest
 import { WorkoutSession, WorkoutSessionExercise } from '../../models/workout-session.model';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 
-interface WorkoutSet {
+export interface DropSet {
+  reps: number;
+  weight: number;
+  superReps?: number;
+  superWeight?: number;
+}
+
+export interface WorkoutSet {
+  type?: 'warmup' | 'effective';
   reps: number;
   weight: number;
   completed: boolean;
-  isDropset?: boolean;
+  dropSets?: DropSet[];
   superReps?: number;
   superWeight?: number;
 }
@@ -96,7 +104,7 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
 
   // --- Modals State ---
   showExitModal         = signal<boolean>(false);
-  pendingExitAction     = signal<'exit' | 'save' | null>(null);
+  pendingExitAction     = signal<'exit' | 'save' | 'cancel' | null>(null);
   showAddExerciseModal  = signal<boolean>(false);
   newExerciseName       = signal<string>('');
   showRestModal         = signal<boolean>(false);
@@ -139,6 +147,14 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       : `${pad(mins)}:${pad(secs)}`;
   });
 
+  // Reactive progress bar (goal: 60 mins)
+  timerProgress = computed(() => {
+    const elapsed = this.sessionSeconds();
+    const target = 3600;
+    const progress = (elapsed / target) * 100;
+    return progress > 100 ? 100 : progress;
+  });
+
   constructor() {
     // Initialize or restore sets when workout loads
     effect(() => {
@@ -167,9 +183,11 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
           const targetSets = ex.series || 3;
           for(let i=0; i<targetSets; i++) {
               sets.push({ 
+                  type: i < 2 ? 'warmup' : 'effective',
                   reps: ex.repeticiones || 10, 
                   weight: ex.pesokg || 0, 
                   completed: false,
+                  dropSets: [],
                   superReps: ex.superSetEjercicio?.repeticiones || 10,
                   superWeight: ex.superSetEjercicio?.pesokg || 0
               });
@@ -289,7 +307,7 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
            this.trainingSessionService.saveSession(null);
       }
       
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/weekly-plan']);
   }
 
   // --- SETS MANAGEMENT ---
@@ -301,8 +319,8 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   addSet(index: number) {
       const map = new Map(this.activeSets());
       const current = map.get(index) || [];
-      const last = current.at(-1) ?? { reps: 0, weight: 0, completed: false };
-      current.push({ ...last, completed: false, isDropset: false });
+      const last = current.at(-1) ?? { type: 'effective', reps: 0, weight: 0, completed: false, dropSets: [] };
+      current.push({ ...last, type: 'effective', completed: false, dropSets: [] });
       map.set(index, current);
       this.activeSets.set(map);
   }
@@ -310,19 +328,38 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   addDropSet(exIndex: number) {
       const map = new Map(this.activeSets());
       const current = map.get(exIndex) || [];
-      const last = current.at(-1) ?? { reps: 10, weight: 0, completed: false };
-      // Biomechanical Drop Set formula: -20% weight, +4 reps
-      const dropWeight = Math.floor((last.weight || 0) * 0.8);
-      const newReps = (last.reps || 10) + 4;
       
-      const newSet: WorkoutSet = { reps: newReps, weight: dropWeight, completed: false, isDropset: true };
-      
-      if (last.superReps !== undefined) {
-          newSet.superWeight = Math.floor((last.superWeight || 0) * 0.8);
-          newSet.superReps = (last.superReps || 10) + 4;
+      // Encontrar el último set efectivo (o el último set si no hay efectivos)
+      let targetSetIndex = -1;
+      for (let i = current.length - 1; i >= 0; i--) {
+          if (current[i].type === 'effective' || current[i].type === undefined) {
+              targetSetIndex = i;
+              break;
+          }
+      }
+      if (targetSetIndex === -1 && current.length > 0) {
+          targetSetIndex = current.length - 1;
       }
       
-      current.push(newSet);
+      if (targetSetIndex !== -1) {
+          const targetSet = current[targetSetIndex];
+          if (!targetSet.dropSets) targetSet.dropSets = [];
+          
+          const baseForDrop = targetSet.dropSets.length > 0 ? targetSet.dropSets[targetSet.dropSets.length - 1] : targetSet;
+          
+          const dropWeight = Math.floor((baseForDrop.weight || 0) * 0.8);
+          const newReps = (baseForDrop.reps || 10) + 4;
+          
+          const newDropSet: DropSet = { reps: newReps, weight: dropWeight };
+          
+          if (baseForDrop.superReps !== undefined) {
+              newDropSet.superWeight = Math.floor((baseForDrop.superWeight || 0) * 0.8);
+              newDropSet.superReps = (baseForDrop.superReps || 10) + 4;
+          }
+          
+          targetSet.dropSets.push(newDropSet);
+      }
+      
       map.set(exIndex, current);
       this.activeSets.set(map);
       this.persistWorkoutChanges();
@@ -382,25 +419,7 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       // Timer keeps running in the service — no pause on close
   }
 
-  // --- CANCEL SESSION ---
 
-  /** Cancels the active session: clears Firestore status and navigates back */
-  async cancelActiveSession(): Promise<void> {
-      const w = this.workout();
-      if (this.sessionInterval) { clearInterval(this.sessionInterval); this.sessionInterval = null; }
-      this.restTimer.stop();
-      this.isActive.set(false);
-      if (w) {
-          await this.persistWorkoutChanges({
-              ...w,
-              status: 'idle',
-              activeStartTime: deleteField() as any,
-              activeSetsState: deleteField() as any
-          });
-      }
-      this.trainingSessionService.saveSession(null);
-      this.router.navigate(['/dashboard']);
-  }
 
   // --- LIFECYCLE ---
 
@@ -567,11 +586,11 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
           const targetSets = newExercise.series || 3;
           const sets: WorkoutSet[] = [];
           for(let i=0; i<targetSets; i++) {
-              sets.push({ reps: newExercise.repeticiones || 10, weight: 0, completed: false });
+              sets.push({ type: i < 2 ? 'warmup' : 'effective', reps: newExercise.repeticiones || 10, weight: 0, completed: false, dropSets: [] });
           }
           // IMPORTANT: Ensure at least one set is initialized to avoid UI/Data undefined bugs
           if (sets.length === 0) {
-              sets.push({ reps: 10, weight: 0, completed: false });
+              sets.push({ type: 'warmup', reps: 10, weight: 0, completed: false, dropSets: [] });
           }
           
           map.set(newIndex, sets);
@@ -663,8 +682,26 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
           await this.finalizeSession();
       } else if (action === 'exit') {
           this.isActive.set(false);
+      } else if (action === 'cancel') {
+          const w = this.workout();
+          if (w) {
+              const updatedW: any = { ...w, status: 'idle' };
+              delete updatedW.activeStartTime;
+              delete updatedW.activeSetsState;
+              await this.workoutService.updateWorkout(updatedW);
+              this.trainingSessionService.saveSession(null);
+          }
+          this.isActive.set(false);
+          if (this.sessionInterval) { clearInterval(this.sessionInterval); this.sessionInterval = null; }
+          this.restTimer.stop();
+          this.router.navigate(['/weekly-plan']);
       }
       this.pendingExitAction.set(null);
+  }
+
+  cancelActiveSession() {
+      this.pendingExitAction.set('cancel');
+      this.showExitModal.set(true);
   }
 
 

@@ -158,21 +158,22 @@
         <!-- Active Header / Timer -->
         <div class="bg-[#0B0E14] sticky top-0 z-50 border-b border-zinc-800 pb-4 pt-4 px-4 shadow-xl">
              <div class="flex justify-between items-center mb-4">
-                 <button (click)="cancelActiveSession()" class="text-zinc-500 hover:text-red-500 font-bold text-xs uppercase flex items-center gap-1 transition-colors">
+                 <button (click)="cancelActiveSession()" class="text-zinc-400 hover:text-zinc-200 bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase flex items-center gap-1 transition-colors border border-zinc-700">
                      <mat-icon class="text-sm">close</mat-icon> Cancelar
                  </button>
                  <div class="flex flex-col items-center">
                      <span class="text-[10px] uppercase tracking-widest text-[#CCFF00] font-bold">Tiempo Transcurrido</span>
                      <span class="text-3xl font-mono font-bold text-white">{{ sessionTimeFormatted() }}</span>
                  </div>
-                 <button (click)="finalizarRutina()" class="bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border border-red-500/50">
+                 <button (click)="finalizarRutina()" class="bg-[#CCFF00] text-black hover:bg-[#bce600] px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-[0_0_10px_rgba(204,255,0,0.3)]">
                      Guardar
                  </button>
              </div>
              
-             <!-- Progress Bar (Mock) -->
-             <div class="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
-                 <div class="h-full bg-[#CCFF00] w-1/3"></div>
+             <!-- Progress Bar -->
+             <div class="w-full h-1 bg-zinc-800 rounded-full overflow-hidden" [ngClass]="{'animate-pulse': sessionSeconds() >= 3600}">
+                 <div class="h-full bg-[#CCFF00] transition-all duration-1000 ease-linear shadow-[0_0_10px_rgba(204,255,0,0.5)]"
+                      [style.width.%]="timerProgress()"></div>
              </div>
         </div>
 
@@ -256,13 +257,13 @@
                         <div class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 items-center"
                              [ngClass]="{'opacity-50': set.completed, 'bg-green-900/10': set.completed}">
                             
-                            <!-- Set Number / Drop Badge -->
+                            <!-- Set Number / Badge -->
                             <div class="col-span-1 flex flex-col items-center justify-center relative">
-                                <div class="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
-                                     [ngClass]="set.isDropset ? 'bg-orange-500/20 text-orange-500 border border-orange-500/50' : 'bg-zinc-700 text-zinc-300'">
-                                    {{ sIndex + 1 }}
+                                <div class="flex items-center flex-col sm:flex-row gap-1">
+                                    <div *ngIf="set.type === 'warmup'" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/50" title="Warm-up">W</div>
+                                    <div *ngIf="set.type === 'effective' || !set.type" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-[#CCFF00]/20 text-[#CCFF00] border border-[#CCFF00]/50" title="Effective">E</div>
+                                    <div class="text-xs font-bold text-zinc-300 w-4 text-center">{{ sIndex + 1 }}</div>
                                 </div>
-                                <span *ngIf="set.isDropset" class="absolute -bottom-3 text-[8px] font-black text-orange-500 tracking-tighter uppercase">Drop</span>
                             </div>
 
                             <!-- KG Input -->
@@ -327,6 +328,60 @@
 
                             <div class="col-span-3"></div> <!-- Empty space under check/delete -->
                         </div>
+                        
+                        <!-- Nested Drop Sets -->
+                        <ng-container *ngIf="set.dropSets && set.dropSets.length > 0">
+                            <div *ngFor="let dropSet of set.dropSets; let dIndex = index" class="mt-1">
+                                
+                                <!-- Drop Set Row -->
+                                <div class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c1815] border-l-2 border-orange-500 ml-4 sm:ml-6 rounded-r-lg mb-1"
+                                     [ngClass]="{'opacity-50': set.completed}">
+                                    
+                                    <div class="col-span-1 flex justify-center items-center gap-1">
+                                        <div class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-orange-500/20 text-orange-500 border border-orange-500/50">D</div>
+                                    </div>
+
+                                    <!-- KG Input DropSet -->
+                                    <div class="col-span-3">
+                                        <input type="number" [(ngModel)]="dropSet.weight" 
+                                               class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                                               placeholder="0">
+                                    </div>
+
+                                    <!-- Reps Input DropSet -->
+                                    <div class="col-span-3">
+                                        <input type="number" [(ngModel)]="dropSet.reps" 
+                                               class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                                               placeholder="0">
+                                    </div>
+
+                                    <div class="col-span-3"></div> <!-- Empty space -->
+                                </div>
+
+                                <!-- Drop Set Superset Row (If parent exercise is a superset) -->
+                                <div *ngIf="ex.superSetEjercicio" 
+                                     class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c212a] border-l-2 border-purple-500 ml-8 sm:ml-10 rounded-r-lg mb-2"
+                                     [ngClass]="{'opacity-50': set.completed}">
+                                    
+                                    <div class="col-span-1 flex justify-center">
+                                        <mat-icon class="text-purple-500 text-sm">subdirectory_arrow_right</mat-icon>
+                                    </div>
+
+                                    <div class="col-span-3">
+                                        <input type="number" [(ngModel)]="dropSet.superWeight" 
+                                               class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                                               placeholder="0">
+                                    </div>
+
+                                    <div class="col-span-3">
+                                        <input type="number" [(ngModel)]="dropSet.superReps" 
+                                               class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                                               placeholder="0">
+                                    </div>
+                                    <div class="col-span-3"></div>
+                                </div>
+                            </div>
+                        </ng-container>
                     </div>
 
                     <!-- Actions Footer -->
@@ -365,12 +420,12 @@
                  <mat-icon>warning</mat-icon>
               </div>
               <h3 class="text-lg font-bold text-white tracking-wide">
-                 {{ pendingExitAction() === 'save' ? 'Finalizar Sesión' : 'Salir del Entrenamiento' }}
-              </h3>
+              {{ pendingExitAction() === 'save' ? 'Finalizar Sesión' : (pendingExitAction() === 'cancel' ? 'Cancelar Sesión' : 'Salir del Entrenamiento') }}
+           </h3>
            </div>
            
            <p class="text-sm text-zinc-400 mb-8">
-              {{ pendingExitAction() === 'save' ? '¿Estás seguro que deseas guardar este entrenamiento y finalizar la sesión activa?' : '¿Seguro que deseas salir sin guardar? Perderás el progreso de esta sesión.' }}
+              {{ pendingExitAction() === 'save' ? '¿Estás seguro que deseas guardar este entrenamiento y finalizar la sesión activa?' : (pendingExitAction() === 'cancel' ? '¿Deseas cancelar la sesión activa? Se perderá el progreso no guardado.' : '¿Seguro que deseas salir sin guardar? Perderás el progreso de esta sesión.') }}
            </p>
 
            <div class="flex gap-3 justify-end mt-4">
