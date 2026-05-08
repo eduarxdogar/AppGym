@@ -16,6 +16,7 @@ import { ChatAiService } from '../../core/services/ai/chat-ai.service';
 import { RestTimerService, REST_PRESETS_SECONDS } from '../../core/services/rest-timer.service';
 import { WorkoutSession, WorkoutSessionExercise } from '../../models/workout-session.model';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { ToastService } from '../../core/services/toast.service';
 
 export interface DropSet {
   reps: number;
@@ -52,6 +53,7 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   public  readonly exerciseService       = inject(ExerciseService);
   public  readonly chatService           = inject(ChatAiService);
   public  readonly restTimer             = inject(RestTimerService);
+  private readonly toastService          = inject(ToastService);
 
   /** Expose presets for template */
   readonly restPresets = REST_PRESETS_SECONDS;
@@ -319,10 +321,70 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   addSet(index: number) {
       const map = new Map(this.activeSets());
       const current = map.get(index) || [];
-      const last = current.at(-1) ?? { type: 'effective', reps: 0, weight: 0, completed: false, dropSets: [] };
-      current.push({ ...last, type: 'effective', completed: false, dropSets: [] });
+      const type = current.length < 2 ? 'warmup' : 'effective';
+      const last = current.at(-1) ?? { type, reps: 0, weight: 0, completed: false, dropSets: [] };
+      current.push({ ...last, type, completed: false, dropSets: [] });
       map.set(index, current);
       this.activeSets.set(map);
+      this.persistWorkoutChanges();
+      
+      // Smooth scroll to the newly added set
+      setTimeout(() => {
+          window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }, 50);
+  }
+
+  toggleSetType(exIndex: number, setIndex: number) {
+      const map = new Map(this.activeSets());
+      const current = map.get(exIndex);
+      if (current && current[setIndex]) {
+          const s = current[setIndex];
+          s.type = s.type === 'warmup' ? 'effective' : 'warmup';
+          map.set(exIndex, current);
+          this.activeSets.set(map);
+          this.persistWorkoutChanges();
+      }
+  }
+
+  clearSupersetData(exIndex: number, setIndex: number) {
+      const map = new Map(this.activeSets());
+      const current = map.get(exIndex);
+      if (current && current[setIndex]) {
+          delete current[setIndex].superWeight;
+          delete current[setIndex].superReps;
+          map.set(exIndex, current);
+          this.activeSets.set(map);
+          this.persistWorkoutChanges();
+          this.toastService.showInfo('Superserie quitada de este set');
+      }
+  }
+
+  clearDropSetSupersetData(exIndex: number, setIndex: number, dropIndex: number) {
+      const map = new Map(this.activeSets());
+      const current = map.get(exIndex);
+      if (current && current[setIndex] && current[setIndex].dropSets) {
+          const dropSets = current[setIndex].dropSets;
+          if (dropSets && dropSets[dropIndex]) {
+              delete dropSets[dropIndex].superWeight;
+              delete dropSets[dropIndex].superReps;
+              map.set(exIndex, current);
+              this.activeSets.set(map);
+              this.persistWorkoutChanges();
+              this.toastService.showInfo('Superserie quitada de este Drop Set');
+          }
+      }
+  }
+
+  deleteDropSet(exIndex: number, setIndex: number, dropIndex: number) {
+      const map = new Map(this.activeSets());
+      const current = map.get(exIndex);
+      if (current && current[setIndex] && current[setIndex].dropSets) {
+          current[setIndex].dropSets!.splice(dropIndex, 1);
+          map.set(exIndex, current);
+          this.activeSets.set(map);
+          this.persistWorkoutChanges();
+          this.toastService.showInfo('Drop Set quitado');
+      }
   }
 
   addDropSet(exIndex: number) {

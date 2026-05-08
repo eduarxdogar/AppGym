@@ -260,8 +260,8 @@
                             <!-- Set Number / Badge -->
                             <div class="col-span-1 flex flex-col items-center justify-center relative">
                                 <div class="flex items-center flex-col sm:flex-row gap-1">
-                                    <div *ngIf="set.type === 'warmup'" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/50" title="Warm-up">W</div>
-                                    <div *ngIf="set.type === 'effective' || !set.type" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-[#CCFF00]/20 text-[#CCFF00] border border-[#CCFF00]/50" title="Effective">E</div>
+                                    <button *ngIf="set.type === 'warmup'" (click)="toggleSetType(i, sIndex)" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/40 transition-colors" title="Warm-up (Click to change)">W</button>
+                                    <button *ngIf="set.type === 'effective' || !set.type" (click)="toggleSetType(i, sIndex)" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-[#CCFF00]/20 text-[#CCFF00] border border-[#CCFF00]/50 hover:bg-[#CCFF00]/40 transition-colors" title="Effective (Click to change)">E</button>
                                     <div class="text-xs font-bold text-zinc-300 w-4 text-center">{{ sIndex + 1 }}</div>
                                 </div>
                             </div>
@@ -304,8 +304,8 @@
                         </div>
 
                         <!-- Superset Row (Double Entry) -->
-                        <div *ngIf="ex.superSetEjercicio" 
-                             class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c212a] border-l-2 border-purple-500 ml-4 sm:ml-6 mb-2 rounded-r-lg"
+                        <div *ngIf="ex.superSetEjercicio && (set.superWeight !== undefined || set.superReps !== undefined)" 
+                             class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c212a] border-l-2 border-purple-500 ml-4 sm:ml-6 mb-2 rounded-r-lg animate-in fade-in slide-in-from-top-2 duration-200"
                              [ngClass]="{'opacity-50': set.completed}">
                             
                             <div class="col-span-1 flex justify-center">
@@ -326,7 +326,16 @@
                                        placeholder="0">
                             </div>
 
-                            <div class="col-span-3"></div> <!-- Empty space under check/delete -->
+                            <div class="col-span-2"></div> <!-- Empty space under check -->
+                            
+                            <!-- Delete Button Superset Child -->
+                            <div class="col-span-1 flex justify-center">
+                                <button *ngIf="set.superWeight !== undefined || set.superReps !== undefined"
+                                        (click)="clearSupersetData(i, sIndex)" 
+                                        class="text-zinc-600 hover:text-red-500 transition-colors">
+                                    <mat-icon class="text-[16px] leading-[16px] w-[16px] h-[16px]">delete</mat-icon>
+                                </button>
+                            </div>
                         </div>
                         
                         <!-- Nested Drop Sets -->
@@ -334,7 +343,7 @@
                             <div *ngFor="let dropSet of set.dropSets; let dIndex = index" class="mt-1">
                                 
                                 <!-- Drop Set Row -->
-                                <div class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c1815] border-l-2 border-orange-500 ml-4 sm:ml-6 rounded-r-lg mb-1"
+                                <div class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c1815] border-l-2 border-orange-500 ml-4 sm:ml-6 rounded-r-lg mb-1 animate-in fade-in slide-in-from-top-2 duration-200"
                                      [ngClass]="{'opacity-50': set.completed}">
                                     
                                     <div class="col-span-1 flex justify-center items-center gap-1">
@@ -355,12 +364,20 @@
                                                placeholder="0">
                                     </div>
 
-                                    <div class="col-span-3"></div> <!-- Empty space -->
+                                    <div class="col-span-2"></div> <!-- Empty space under check -->
+                                    
+                                    <!-- Delete Button DropSet -->
+                                    <div class="col-span-1 flex justify-center">
+                                        <button (click)="deleteDropSet(i, sIndex, dIndex)" 
+                                                class="text-zinc-600 hover:text-red-500 transition-colors">
+                                            <mat-icon class="text-[16px] leading-[16px] w-[16px] h-[16px]">delete</mat-icon>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <!-- Drop Set Superset Row (If parent exercise is a superset) -->
-                                <div *ngIf="ex.superSetEjercicio" 
-                                     class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c212a] border-l-2 border-purple-500 ml-8 sm:ml-10 rounded-r-lg mb-2"
+                                <div *ngIf="ex.superSetEjercicio && (dropSet.superWeight !== undefined || dropSet.superReps !== undefined)" 
+                                     class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c212a] border-l-2 border-purple-500 ml-8 sm:ml-10 rounded-r-lg mb-2 animate-in fade-in slide-in-from-top-2 duration-200"
                                      [ngClass]="{'opacity-50': set.completed}">
                                     
                                     <div class="col-span-1 flex justify-center">
@@ -378,7 +395,17 @@
                                                class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
                                                placeholder="0">
                                     </div>
-                                    <div class="col-span-3"></div>
+                                    
+                                    <div class="col-span-2"></div> <!-- Empty space under check -->
+                                    
+                                    <!-- Delete Button DropSet Superset Child -->
+                                    <div class="col-span-1 flex justify-center">
+                                        <button *ngIf="dropSet.superWeight !== undefined || dropSet.superReps !== undefined"
+                                                (click)="clearDropSetSupersetData(i, sIndex, dIndex)" 
+                                                class="text-zinc-600 hover:text-red-500 transition-colors">
+                                            <mat-icon class="text-[16px] leading-[16px] w-[16px] h-[16px]">delete</mat-icon>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </ng-container>
