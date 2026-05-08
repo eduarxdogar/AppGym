@@ -217,6 +217,12 @@
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="bg-purple-500/20 text-purple-400 text-[8px] font-black uppercase px-2 py-0.5 rounded tracking-widest border border-purple-500/30">Super</span>
                                 <h3 class="text-base font-bold text-zinc-300 leading-tight truncate">{{ ex.superSetEjercicio.nombre }}</h3>
+                                <!-- INLINE GOAL EDITING -->
+                                <div class="flex items-center gap-1 text-[10px] text-zinc-500 ml-1">
+                                    <input type="number" [ngModel]="ex.superSetEjercicio.series" (ngModelChange)="updateSupersetField(i, 'series', $event)" class="w-8 bg-transparent text-center border-b border-zinc-700 focus:border-purple-500 outline-none text-purple-400 font-bold transition-colors" />
+                                    <span>x</span>
+                                    <input type="number" [ngModel]="ex.superSetEjercicio.repeticiones" (ngModelChange)="updateSupersetField(i, 'repeticiones', $event)" class="w-8 bg-transparent text-center border-b border-zinc-700 focus:border-purple-500 outline-none text-purple-400 font-bold transition-colors" />
+                                </div>
                                 <button (click)="openExerciseDetail(ex.superSetEjercicio)" class="text-zinc-500 hover:text-purple-400 min-w-[36px] min-h-[36px] flex items-center justify-center transition-colors flex-shrink-0">
                                     <mat-icon class="text-lg">info</mat-icon>
                                 </button>
@@ -244,53 +250,82 @@
                     </div>
 
                     <!-- Rows -->
-                    <div *ngFor="let set of getSetsForExercise(i); let sIndex = index" 
-                         class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 items-center border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-colors"
-                         [ngClass]="{'opacity-50': set.completed, 'bg-green-900/10': set.completed}">
+                    <div *ngFor="let set of getSetsForExercise(i); let sIndex = index" class="border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-colors">
                         
-                        <!-- Set Number / Drop Badge -->
-                        <div class="col-span-1 flex flex-col items-center justify-center relative">
-                            <div class="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
-                                 [ngClass]="set.isDropset ? 'bg-orange-500/20 text-orange-500 border border-orange-500/50' : 'bg-zinc-700 text-zinc-300'">
-                                {{ sIndex + 1 }}
+                        <!-- Parent Row -->
+                        <div class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 items-center"
+                             [ngClass]="{'opacity-50': set.completed, 'bg-green-900/10': set.completed}">
+                            
+                            <!-- Set Number / Drop Badge -->
+                            <div class="col-span-1 flex flex-col items-center justify-center relative">
+                                <div class="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
+                                     [ngClass]="set.isDropset ? 'bg-orange-500/20 text-orange-500 border border-orange-500/50' : 'bg-zinc-700 text-zinc-300'">
+                                    {{ sIndex + 1 }}
+                                </div>
+                                <span *ngIf="set.isDropset" class="absolute -bottom-3 text-[8px] font-black text-orange-500 tracking-tighter uppercase">Drop</span>
                             </div>
-                            <span *ngIf="set.isDropset" class="absolute -bottom-3 text-[8px] font-black text-orange-500 tracking-tighter uppercase">Drop</span>
+
+                            <!-- KG Input -->
+                            <div class="col-span-3">
+                                <input type="number" [(ngModel)]="set.weight" 
+                                       class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none"
+                                       placeholder="0">
+                            </div>
+
+                            <!-- Reps Input -->
+                            <div class="col-span-3">
+                                <input type="number" [(ngModel)]="set.reps" 
+                                       class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none"
+                                       placeholder="0">
+                            </div>
+
+                            <!-- Checkbox -->
+                            <div class="col-span-2 flex justify-center">
+                                <button (click)="toggleSetComplete(i, sIndex)" 
+                                        [class.bg-[#CCFF00]]="set.completed"
+                                        [class.text-black]="set.completed"
+                                        [class.bg-zinc-700]="!set.completed"
+                                        [class.text-zinc-500]="!set.completed"
+                                        class="h-8 w-12 rounded-lg flex items-center justify-center transition-all active:scale-95">
+                                    <mat-icon *ngIf="set.completed">check</mat-icon>
+                                    <mat-icon *ngIf="!set.completed">check_box_outline_blank</mat-icon>
+                                </button>
+                            </div>
+                            
+                            <!-- Delete Button -->
+                            <div class="col-span-1 flex justify-center">
+                                <button *ngIf="getSetsForExercise(i).length > 1"
+                                        (click)="deleteSet(i, sIndex)" 
+                                        class="text-zinc-600 hover:text-red-500 transition-colors">
+                                    <mat-icon class="text-lg">delete</mat-icon>
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- KG Input -->
-                        <div class="col-span-3">
-                            <input type="number" [(ngModel)]="set.weight" 
-                                   class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none"
-                                   placeholder="0">
-                        </div>
+                        <!-- Superset Row (Double Entry) -->
+                        <div *ngIf="ex.superSetEjercicio" 
+                             class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c212a] border-l-2 border-purple-500 ml-4 sm:ml-6 mb-2 rounded-r-lg"
+                             [ngClass]="{'opacity-50': set.completed}">
+                            
+                            <div class="col-span-1 flex justify-center">
+                                <mat-icon class="text-purple-500 text-sm">subdirectory_arrow_right</mat-icon>
+                            </div>
 
-                        <!-- Reps Input -->
-                        <div class="col-span-3">
-                            <input type="number" [(ngModel)]="set.reps" 
-                                   class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none"
-                                   placeholder="0">
-                        </div>
+                            <!-- KG Input Child -->
+                            <div class="col-span-3">
+                                <input type="number" [(ngModel)]="set.superWeight" 
+                                       class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                                       placeholder="0">
+                            </div>
 
-                        <!-- Checkbox -->
-                        <div class="col-span-2 flex justify-center">
-                            <button (click)="toggleSetComplete(i, sIndex)" 
-                                    [class.bg-[#CCFF00]]="set.completed"
-                                    [class.text-black]="set.completed"
-                                    [class.bg-zinc-700]="!set.completed"
-                                    [class.text-zinc-500]="!set.completed"
-                                    class="h-8 w-12 rounded-lg flex items-center justify-center transition-all active:scale-95">
-                                <mat-icon *ngIf="set.completed">check</mat-icon>
-                                <mat-icon *ngIf="!set.completed">check_box_outline_blank</mat-icon>
-                            </button>
-                        </div>
-                        
-                        <!-- Delete Button -->
-                        <div class="col-span-1 flex justify-center">
-                            <button *ngIf="getSetsForExercise(i).length > 1"
-                                    (click)="deleteSet(i, sIndex)" 
-                                    class="text-zinc-600 hover:text-red-500 transition-colors">
-                                <mat-icon class="text-lg">delete</mat-icon>
-                            </button>
+                            <!-- Reps Input Child -->
+                            <div class="col-span-3">
+                                <input type="number" [(ngModel)]="set.superReps" 
+                                       class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                                       placeholder="0">
+                            </div>
+
+                            <div class="col-span-3"></div> <!-- Empty space under check/delete -->
                         </div>
                     </div>
 

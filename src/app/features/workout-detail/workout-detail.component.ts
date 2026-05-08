@@ -22,6 +22,8 @@ interface WorkoutSet {
   weight: number;
   completed: boolean;
   isDropset?: boolean;
+  superReps?: number;
+  superWeight?: number;
 }
 
 @Component({
@@ -167,7 +169,9 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
               sets.push({ 
                   reps: ex.repeticiones || 10, 
                   weight: ex.pesokg || 0, 
-                  completed: false 
+                  completed: false,
+                  superReps: ex.superSetEjercicio?.repeticiones || 10,
+                  superWeight: ex.superSetEjercicio?.pesokg || 0
               });
           }
           initialMap.set(index, sets);
@@ -310,7 +314,15 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       // Biomechanical Drop Set formula: -20% weight, +4 reps
       const dropWeight = Math.floor((last.weight || 0) * 0.8);
       const newReps = (last.reps || 10) + 4;
-      current.push({ reps: newReps, weight: dropWeight, completed: false, isDropset: true });
+      
+      const newSet: WorkoutSet = { reps: newReps, weight: dropWeight, completed: false, isDropset: true };
+      
+      if (last.superReps !== undefined) {
+          newSet.superWeight = Math.floor((last.superWeight || 0) * 0.8);
+          newSet.superReps = (last.superReps || 10) + 4;
+      }
+      
+      current.push(newSet);
       map.set(exIndex, current);
       this.activeSets.set(map);
       this.persistWorkoutChanges();
@@ -443,6 +455,23 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       }
       if (field === 'repeticiones' && typeof value === 'number') ex.repeticiones = value;
       if (field === 'pesokg' && typeof value === 'number') ex.pesokg = value;
+      updatedEjercicios[exIndex] = ex;
+      await this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
+  }
+
+  /** Updates a field on a linked superset exercise and immediately persists to Firestore */
+  async updateSupersetField(exIndex: number, field: 'series' | 'repeticiones', value: number) {
+      const w = this.workout();
+      if (!w) return;
+      const updatedEjercicios = [...w.ejercicios];
+      const ex = { ...updatedEjercicios[exIndex] };
+      if (!ex.superSetEjercicio) return;
+      const child = { ...ex.superSetEjercicio };
+      
+      if (field === 'series') child.series = value;
+      if (field === 'repeticiones') child.repeticiones = value;
+      
+      ex.superSetEjercicio = child;
       updatedEjercicios[exIndex] = ex;
       await this.persistWorkoutChanges({ ...w, ejercicios: updatedEjercicios });
   }
