@@ -26,7 +26,7 @@ export interface DropSet {
 }
 
 export interface WorkoutSet {
-  type?: 'warmup' | 'effective';
+  type?: 'warmup' | 'effective' | 'topset' | 'backoff';
   reps: number;
   weight: number;
   completed: boolean;
@@ -184,14 +184,15 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
           const sets: WorkoutSet[] = [];
           const targetSets = ex.series || 3;
           for(let i=0; i<targetSets; i++) {
+              const isWarmup = i < 2;
               sets.push({ 
-                  type: i < 2 ? 'warmup' : 'effective',
+                  type: isWarmup ? 'warmup' : 'effective',
                   reps: ex.repeticiones || 10, 
                   weight: ex.pesokg || 0, 
                   completed: false,
                   dropSets: [],
-                  superReps: ex.superSetEjercicio?.repeticiones || 10,
-                  superWeight: ex.superSetEjercicio?.pesokg || 0
+                  superReps: (!isWarmup && ex.superSetEjercicio) ? (ex.superSetEjercicio.repeticiones || 10) : undefined,
+                  superWeight: (!isWarmup && ex.superSetEjercicio) ? (ex.superSetEjercicio.pesokg || 0) : undefined
               });
           }
           initialMap.set(index, sets);
@@ -323,14 +324,19 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       const current = map.get(index) || [];
       const type = current.length < 2 ? 'warmup' : 'effective';
       const last = current.at(-1) ?? { type, reps: 0, weight: 0, completed: false, dropSets: [] };
-      current.push({ ...last, type, completed: false, dropSets: [] });
+      const newSetIndex = current.length;
+      
+      current.push({ ...last, type, completed: false, dropSets: [], superReps: undefined, superWeight: undefined });
       map.set(index, current);
       this.activeSets.set(map);
       this.persistWorkoutChanges();
       
-      // Smooth scroll to the newly added set
+      // Precision scroll to the newly added set
       setTimeout(() => {
-          window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+          const el = document.getElementById(`set-row-${index}-${newSetIndex}`);
+          if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
       }, 50);
   }
 
@@ -339,7 +345,33 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       const current = map.get(exIndex);
       if (current && current[setIndex]) {
           const s = current[setIndex];
-          s.type = s.type === 'warmup' ? 'effective' : 'warmup';
+          const typeMap: Record<string, 'warmup'|'effective'|'topset'|'backoff'> = {
+              'warmup': 'effective',
+              'effective': 'topset',
+              'topset': 'backoff',
+              'backoff': 'warmup'
+          };
+          s.type = typeMap[s.type || 'effective'];
+          map.set(exIndex, current);
+          this.activeSets.set(map);
+          this.persistWorkoutChanges();
+      }
+  }
+
+  toggleSupersetForSet(exIndex: number, setIndex: number) {
+      const map = new Map(this.activeSets());
+      const current = map.get(exIndex);
+      const w = this.workout();
+      if (current && current[setIndex] && w) {
+          const s = current[setIndex];
+          if (s.superWeight !== undefined || s.superReps !== undefined) {
+              s.superWeight = undefined;
+              s.superReps = undefined;
+          } else {
+              const ex = w.ejercicios[exIndex];
+              s.superWeight = ex.superSetEjercicio?.pesokg || 0;
+              s.superReps = ex.superSetEjercicio?.repeticiones || 10;
+          }
           map.set(exIndex, current);
           this.activeSets.set(map);
           this.persistWorkoutChanges();
@@ -648,11 +680,12 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
           const targetSets = newExercise.series || 3;
           const sets: WorkoutSet[] = [];
           for(let i=0; i<targetSets; i++) {
-              sets.push({ type: i < 2 ? 'warmup' : 'effective', reps: newExercise.repeticiones || 10, weight: 0, completed: false, dropSets: [] });
+              const isWarmup = i < 2;
+              sets.push({ type: isWarmup ? 'warmup' : 'effective', reps: newExercise.repeticiones || 10, weight: 0, completed: false, dropSets: [], superReps: undefined, superWeight: undefined });
           }
           // IMPORTANT: Ensure at least one set is initialized to avoid UI/Data undefined bugs
           if (sets.length === 0) {
-              sets.push({ type: 'warmup', reps: 10, weight: 0, completed: false, dropSets: [] });
+              sets.push({ type: 'warmup', reps: 10, weight: 0, completed: false, dropSets: [], superReps: undefined, superWeight: undefined });
           }
           
           map.set(newIndex, sets);

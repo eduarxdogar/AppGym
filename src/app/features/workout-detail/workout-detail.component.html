@@ -254,7 +254,7 @@
                     <div *ngFor="let set of getSetsForExercise(i); let sIndex = index" class="border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-colors">
                         
                         <!-- Parent Row -->
-                        <div class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 items-center"
+                        <div [id]="'set-row-' + i + '-' + sIndex" class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 items-center"
                              [ngClass]="{'opacity-50': set.completed, 'bg-green-900/10': set.completed}">
                             
                             <!-- Set Number / Badge -->
@@ -262,7 +262,18 @@
                                 <div class="flex items-center flex-col sm:flex-row gap-1">
                                     <button *ngIf="set.type === 'warmup'" (click)="toggleSetType(i, sIndex)" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/40 transition-colors" title="Warm-up (Click to change)">W</button>
                                     <button *ngIf="set.type === 'effective' || !set.type" (click)="toggleSetType(i, sIndex)" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-[#CCFF00]/20 text-[#CCFF00] border border-[#CCFF00]/50 hover:bg-[#CCFF00]/40 transition-colors" title="Effective (Click to change)">E</button>
+                                    <button *ngIf="set.type === 'topset'" (click)="toggleSetType(i, sIndex)" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-red-500/20 text-red-500 border border-red-500/50 hover:bg-red-500/40 transition-colors" title="Top Set (Click to change)">T</button>
+                                    <button *ngIf="set.type === 'backoff'" (click)="toggleSetType(i, sIndex)" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-yellow-500/20 text-yellow-500 border border-yellow-500/50 hover:bg-yellow-500/40 transition-colors" title="Back-off Set (Click to change)">B</button>
                                     <div class="text-xs font-bold text-zinc-300 w-4 text-center">{{ sIndex + 1 }}</div>
+                                    
+                                    <!-- Link Toggle (Superset) -->
+                                    <button *ngIf="ex.superSetEjercicio && set.type !== 'warmup'" 
+                                            (click)="toggleSupersetForSet(i, sIndex)"
+                                            [ngClass]="(set.superWeight !== undefined || set.superReps !== undefined) ? 'text-purple-400 bg-purple-500/20 border-purple-500/50' : 'text-zinc-600 bg-zinc-800/50 border-zinc-700 hover:text-purple-400'"
+                                            class="w-4 h-4 rounded flex items-center justify-center text-[10px] border transition-colors hidden sm:flex" 
+                                            title="Vincular/Desvincular Superserie">
+                                        <mat-icon class="text-[12px] w-[12px] h-[12px] leading-[12px]">link</mat-icon>
+                                    </button>
                                 </div>
                             </div>
 
