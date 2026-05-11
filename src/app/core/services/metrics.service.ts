@@ -88,9 +88,7 @@ export class MetricsService {
   // ─── Unified computed ─────────────────────────────────────────────────
 
   readonly estimatedCalories = computed<number>(() => {
-    const total = this.gymCalories() + this.cardioCalories();
-    console.log(`[MetricsService] Gym: ${this.gymCalories()} + Cardio: ${this.cardioCalories()} = ${total} kcal`);
-    return total;
+    return this.gymCalories() + this.cardioCalories();
   });
 
   readonly weeklyMetrics = computed<WeeklyMetrics>(() => ({

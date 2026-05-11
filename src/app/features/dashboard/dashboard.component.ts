@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,12 +7,14 @@ import { RecoveryService } from '../../core/services/recovery.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MetricsService } from '../../core/services/metrics.service';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
+import { Workout, Ejercicio } from '../../models/workout.model';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, RouterModule, MatIconModule, UiButtonComponent],
   templateUrl: './dashboard.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host { display: block; }
     /* Utilitarios personalizados si Tailwind no alcanza para efectos específicos */
@@ -32,7 +34,7 @@ export class DashboardComponent {
   private metricsService = inject(MetricsService);
 
   // Signals
-  workouts = this.workoutService.workouts;
+  workouts: Signal<Workout[]> = this.workoutService.workouts;
   muscleStatus = this.recoveryService.getMuscleRecoveryStatus();
   metrics = this.metricsService.weeklyMetrics;
 
@@ -43,17 +45,65 @@ export class DashboardComponent {
   nextWorkout = computed(() => {
     const all = this.workouts();
     if (all.length === 0) return null;
-    // Asumimos que la última creada es la "próxima" o la más relevante por ahora
-    // En el futuro, esto podría ser "la rutina de hoy" basada en un calendario.
-    return all[0];
+    
+    // Check if there is an explicitly active workout right now
+    const active = all.find(w => w.status === 'active');
+    if (active) return active;
+
+    // Sort workouts by date ascending to ensure logical sequence (Día 1, Día 2...)
+    const sorted = [...all].sort((a, b) => {
+       const timeA = a.fecha ? new Date(a.fecha).getTime() : 0;
+       const timeB = b.fecha ? new Date(b.fecha).getTime() : 0;
+       return timeA - timeB;
+    });
+
+    // Find the first workout that has not been completed
+    const nextPending = sorted.find(w => !w.isCompleted);
+
+    // If there is a pending workout, return it.
+    // If all are completed, return null or an empty marker instead of day 1 to avoid confusion
+    return nextPending || null;
   });
 
-  // Mock data for target muscles
-  mockTargetMuscles = [
-    { name: 'Cuádriceps', percentage: 65 },
-    { name: 'Pecho', percentage: 90 },
-    { name: 'Tríceps', percentage: 45 }
-  ];
+  // Computed: Obtener los músculos objetivo dinámicamente según la próxima rutina
+  targetMuscles = computed(() => {
+    const w = this.nextWorkout();
+    if (!w) return [];
+
+    const result: { name: string; percentage: number }[] = [];
+    const baseMap: Record<string, number> = {
+        'Pectorales': 94, 'Deltoides': 83, 'Tríceps': 78,
+        'Espalda': 88, 'Bíceps': 91, 'Cuádriceps': 65, 'Isquios': 70
+    };
+
+    // 1. Intentar con la propiedad `musculos` en la raíz del workout
+    const musculos = w.musculos || [];
+    
+    if (musculos.length > 0) {
+      musculos.forEach((m: string) => {
+        result.push({
+          name: m,
+          percentage: baseMap[m] || 70 + (m.charCodeAt(0) % 30)
+        });
+      });
+    } else {
+      // 2. Si no hay array en la raíz, extraer de los ejercicios
+      const extraidos = new Set<string>();
+      w.ejercicios.forEach((ex: Ejercicio) => {
+        if (ex.grupoMuscular && ex.grupoMuscular !== 'General' && ex.grupoMuscular !== 'otros') {
+          extraidos.add(ex.grupoMuscular);
+        }
+      });
+      extraidos.forEach((m: string) => {
+        result.push({
+          name: m,
+          percentage: baseMap[m] || 70 + (m.charCodeAt(0) % 30)
+        });
+      });
+    }
+
+    return result;
+  });
 
   // Computed: Promedio de recuperación global (0-100)
   globalRecoveryScore = computed(() => {

@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, DestroyRef } from '@angular/core';
+import { Injectable, inject, signal, DestroyRef, Injector, runInInjectionContext } from '@angular/core';
 import { Firestore, collection, collectionData, doc, setDoc, query, where } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -20,6 +20,7 @@ export class CardioSessionService {
   private firestore = inject(Firestore);
   private authService = inject(AuthService);
   private destroyRef = inject(DestroyRef);
+  private injector = inject(Injector);
 
   private _sessions = signal<CardioSession[]>([]);
   readonly cardioSessions = this._sessions.asReadonly();
@@ -28,9 +29,11 @@ export class CardioSessionService {
     this.authService.authState$.pipe(
       switchMap(user => {
         if (!user) return of([]);
-        const col = collection(this.firestore, 'cardio_sessions');
-        const q = query(col, where('userId', '==', user.uid));
-        return collectionData(q, { idField: 'id' }) as any;
+        return runInInjectionContext(this.injector, () => {
+          const col = collection(this.firestore, 'cardio_sessions');
+          const q = query(col, where('userId', '==', user.uid));
+          return collectionData(q, { idField: 'id' }) as any;
+        });
       }),
       catchError(err => {
         console.error('[CardioSessionService] Error:', err);

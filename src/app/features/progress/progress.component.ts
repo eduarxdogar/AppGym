@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TrainingHistoryService } from '../../core/services/training-history.service';
 import { TrainingSession } from '../../models/training-session.model';
@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
   standalone: true,
   imports: [CommonModule, MatIconModule],
   templateUrl: './progress.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProgressComponent implements OnInit {
   sesiones: TrainingSession[] = [];
@@ -21,7 +22,7 @@ export class ProgressComponent implements OnInit {
         next: (data: any[]) => {
             this.sesiones = data.map(session => ({
                 id: Number(session.id) || Date.now(),
-                workoutId: Number(session.workoutId),
+                workoutId: String(session.workoutId) || '',
                 nombre: session.name || session.nombre || 'Entrenamiento',
                 fechaInicio: new Date(session.startTime || session.fechaInicio),
                 fechaFin: session.endTime ? new Date(session.endTime) : undefined,

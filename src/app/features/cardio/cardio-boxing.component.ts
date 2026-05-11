@@ -1,15 +1,17 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { AiCoachService, BoxingRoutine } from '../../core/services/ai-coach.service';
+import { BoxingAiService } from '../../core/services/ai/boxing-ai.service';
+import { BoxingRoutine } from '../../models/ai-requests.model';
 import { CardioSessionService } from '../../core/services/cardio-session.service';
 
 @Component({
   selector: 'app-cardio-boxing',
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-[#0B0E14] text-white pb-20 font-sans">
 
@@ -161,7 +163,7 @@ import { CardioSessionService } from '../../core/services/cardio-session.service
   `
 })
 export class CardioBoxingComponent {
-  private aiCoach = inject(AiCoachService);
+  private aiCoach = inject(BoxingAiService);
   private cardioService = inject(CardioSessionService);
   private router = inject(Router);
 

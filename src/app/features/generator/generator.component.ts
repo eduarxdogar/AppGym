@@ -1,10 +1,12 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
-import { AiCoachService, UserProfile } from '../../core/services/ai-coach.service';
+import { TrainerAiService } from '../../core/services/ai/trainer-ai.service';
+import { UserProfile } from '../../models/user-profile.model';
+import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { Workout } from '../../models/workout.model';
 import { WorkoutService } from '../../core/services/workout.service';
 import { RecoveryService, MuscleStatus } from '../../core/services/recovery.service';
@@ -16,13 +18,15 @@ import { MatIconModule } from '@angular/material/icon';
   standalone: true,
   imports: [CommonModule, FormsModule, MatIconModule, ProfessionalBodyMapComponent],
   templateUrl: './generator.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GeneratorComponent {
   
   // Dependencies
-  public aiService = inject(AiCoachService);
+  public aiService = inject(TrainerAiService);
   private workoutService = inject(WorkoutService);
   private recoveryService = inject(RecoveryService);
+  private profileState = inject(UserProfileStateService);
   private router = inject(Router);
 
   // State
@@ -56,6 +60,12 @@ export class GeneratorComponent {
   async generate() {
     if (!this.userPrompt().trim()) return;
 
+    const userProfile = this.profileState.profile();
+    if (!userProfile) {
+        this.errorMessage.set('Configura tu perfil primero.');
+        return;
+    }
+
     this.isLoading.set(true);
     this.generatedWorkout.set(null);
     this.errorMessage.set(null);
@@ -68,11 +78,8 @@ export class GeneratorComponent {
 
     // Create profile with REAL data
     const profile: UserProfile = {
-        weight: 75, // TODO: Get from UserService
-        height: 180, // TODO: Get from UserService
-        fatigueLevels: fatigueRecord,
-        availableDays: ['Hoy'],
-        equipment: ['Gym Completo']
+        ...userProfile,
+        fatigueLevels: fatigueRecord
     };
 
     // Call AI Service

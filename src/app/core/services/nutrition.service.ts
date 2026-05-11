@@ -1,9 +1,9 @@
-import { Injectable, inject } from '@angular/core';
-import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
-import { Auth } from '@angular/fire/auth';
+import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
+import { Firestore, doc, setDoc, docData } from '@angular/fire/firestore';
+import { Auth, authState } from '@angular/fire/auth';
 import { from, Observable, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
-import { WeeklyDietPlan } from '../services/ai-coach.service';
+import { map, switchMap } from 'rxjs/operators';
+import { WeeklyDietPlan } from '../../models/ai-requests.model';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +11,7 @@ import { WeeklyDietPlan } from '../services/ai-coach.service';
 export class NutritionService {
   private firestore = inject(Firestore);
   private auth = inject(Auth);
+  private injector = inject(Injector);
 
   /** Guarda (sobrescribe) el plan nutricional del usuario autenticado. */
   async savePlan(plan: WeeklyDietPlan): Promise<void> {
@@ -19,18 +20,21 @@ export class NutritionService {
     const ref = doc(this.firestore, `nutrition_plans/${uid}`);
     await setDoc(ref, { plan, updatedAt: new Date().toISOString() });
   }
-
-  /** Recupera el plan nutricional guardado, o null si no existe. */
   getPlan(): Observable<WeeklyDietPlan | null> {
-    const uid = this.auth.currentUser?.uid;
-    if (!uid) return of(null);
-    const ref = doc(this.firestore, `nutrition_plans/${uid}`);
-    return from(getDoc(ref)).pipe(
-      switchMap(snap => {
-        if (snap.exists()) {
-          return of((snap.data() as any).plan as WeeklyDietPlan);
-        }
-        return of(null);
+    return authState(this.auth).pipe(
+      switchMap((user: any) => {
+        if (!user) return of(null);
+        return runInInjectionContext(this.injector, () => {
+          const ref = doc(this.firestore, `nutrition_plans/${user.uid}`);
+          return docData(ref).pipe(
+            map(data => {
+              if (data && data['plan']) {
+                return data['plan'] as WeeklyDietPlan;
+              }
+              return null;
+            })
+          );
+        });
       })
     );
   }

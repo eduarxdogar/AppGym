@@ -1,42 +1,25 @@
-import { Injectable, signal, computed, inject, Signal, DestroyRef } from '@angular/core';
+import { Injectable, signal, computed, inject, Signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
 import { Workout } from '../../models/workout.model';
 import { Ejercicio } from '../../models/ejercicio.model'; 
 import { StorageService } from './storage.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError } from 'rxjs/operators';
-import { EMPTY } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WorkoutService {
-  private storageService = inject(StorageService);
-  private destroyRef = inject(DestroyRef);
+  private readonly storageService = inject(StorageService);
   
-  // Signal para manejar el estado de los workouts - inicializamos vacío
-  private workoutsSignal = signal<Workout[]>([]);
-  
-  // Signal computada de solo lectura para exponer los workouts
-  readonly workouts = computed(() => this.workoutsSignal());
+  // Modern Reactive Signal using toSignal
+  readonly workouts: Signal<Workout[]> = toSignal(
+    this.storageService.getWorkouts() as Observable<Workout[]>,
+    { initialValue: [] as Workout[] }
+  );
 
-  constructor() {
-    // Suscribirse a los cambios en Firestore
-    this.storageService.getWorkouts().pipe(
-      catchError(err => {
-        console.warn('Subscription error in WorkoutService:', err);
-        return EMPTY; // Return EMPTY to not emit further or crash this pipe, but keeps service alive
-      }),
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe({
-      next: (workouts) => {
-        console.log('Workouts received from Firestore:', workouts);
-        this.workoutsSignal.set(workouts);
-      },
-      error: (err) => {
-        console.error('Error fetching workouts (caught in subscriber):', err);
-      }
-    });
-  }
+  private readonly workoutsSignal = computed(() => this.workouts() || []);
+
+  constructor() {}
 
   // --- Métodos de Acción Asíncronos ---
 
@@ -52,11 +35,11 @@ export class WorkoutService {
   }
 
   // Eliminar (Delete) - Borra en Firestore
-  async deleteWorkout(id: number) {
+  async deleteWorkout(id: string) {
     await this.storageService.deleteWorkout(id);
   }
 
-  getWorkoutById(id: string | number): Signal<Workout | undefined> {
+  getWorkoutById(id: string): Signal<Workout | undefined> {
     return computed(() => 
       this.workoutsSignal().find(w => String(w.id) === String(id))
     );
@@ -72,7 +55,7 @@ export class WorkoutService {
   // Estos métodos modifican el objeto localmente y luego guardan TODO el workout.
 
   // Agregar un nuevo ejercicio a una rutina específica
-  async addExerciseToWorkout(workoutId: number, ejercicio: Ejercicio): Promise<void> {
+  async addExerciseToWorkout(workoutId: string, ejercicio: Ejercicio): Promise<void> {
     const workout = this.getWorkoutById(workoutId)();
     if (!workout) return;
 
@@ -84,7 +67,7 @@ export class WorkoutService {
   }
 
   // Editar un ejercicio existente en una rutina
-  async editExerciseInWorkout(workoutId: number, ejercicioIndex: number, updatedEjercicio: Ejercicio): Promise<void> {
+  async editExerciseInWorkout(workoutId: string, ejercicioIndex: number, updatedEjercicio: Ejercicio): Promise<void> {
     const workout = this.getWorkoutById(workoutId)();
     if (!workout || !workout.ejercicios[ejercicioIndex]) return;
 
@@ -96,7 +79,7 @@ export class WorkoutService {
   }
 
   // Eliminar un ejercicio de una rutina
-  async deleteExerciseFromWorkout(workoutId: number, ejercicioIndex: number): Promise<void> {
+  async deleteExerciseFromWorkout(workoutId: string, ejercicioIndex: number): Promise<void> {
     const workout = this.getWorkoutById(workoutId)();
     if (!workout || !workout.ejercicios[ejercicioIndex]) return;
 
@@ -108,7 +91,7 @@ export class WorkoutService {
   }
 
   // Configurar un ejercicio avanzado (Top Set y Back Set)
-  async configureAdvancedExercise(workoutId: number, ejercicioIndex: number): Promise<void> {
+  async configureAdvancedExercise(workoutId: string, ejercicioIndex: number): Promise<void> {
     const workout = this.getWorkoutById(workoutId)();
     if (!workout || !workout.ejercicios[ejercicioIndex]) return;
 
@@ -142,7 +125,7 @@ export class WorkoutService {
   }
 
   // Añadir una Super Serie a una rutina
-  async addSuperSetToWorkout(workoutId: number): Promise<void> {
+  async addSuperSetToWorkout(workoutId: string): Promise<void> {
     const superSet: Ejercicio = {
       id: Date.now(),
       nombre: 'Super Serie',
@@ -159,7 +142,7 @@ export class WorkoutService {
     await this.addExerciseToWorkout(workoutId, superSet);
   }
 
-  async addDropSetToExercise(workoutId: number, ejercicioIndex: number): Promise<void> {
+  async addDropSetToExercise(workoutId: string, ejercicioIndex: number): Promise<void> {
     const workout = this.getWorkoutById(workoutId)();
     if (!workout || !workout.ejercicios[ejercicioIndex]) return;
     
@@ -181,7 +164,7 @@ export class WorkoutService {
     await this.storageService.saveWorkout(updatedWorkout);
   }
 
-  async addSuperSetToExercise(workoutId: number, ejercicioIndex: number, ejercicioVinculado: Ejercicio): Promise<void> {
+  async addSuperSetToExercise(workoutId: string, ejercicioIndex: number, ejercicioVinculado: Ejercicio): Promise<void> {
     const workout = this.getWorkoutById(workoutId)();
     if (!workout || !workout.ejercicios[ejercicioIndex]) return;
 

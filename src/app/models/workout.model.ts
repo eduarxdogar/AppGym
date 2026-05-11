@@ -1,8 +1,15 @@
 import { Ejercicio } from './ejercicio.model';
 
+export interface ActiveSetState {
+  reps: number;
+  weight: number;
+  completed: boolean;
+  isDropset?: boolean;
+}
+
 export interface Workout {
-  id: number;
-  fecha?: string; // Stored as string in JSON
+  id: string;
+  fecha?: string;
   nombre: string;
   ejercicios: Ejercicio[]; 
   nivelDificultad: 'principiante' | 'intermedio' | 'avanzado'; 
@@ -11,6 +18,10 @@ export interface Workout {
   isCompleted?: boolean;
   completedAt?: string;
   durationMinutes?: number;
+  // Session persistence
+  status?: 'idle' | 'active' | 'completed';
+  activeStartTime?: string;           // ISO string when session started
+  activeSetsState?: Record<number, ActiveSetState[]>; // Persisted sets progress
 }
 
 export type { Ejercicio };

@@ -1,10 +1,12 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { UserProfileService, UserProfile } from '../../core/services/user-profile.service';
-import { AiCoachService } from '../../core/services/ai-coach.service';
+import { UserProfileService } from '../../core/services/user-profile.service';
+import { UserProfileStateService } from '../../core/services/user-profile-state.service';
+import { UserProfile } from '../../models/user-profile.model';
+import { InbodyAiService } from '../../core/services/ai/inbody-ai.service';
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const EQUIPMENT = ['Mancuernas', 'Barra', 'Máquinas', 'Bandas', 'Polea', 'Kettlebells', 'Calistenia'];
@@ -13,6 +15,7 @@ const EQUIPMENT = ['Mancuernas', 'Barra', 'Máquinas', 'Bandas', 'Polea', 'Kettl
   selector: 'app-onboarding',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-[#0B0E14] text-white font-sans flex flex-col">
 
@@ -226,7 +229,8 @@ const EQUIPMENT = ['Mancuernas', 'Barra', 'Máquinas', 'Bandas', 'Polea', 'Kettl
 })
 export class OnboardingComponent {
   private profileService = inject(UserProfileService);
-  private aiCoach = inject(AiCoachService);
+  private profileState = inject(UserProfileStateService);
+  private aiCoach = inject(InbodyAiService);
   private router = inject(Router);
 
   step = signal(0);
@@ -267,15 +271,19 @@ export class OnboardingComponent {
   }
 
   toggleDay(day: string) {
-    const idx = this.profile.availableDays.indexOf(day);
-    if (idx === -1) this.profile.availableDays.push(day);
-    else this.profile.availableDays.splice(idx, 1);
+    if (this.profile.availableDays.includes(day)) {
+      this.profile.availableDays = this.profile.availableDays.filter(d => d !== day);
+    } else {
+      this.profile.availableDays = [...this.profile.availableDays, day];
+    }
   }
 
   toggleEquipment(eq: string) {
-    const idx = this.profile.equipment.indexOf(eq);
-    if (idx === -1) this.profile.equipment.push(eq);
-    else this.profile.equipment.splice(idx, 1);
+    if (this.profile.equipment.includes(eq)) {
+      this.profile.equipment = this.profile.equipment.filter(e => e !== eq);
+    } else {
+      this.profile.equipment = [...this.profile.equipment, eq];
+    }
   }
 
   async onInBodySelected(event: any) {
@@ -313,6 +321,7 @@ export class OnboardingComponent {
     this.error.set(null);
     try {
       await this.profileService.saveProfile(this.profile as UserProfile);
+      this.profileState.refreshProfile();
       this.router.navigate(['/dashboard']);
     } catch (err: any) {
       this.error.set('Error al guardar el perfil. Intenta de nuevo.');

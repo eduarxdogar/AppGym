@@ -1,0 +1,127 @@
+<div class="relative w-full max-w-4xl mx-auto p-4 rounded-xl border border-zinc-800/50 bg-[#0B0E14] grid-bg overflow-hidden flex flex-col items-center">
+      
+      <!-- Scan Line Animation -->
+      <div class="scan-line"></div>
+
+      <!-- Controls -->
+      <div class="z-30 mb-4">
+          <button (click)="toggleFlip()" class="px-6 py-2 bg-transparent border border-[#CCFF00] text-[#CCFF00] font-mono text-xs tracking-widest uppercase rounded hover:bg-[#CCFF00]/10 transition-colors shadow-[0_0_10px_rgba(204,255,0,0.2)]">
+              Rotar Cuerpo
+          </button>
+      </div>
+
+      <!-- 3D Flip Container -->
+      <div class="flip-container z-10">
+        <div class="flip-inner" [class.is-flipped]="isFlipped()">
+          
+          <!-- VISTA ANTERIOR (FRENTE) -->
+          <div class="flip-front flex flex-col items-center">
+            <div class="text-center mb-2 absolute top-0 w-full">
+              <span class="text-[10px] tracking-[0.4em] text-[#CCFF00]/50 uppercase font-mono">Anterior Scan</span>
+            </div>
+            
+            <svg viewBox="0 0 300 600" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto mt-8">
+              <defs>
+                <filter id="muscle-volume" x="-20%" y="-20%" width="140%" height="140%">
+                  <!-- Soft inset blur for volume -->
+                  <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur" />
+                  <feOffset dx="1" dy="1" result="offsetBlur" />
+                  <feSpecularLighting in="blur" surfaceScale="2" specularConstant=".8" specularExponent="30" lighting-color="#ffffff" result="specOut">
+                    <fePointLight x="-50" y="-100" z="200" />
+                  </feSpecularLighting>
+                  <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut" />
+                  <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="litPaint" />
+                </filter>
+              </defs>
+
+              <g filter="url(#muscle-volume)">
+                <!-- Cabeza/Cuello base -->
+                <path d="M 135 40 C 130 20 170 20 165 40 C 170 60 160 80 150 85 C 140 80 130 60 135 40 Z" class="base-dark" />
+                <path d="M 140 80 C 140 95 160 95 160 80 Z" class="base-dark" />
+
+                <!-- TRAPECIO -->
+                <path id="traps-front" d="M 140 90 C 120 100 100 115 115 125 C 130 115 150 110 150 110 C 150 110 170 115 185 125 C 200 115 180 100 160 90 Z" class="base-dark" (click)="onMuscleClick('Trapecio')" />
+
+                <!-- PECHO (Curved Anatomy) -->
+                <path id="chest-left" d="M 150 120 C 130 120 115 130 115 150 C 115 165 130 175 150 180 Z" [ngClass]="getColor('Pecho')" (click)="onMuscleClick('Pecho')" />
+                <path id="chest-right" d="M 150 120 C 170 120 185 130 185 150 C 185 165 170 175 150 180 Z" [ngClass]="getColor('Pecho')" (click)="onMuscleClick('Pecho')" />
+
+                <!-- HOMBROS (Deltoids) -->
+                <path id="shoulders-left" d="M 115 125 C 105 125 95 140 95 160 C 95 170 105 175 115 170 C 120 150 125 135 115 125 Z" [ngClass]="getColor('Hombros')" (click)="onMuscleClick('Hombros')" />
+                <path id="shoulders-right" d="M 185 125 C 195 125 205 140 205 160 C 205 170 195 175 185 170 C 180 150 175 135 185 125 Z" [ngClass]="getColor('Hombros')" (click)="onMuscleClick('Hombros')" />
+
+                <!-- BICEPS -->
+                <path id="biceps-left" d="M 115 170 C 105 175 95 190 100 205 C 110 200 120 185 115 170 Z" [ngClass]="getColor('Bíceps')" (click)="onMuscleClick('Bíceps')" />
+                <path id="biceps-right" d="M 185 170 C 195 175 205 190 200 205 C 190 200 180 185 185 170 Z" [ngClass]="getColor('Bíceps')" (click)="onMuscleClick('Bíceps')" />
+
+                <!-- ANTEBRAZOS -->
+                <path id="forearms-left" d="M 100 205 C 90 220 95 240 105 245 C 115 230 115 210 100 205 Z" [ngClass]="getColor('Antebrazos')" (click)="onMuscleClick('Antebrazos')" />
+                <path id="forearms-right" d="M 200 205 C 210 220 205 240 195 245 C 185 230 185 210 200 205 Z" [ngClass]="getColor('Antebrazos')" (click)="onMuscleClick('Antebrazos')" />
+
+                <!-- CORE (Six pack - organic) -->
+                <path id="abs-upper" d="M 135 180 C 145 185 155 185 165 180 C 160 200 140 200 135 180 Z" [ngClass]="getColor('Core')" (click)="onMuscleClick('Core')" />
+                <path id="abs-mid" d="M 138 200 C 145 205 155 205 162 200 C 158 220 142 220 138 200 Z" [ngClass]="getColor('Core')" (click)="onMuscleClick('Core')" />
+                <path id="abs-lower" d="M 140 220 C 145 225 155 225 160 220 C 155 240 145 240 140 220 Z" [ngClass]="getColor('Core')" (click)="onMuscleClick('Core')" />
+                
+                <!-- OBLICUOS -->
+                <path id="obliques-left" d="M 135 180 C 120 190 120 230 135 245 C 130 220 130 200 135 180 Z" [ngClass]="getColor('Core')" (click)="onMuscleClick('Core')" />
+                <path id="obliques-right" d="M 165 180 C 180 190 180 230 165 245 C 170 220 170 200 165 180 Z" [ngClass]="getColor('Core')" (click)="onMuscleClick('Core')" />
+
+                <!-- CUADRICEPS (Organic teardrop) -->
+                <path id="quads-left" d="M 135 250 C 110 260 100 320 125 350 C 140 330 150 280 145 250 Z" [ngClass]="getColor('Cuádriceps')" (click)="onMuscleClick('Cuádriceps')" />
+                <path id="quads-right" d="M 165 250 C 190 260 200 320 175 350 C 160 330 150 280 155 250 Z" [ngClass]="getColor('Cuádriceps')" (click)="onMuscleClick('Cuádriceps')" />
+
+                <!-- GEMELOS Frontal -->
+                <path id="calves-left" d="M 125 350 C 115 380 125 420 135 430 C 145 400 145 370 125 350 Z" [ngClass]="getColor('Gemelos')" (click)="onMuscleClick('Gemelos')" />
+                <path id="calves-right" d="M 175 350 C 185 380 175 420 165 430 C 155 400 155 370 175 350 Z" [ngClass]="getColor('Gemelos')" (click)="onMuscleClick('Gemelos')" />
+              </g>
+            </svg>
+          </div>
+
+          <!-- VISTA POSTERIOR (ESPALDA) -->
+          <div class="flip-back flex flex-col items-center">
+            <div class="text-center mb-2 absolute top-0 w-full">
+              <span class="text-[10px] tracking-[0.4em] text-[#CCFF00]/50 uppercase font-mono">Posterior Scan</span>
+            </div>
+            
+            <svg viewBox="0 0 300 600" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto mt-8">
+              <g filter="url(#muscle-volume)">
+                 <!-- Cabeza Posterior -->
+                <path d="M 135 40 C 130 20 170 20 165 40 C 170 60 160 80 150 85 C 140 80 130 60 135 40 Z" class="base-dark" />
+
+                <!-- TRAPECIO (Upper Armor) -->
+                <path id="traps" d="M 140 85 C 120 100 100 115 110 125 C 130 115 150 140 150 140 C 150 140 170 115 190 125 C 200 115 180 100 160 85 Z" [ngClass]="getColor('Trapecio')" (click)="onMuscleClick('Trapecio')" />
+
+                <!-- HOMBROS (Posterior) -->
+                <path id="shoulders-back-left" d="M 110 125 C 100 130 90 150 100 165 C 115 150 120 135 110 125 Z" [ngClass]="getColor('Hombros')" (click)="onMuscleClick('Hombros')" />
+                <path id="shoulders-back-right" d="M 190 125 C 200 130 210 150 200 165 C 185 150 180 135 190 125 Z" [ngClass]="getColor('Hombros')" (click)="onMuscleClick('Hombros')" />
+
+                <!-- DORSALES (Alas Tech) -->
+                <path id="lats-left" d="M 150 140 C 130 150 110 180 130 210 C 145 200 150 180 150 140 Z" [ngClass]="getColor('Espalda')" (click)="onMuscleClick('Espalda')" />
+                <path id="lats-right" d="M 150 140 C 170 150 190 180 170 210 C 155 200 150 180 150 140 Z" [ngClass]="getColor('Espalda')" (click)="onMuscleClick('Espalda')" />
+
+                <!-- TRICEPS -->
+                <path id="triceps-left" d="M 100 165 C 90 180 100 200 110 205 C 120 190 115 175 100 165 Z" [ngClass]="getColor('Tríceps')" (click)="onMuscleClick('Tríceps')" />
+                <path id="triceps-right" d="M 200 165 C 210 180 200 200 190 205 C 180 190 185 175 200 165 Z" [ngClass]="getColor('Tríceps')" (click)="onMuscleClick('Tríceps')" />
+
+                <!-- LUMBARES (Placa Baja) -->
+                <path id="lower-back" d="M 130 210 C 140 220 160 220 170 210 C 160 240 140 240 130 210 Z" [ngClass]="getColor('Lumbares')" (click)="onMuscleClick('Lumbares')" />
+
+                <!-- GLUTEOS (Blindaje Posterior) -->
+                <path id="glutes-left" d="M 130 240 C 110 250 110 290 145 290 C 150 260 140 250 130 240 Z" [ngClass]="getColor('Glúteos')" (click)="onMuscleClick('Glúteos')" />
+                <path id="glutes-right" d="M 170 240 C 190 250 190 290 155 290 C 150 260 160 250 170 240 Z" [ngClass]="getColor('Glúteos')" (click)="onMuscleClick('Glúteos')" />
+
+                <!-- ISQUIOS -->
+                <path id="hamstrings-left" d="M 145 290 C 115 300 115 340 130 350 C 145 330 150 310 145 290 Z" [ngClass]="getColor('Isquiotibiales')" (click)="onMuscleClick('Isquiotibiales')" />
+                <path id="hamstrings-right" d="M 155 290 C 185 300 185 340 170 350 C 155 330 150 310 155 290 Z" [ngClass]="getColor('Isquiotibiales')" (click)="onMuscleClick('Isquiotibiales')" />
+
+                <!-- GEMELOS (Posterior) -->
+                <path id="calves-back-left" d="M 130 350 C 110 380 115 420 135 430 C 145 400 145 370 130 350 Z" [ngClass]="getColor('Gemelos')" (click)="onMuscleClick('Gemelos')" />
+                <path id="calves-back-right" d="M 170 350 C 190 380 185 420 165 430 C 155 400 155 370 170 350 Z" [ngClass]="getColor('Gemelos')" (click)="onMuscleClick('Gemelos')" />
+              </g>
+            </svg>
+          </div>
+
+        </div>
+      </div>
+</div>

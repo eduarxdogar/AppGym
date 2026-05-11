@@ -1,10 +1,12 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { AiCoachService, WeeklyDietPlan, DayDietPlan } from '../../core/services/ai-coach.service';
+import { NutritionAiService } from '../../core/services/ai/nutrition-ai.service';
+import { WeeklyDietPlan, DayDietPlan } from '../../models/ai-requests.model';
 import { NutritionService } from '../../core/services/nutrition.service';
+import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 
 interface ScannedFood {
   calories: number; protein: number; carbs: number; fats: number;
@@ -16,6 +18,7 @@ type MealOverrides = Record<number, ScannedFood>; // key = meal index
   selector: 'app-nutrition',
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-[#0B0E14] text-white pb-20 font-sans">
 
@@ -236,8 +239,9 @@ type MealOverrides = Record<number, ScannedFood>; // key = meal index
   `
 })
 export class NutritionComponent implements OnInit {
-  private aiCoach = inject(AiCoachService);
+  private aiCoach = inject(NutritionAiService);
   private nutritionService = inject(NutritionService);
+  private profileState = inject(UserProfileStateService);
 
   // Form
   goal = 'volumen';
@@ -282,6 +286,12 @@ export class NutritionComponent implements OnInit {
   overridesCount = computed(() => Object.keys(this.mealOverrides()).length);
 
   ngOnInit() {
+    const profile = this.profileState.profile();
+    if (profile) {
+      if (profile.weight) this.weight = profile.weight;
+      if (profile.goal) this.goal = profile.goal;
+    }
+
     this.nutritionService.getPlan().subscribe({
       next: (existing) => {
         if (existing) {
@@ -317,8 +327,8 @@ export class NutritionComponent implements OnInit {
       this.mealOverrides.set({});
       this.showForm.set(false);
       await this.nutritionService.savePlan(result);
-    } catch {
-      this.error.set('No se pudo generar el plan. Verifica tu API Key de Gemini.');
+    } catch (err: any) {
+      this.error.set(err.message || 'No se pudo generar el plan.');
     } finally {
       this.isLoading.set(false);
     }
@@ -338,8 +348,8 @@ export class NutritionComponent implements OnInit {
       try {
         const scanned = await this.aiCoach.scanNutritionLabel(base64, mimeType);
         this.mealOverrides.update(overrides => ({ ...overrides, [mealIndex]: scanned }));
-      } catch {
-        this.error.set('No se pudo leer la etiqueta. Intenta con una foto más clara.');
+      } catch (err: any) {
+        this.error.set(err.message || 'No se pudo leer la etiqueta. Intenta con una foto más clara.');
       } finally {
         this.scanningMealIndex.set(null);
       }
