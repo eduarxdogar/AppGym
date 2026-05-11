@@ -1,4 +1,5 @@
 export interface WorkoutSessionSet {
+    type?: 'warmup' | 'effective' | 'topset' | 'backoff';
     weight: number;
     reps: number;
     completed: boolean;

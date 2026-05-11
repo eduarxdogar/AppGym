@@ -1,4 +1,4 @@
-import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,6 +7,7 @@ import { RecoveryService } from '../../core/services/recovery.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MetricsService } from '../../core/services/metrics.service';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
+import { Workout, Ejercicio } from '../../models/workout.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -33,7 +34,7 @@ export class DashboardComponent {
   private metricsService = inject(MetricsService);
 
   // Signals
-  workouts = this.workoutService.workouts;
+  workouts: Signal<Workout[]> = this.workoutService.workouts;
   muscleStatus = this.recoveryService.getMuscleRecoveryStatus();
   metrics = this.metricsService.weeklyMetrics;
 
@@ -79,7 +80,7 @@ export class DashboardComponent {
     const musculos = w.musculos || [];
     
     if (musculos.length > 0) {
-      musculos.forEach(m => {
+      musculos.forEach((m: string) => {
         result.push({
           name: m,
           percentage: baseMap[m] || 70 + (m.charCodeAt(0) % 30)
@@ -88,12 +89,12 @@ export class DashboardComponent {
     } else {
       // 2. Si no hay array en la raíz, extraer de los ejercicios
       const extraidos = new Set<string>();
-      w.ejercicios.forEach(ex => {
+      w.ejercicios.forEach((ex: Ejercicio) => {
         if (ex.grupoMuscular && ex.grupoMuscular !== 'General' && ex.grupoMuscular !== 'otros') {
           extraidos.add(ex.grupoMuscular);
         }
       });
-      extraidos.forEach(m => {
+      extraidos.forEach((m: string) => {
         result.push({
           name: m,
           percentage: baseMap[m] || 70 + (m.charCodeAt(0) % 30)

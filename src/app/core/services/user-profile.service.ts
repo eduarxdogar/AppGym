@@ -1,14 +1,15 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
 import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
-import { Auth } from '@angular/fire/auth';
+import { Auth, authState, User } from '@angular/fire/auth';
 import { from, Observable, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { switchMap, map } from 'rxjs/operators';
 import { UserProfile } from '../../models/user-profile.model';
 
 @Injectable({ providedIn: 'root' })
 export class UserProfileService {
   private firestore = inject(Firestore);
   private auth = inject(Auth);
+  private injector = inject(Injector);
 
   /** Guarda (crea o actualiza) el perfil del usuario. */
   async saveProfile(profile: UserProfile): Promise<void> {
@@ -24,14 +25,16 @@ export class UserProfileService {
 
   /** Recupera el perfil del usuario actual. Devuelve null si no existe. */
   getProfile(): Observable<UserProfile | null> {
-    const uid = this.auth.currentUser?.uid;
-    if (!uid) return of(null);
-    const ref = doc(this.firestore, `users/${uid}/profile/data`);
-    return from(getDoc(ref)).pipe(
-      switchMap(snap => snap.exists()
-        ? of(snap.data() as UserProfile)
-        : of(null)
-      )
+    return authState(this.auth).pipe(
+      switchMap((user: User | null) => {
+        if (!user) return of(null);
+        return runInInjectionContext(this.injector, () => {
+          const ref = doc(this.firestore, `users/${user.uid}/profile/data`);
+          return from(getDoc(ref)).pipe(
+            map(snap => snap.exists() ? snap.data() as UserProfile : null)
+          );
+        });
+      })
     );
   }
 

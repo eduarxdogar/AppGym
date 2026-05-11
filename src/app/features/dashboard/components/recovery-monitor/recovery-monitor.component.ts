@@ -1,46 +1,48 @@
 import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { RecoveryService, MuscleStatus } from '../../../../core/services/recovery.service';
-import { ProfessionalBodyMapComponent } from '../../../../shared/components/professional-body-map/professional-body-map.component';
+import { RecoveryService } from '../../../../core/services/recovery.service';
+import { NgtCanvas } from 'angular-three/dom';
+import { BiometricModelComponent } from '../../../../shared/components/biometric-model/biometric-model.component';
 
 @Component({
   selector: 'app-recovery-monitor',
   standalone: true,
-  imports: [CommonModule, MatIconModule, ProfessionalBodyMapComponent],
+  imports: [CommonModule, MatIconModule, NgtCanvas, BiometricModelComponent],
   templateUrl: './recovery-monitor.component.html',
   styles: [`
     :host {
       display: block;
+    }
+    .hud-clip {
+      clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
     }
   `]
 })
 export class RecoveryMonitorComponent {
   private recoveryService = inject(RecoveryService);
   
-  // Signal directo del servicio
   public statusMap = this.recoveryService.getMuscleRecoveryStatus();
-
-  /**
-   * Lista ordenada de músculos:
-   * 1. Menor porcentaje (más fatigados) primero.
-   */
-  sortedMuscles = computed(() => {
+  
+  selectedMuscle = computed(() => {
+    const name = this.recoveryService.selectedMuscleName();
+    if (!name) return null;
     const map = this.statusMap();
-    return Array.from(map.values()).sort((a, b) => a.percentage - b.percentage);
+    return map.get(name) || null;
   });
 
-  /**
-   * Lista de músculos sugeridos (100% recuperados)
-   * Limitado a 4 sugerencias para no saturar.
-   */
+  /** Limit to 4 suggested fresh muscles */
   suggestedMuscles = computed(() => {
-    const fresh = this.sortedMuscles().filter(m => m.percentage >= 90);
-    // Priorizamos los que llevan más tiempo sin entrenar (si tuviéramos esa info exacta,
-    // pero por ahora filtramos los más frescos).
-    // shuffle o simplemente devolver los primeros.
+    const map = this.statusMap();
+    const fresh = Array.from(map.values()).filter(m => m.percentage >= 90);
     return fresh.slice(0, 4);
   });
 
-  constructor() {}
+  closeHUD() {
+    this.recoveryService.setSelectedMuscle(null);
+  }
+
+  getEtaHours(percentage: number): number {
+    return Math.max(0, Math.round(48 * (1 - (percentage / 100))));
+  }
 }

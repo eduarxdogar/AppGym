@@ -3,6 +3,8 @@ import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, w
 import { Observable, of } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
+import { Workout } from '../../models/workout.model';
+import { WorkoutSession } from '../models/workout-history.model';
 
 export interface ChatMessage {
   id: string;
@@ -16,33 +18,32 @@ export interface ChatMessage {
   providedIn: 'root'
 })
 export class StorageService {
-  private firestore = inject(Firestore);
-  private authService = inject(AuthService);
-  private injector = inject(Injector);
+  private readonly firestore = inject(Firestore);
+  private readonly authService = inject(AuthService);
+  private readonly injector = inject(Injector);
 
   constructor() { }
 
-  getWorkouts(): Observable<any[]> {
+  getWorkouts(): Observable<Workout[]> {
     return this.authService.authState$.pipe(
       switchMap(user => {
         if (!user) {
-          return of([]);
+          return of([] as Workout[]);
         }
-        // Use runInInjectionContext safely
         return runInInjectionContext(this.injector, () => {
              const workoutsCol = collection(this.firestore, 'workouts');
              const q = query(workoutsCol, where('userId', '==', user.uid));
-             return collectionData(q, { idField: 'id' }).pipe(
+             return (collectionData(q, { idField: 'id' }) as any as Observable<Workout[]>).pipe(
                  catchError(err => {
                      console.error('Firestore rule or collection error:', err);
-                     return of([]);
+                     return of([] as Workout[]);
                  })
              );
         });
       }),
       catchError(err => {
         console.error('Auth state error in getWorkouts:', err);
-        return of([]);
+        return of([] as Workout[]);
       })
     );
   }
@@ -92,19 +93,14 @@ export class StorageService {
 
   // --- HISTORY MANAGEMENT ---
   
-  getHistory(): Observable<any[]> {
+  getHistory(): Observable<WorkoutSession[]> {
     return this.authService.authState$.pipe(
       switchMap(user => {
         if (!user) return of([]);
         return runInInjectionContext(this.injector, () => {
              const historyCol = collection(this.firestore, 'workout_history');
              const q = query(historyCol, where('userId', '==', user.uid));
-             return collectionData(q, { idField: 'id' }).pipe(
-                 catchError(err => {
-                     console.error('Firestore rule or collection error in history:', err);
-                     return of([]);
-                 })
-             );
+             return collectionData(q, { idField: 'id' }) as Observable<WorkoutSession[]>;
         });
       }),
       catchError(err => {
@@ -114,13 +110,12 @@ export class StorageService {
     );
   }
 
-  async saveHistory(session: any): Promise<void> {
+  async saveHistory(session: WorkoutSession): Promise<void> {
     const user = this.authService.currentUser();
     if (!user) throw new Error('User must be authenticated');
 
     try {
       const historyCol = collection(this.firestore, 'workout_history');
-      // If session doesn't have ID, create one
       const docId = session.id ? String(session.id) : doc(historyCol).id;
       const docRef = doc(historyCol, docId);
       

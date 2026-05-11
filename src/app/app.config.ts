@@ -16,6 +16,7 @@ import { provideFirestore, getFirestore } from '@angular/fire/firestore';
 import { provideAuth, getAuth } from '@angular/fire/auth';
 import { provideFunctions, getFunctions } from '@angular/fire/functions';
 import { environment } from '../environments/environment';
+import { provideNgtRenderer } from 'angular-three/dom';
 
 import { MatNativeDateModule } from '@angular/material/core';
 
@@ -30,6 +31,7 @@ export const appConfig: ApplicationConfig = {
     provideFirestore(() => getFirestore()),
     provideAuth(() => getAuth()),
     provideFunctions(() => getFunctions()),
+    provideNgtRenderer(),
     { provide: LOCALE_ID, useValue: 'es-CO' }
   ]
 };

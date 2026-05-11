@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { WorkoutSession } from '../../models/workout-session.model';
+import { WorkoutSession } from '../models/workout-history.model';
 import { StorageService } from './storage.service';
 
 @Injectable({ providedIn: 'root' })
@@ -20,11 +20,11 @@ export class TrainingHistoryService {
         let durationMin = 0;
         if(session.duration) {
             durationMin = this.parseDurationToMinutes(session.duration);
-        } else {
+        } else if (session.endTime && session.startTime) {
              const diff = new Date(session.endTime).getTime() - new Date(session.startTime).getTime();
              durationMin = diff / 1000 / 60;
         }
-        const calculated = Math.round((durationMin * 5) + (session.totalVolume * 0.0005));
+        const calculated = Math.round((durationMin * 5) + ((session.totalVolume || 0) * 0.0005));
         console.log('Calculated Calories in Service:', calculated, 'DurationMin:', durationMin, 'Volume:', session.totalVolume);
         session.calories = calculated;
     } else {
@@ -62,9 +62,9 @@ export class TrainingHistoryService {
 
               // Filter by date
               const filtered = history.filter(h => {
-                  const date = new Date(h.endTime || h.startTime || h.fecha);
+                  const date = new Date(h.endTime || h.startTime || h.fecha || '');
                   return date >= startDate;
-              }).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());;
+              }).sort((a, b) => new Date(a.startTime || '').getTime() - new Date(b.startTime || '').getTime());
 
               // Process based on type
               let total = 0;
@@ -75,7 +75,7 @@ export class TrainingHistoryService {
 
               filtered.forEach(session => {
                   let val = 0;
-                  const date = new Date(session.endTime || session.startTime);
+                  const date = new Date(session.endTime || session.startTime || '');
                   const label = range === 'week' ? this.formatDay(date) : this.formatDate(date);
 
                   if (type === 'volume') {

@@ -1,42 +1,25 @@
-import { Injectable, signal, computed, inject, Signal, DestroyRef } from '@angular/core';
+import { Injectable, signal, computed, inject, Signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
 import { Workout } from '../../models/workout.model';
 import { Ejercicio } from '../../models/ejercicio.model'; 
 import { StorageService } from './storage.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError } from 'rxjs/operators';
-import { EMPTY } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WorkoutService {
-  private storageService = inject(StorageService);
-  private destroyRef = inject(DestroyRef);
+  private readonly storageService = inject(StorageService);
   
-  // Signal para manejar el estado de los workouts - inicializamos vacío
-  private workoutsSignal = signal<Workout[]>([]);
-  
-  // Signal computada de solo lectura para exponer los workouts
-  readonly workouts = computed(() => this.workoutsSignal());
+  // Modern Reactive Signal using toSignal
+  readonly workouts: Signal<Workout[]> = toSignal(
+    this.storageService.getWorkouts() as Observable<Workout[]>,
+    { initialValue: [] as Workout[] }
+  );
 
-  constructor() {
-    // Suscribirse a los cambios en Firestore
-    this.storageService.getWorkouts().pipe(
-      catchError(err => {
-        console.warn('Subscription error in WorkoutService:', err);
-        return EMPTY; // Return EMPTY to not emit further or crash this pipe, but keeps service alive
-      }),
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe({
-      next: (workouts) => {
-        console.log('Workouts received from Firestore:', workouts);
-        this.workoutsSignal.set(workouts);
-      },
-      error: (err) => {
-        console.error('Error fetching workouts (caught in subscriber):', err);
-      }
-    });
-  }
+  private readonly workoutsSignal = computed(() => this.workouts() || []);
+
+  constructor() {}
 
   // --- Métodos de Acción Asíncronos ---
 

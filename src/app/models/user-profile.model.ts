@@ -13,6 +13,7 @@ export interface UserProfile {
     muscleKg?: number;
     fatPercent?: number;
     bmr?: number;
+    score?: number;
     raw?: string;
   };
   createdAt?: string;
