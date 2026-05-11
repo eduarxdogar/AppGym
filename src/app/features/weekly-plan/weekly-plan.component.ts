@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -220,12 +220,12 @@ import { ToastService } from '../../core/services/toast.service';
 })
 export class WeeklyPlanComponent {
   // Services
-  private workoutService = inject(WorkoutService);
-  public aiService = inject(TrainerAiService);
-  private recoveryService = inject(RecoveryService);
-  private profileState = inject(UserProfileStateService);
-  private router = inject(Router);
-  private toastService = inject(ToastService);
+  private readonly workoutService = inject(WorkoutService);
+  public readonly aiService = inject(TrainerAiService);
+  private readonly recoveryService = inject(RecoveryService);
+  private readonly profileState = inject(UserProfileStateService);
+  private readonly router = inject(Router);
+  private readonly toastService = inject(ToastService);
 
   // Constants
   levels: Array<'Principiante' | 'Intermedio' | 'Avanzado'> = ['Principiante', 'Intermedio', 'Avanzado'];
@@ -238,6 +238,29 @@ export class WeeklyPlanComponent {
   selectedLevel: 'Principiante' | 'Intermedio' | 'Avanzado' | null = null;
   userGoal: string = '';
   daysPerWeek: number = 3;
+
+  constructor() {
+    // AUTO-FILL GENERATOR: Sync with User Profile from Onboarding
+    effect(() => {
+      const profile = this.profileState.profile();
+      if (profile) {
+        // Only auto-fill if the user hasn't modified them manually or if it's the first load
+        if (!this.selectedLevel) this.selectedLevel = profile.fitnessLevel;
+        if (!this.userGoal) {
+          const goalMap: Record<string, string> = {
+            'volumen': 'Ganar masa muscular y fuerza.',
+            'definicion': 'Definir músculos y perder grasa.',
+            'mantenimiento': 'Mantener forma física actual.',
+            'perdida_peso': 'Bajar de peso y mejorar condición.'
+          };
+          this.userGoal = goalMap[profile.goal] || '';
+        }
+        if (this.daysPerWeek === 3 && profile.availableDays?.length > 0) {
+          this.daysPerWeek = Math.min(Math.max(profile.availableDays.length, 2), 6);
+        }
+      }
+    });
+  }
 
   // Workouts Signal (Filtered for "Weekly" Plan - in this MVP essentially just all future workouts, or current data)
   // For simplicity, we are showing ALL workouts sorted by date descending like a plan, but realistically we would filter by date range.
@@ -330,16 +353,14 @@ export class WeeklyPlanComponent {
       try {
            const newWorkout = await this.aiService.generateWorkout(prompt, profile);
 
-           // Re-ajustar la fecha basándose en la fecha del último entrenamiento del plan actual, si existe.
-           const currentWorkouts = this.weekWorkouts();
-           if (currentWorkouts.length > 0) {
-              const lastWorkout = currentWorkouts[currentWorkouts.length - 1];
-              if (lastWorkout && lastWorkout.fecha) {
-                 const newDate = new Date(lastWorkout.fecha);
-                 newDate.setDate(newDate.getDate() + 1);
-                 newWorkout.fecha = newDate.toISOString();
-              }
-           }
+            // Re-ajustar la fecha basándose en la fecha del último entrenamiento del plan actual, si existe.
+            const currentWorkouts = this.weekWorkouts();
+            const lastWorkout = currentWorkouts.at(-1);
+            if (lastWorkout?.fecha) {
+               const newDate = new Date(lastWorkout.fecha);
+               newDate.setDate(newDate.getDate() + 1);
+               newWorkout.fecha = newDate.toISOString();
+            }
 
            await this.workoutService.addWorkout(newWorkout);
            this.toastService.showSuccess('✨ Nuevo día generado y agregado al plan.');

@@ -16,6 +16,7 @@ export interface UserProfile {
     score?: number;
     raw?: string;
   };
+  baseGym?: string;
   createdAt?: string;
   updatedAt?: string;
 }
