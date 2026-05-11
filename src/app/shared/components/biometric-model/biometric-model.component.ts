@@ -99,9 +99,9 @@ export class BiometricModelComponent {
   private scanDir = 1;
   private scanY = -1.2;
 
-  // Position / scale tweaks — FINAL PRECISION ALIGNMENT
-  readonly modelOffset: [number, number, number] = [0, 0, 0];
-  readonly modelScale: [number, number, number] = [75, 75, 75];
+  // Position / scale tweaks — TITAN SCALE UP for maximum impact
+  readonly modelOffset: [number, number, number] = [0, 10, 0];
+  readonly modelScale: [number, number, number] = [150, 130, 100];
 
   // Map from mesh UUID → muscle name (populated on model load)
   private readonly meshMuscleMap = new Map<string, string>();
