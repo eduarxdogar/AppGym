@@ -160,24 +160,49 @@
           </div>
 
           <!-- Scan Result -->
-          <div *ngIf="inbodyScanResult()" class="bg-[#151921] border border-[#CCFF00]/20 rounded-2xl p-4 space-y-2">
+          <div *ngIf="inbodyScanResult()" class="bg-[#151921] border border-[#CCFF00]/20 rounded-2xl p-4 space-y-3">
             <p class="text-[10px] text-[#CCFF00] uppercase tracking-widest font-bold flex items-center gap-1">
-              <mat-icon class="text-xs">check_circle</mat-icon> InBody extraído por AI
+              <mat-icon class="text-xs">check_circle</mat-icon> Reporte Médico Extraído por AI
             </p>
+
+            <!-- Primary Metrics Row -->
             <div class="grid grid-cols-3 gap-2 text-center">
               <div>
-                <span class="block text-lg font-black text-white">{{ inbodyScanResult()?.muscleKg || '—' }} kg</span>
-                <span class="block text-[9px] text-zinc-500 uppercase">Músculo</span>
+                <span class="block text-lg font-black text-white">{{ inbodyScanResult()?.muscleKg || '—' }} <span class="text-xs font-normal text-zinc-500">kg</span></span>
+                <span class="block text-[9px] text-zinc-500 uppercase tracking-widest">Músculo</span>
               </div>
               <div>
-                <span class="block text-lg font-black text-white">{{ inbodyScanResult()?.fatPercent || '—' }}%</span>
-                <span class="block text-[9px] text-zinc-500 uppercase">Grasa</span>
+                <span class="block text-lg font-black text-white">{{ inbodyScanResult()?.fatPercent || '—' }}<span class="text-xs font-normal text-zinc-500">%</span></span>
+                <span class="block text-[9px] text-zinc-500 uppercase tracking-widest">Grasa</span>
               </div>
               <div>
                 <span class="block text-lg font-black text-white">{{ inbodyScanResult()?.bmr || '—' }}</span>
-                <span class="block text-[9px] text-zinc-500 uppercase">TMB kcal</span>
+                <span class="block text-[9px] text-zinc-500 uppercase tracking-widest">TMB kcal</span>
               </div>
             </div>
+
+            <!-- Divider -->
+            <div class="border-t border-zinc-800"></div>
+
+            <!-- Advanced Metrics Row -->
+            <div class="grid grid-cols-3 gap-2">
+              <div class="flex flex-col items-center gap-1 bg-blue-500/5 border border-blue-500/15 rounded-xl py-2 px-1 text-center"
+                   *ngIf="inbodyScanResult()?.waterPercentage != null">
+                <span class="text-sm font-black text-blue-400">{{ inbodyScanResult()?.waterPercentage }}</span>
+                <span class="text-[8px] text-zinc-500 uppercase tracking-widest leading-tight">Agua TBW</span>
+              </div>
+              <div class="flex flex-col items-center gap-1 bg-orange-500/5 border border-orange-500/15 rounded-xl py-2 px-1 text-center"
+                   *ngIf="inbodyScanResult()?.visceralFat != null">
+                <span class="text-sm font-black text-orange-400">Nv. {{ inbodyScanResult()?.visceralFat }}</span>
+                <span class="text-[8px] text-zinc-500 uppercase tracking-widest leading-tight">G. Visceral</span>
+              </div>
+              <div class="flex flex-col items-center gap-1 bg-purple-500/5 border border-purple-500/15 rounded-xl py-2 px-1 text-center"
+                   *ngIf="inbodyScanResult()?.boneMass != null">
+                <span class="text-sm font-black text-purple-400">{{ inbodyScanResult()?.boneMass }} <span class="text-[9px] font-normal">kg</span></span>
+                <span class="text-[8px] text-zinc-500 uppercase tracking-widest leading-tight">Masa Ósea</span>
+              </div>
+            </div>
+
           </div>
 
           <div *ngIf="scanningInBody()" class="flex items-center justify-center gap-3 py-4 text-zinc-400">

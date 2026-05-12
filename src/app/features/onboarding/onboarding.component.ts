@@ -36,7 +36,14 @@ export class OnboardingComponent {
   error = signal<string | null>(null);
   inbodyPreview = signal<string | null>(null);
   scanningInBody = signal(false);
-  inbodyScanResult = signal<{ muscleKg?: number; fatPercent?: number; bmr?: number } | null>(null);
+  inbodyScanResult = signal<{
+    muscleKg?: number | null;
+    fatPercent?: number | null;
+    bmr?: number | null;
+    waterPercentage?: number | null;
+    visceralFat?: number | null;
+    boneMass?: number | null;
+  } | null>(null);
 
   allDays = DAYS;
   allEquipment = EQUIPMENT;
@@ -105,7 +112,16 @@ export class OnboardingComponent {
       try {
         const result = await this.aiCoach.scanInBodyReport(base64, mimeType);
         this.inbodyScanResult.set(result);
-        this.profile.inbodyData = result;
+        
+        // Mapeo explícito para asegurar persistencia en Firestore
+        this.profile.inbodyData = {
+          muscleKg: result.muscleKg || null,
+          fatPercent: result.fatPercent || null,
+          bmr: result.bmr || null,
+          waterPercentage: result.waterPercentage || null,
+          visceralFat: result.visceralFat || null,
+          boneMass: result.boneMass || null
+        };
       } catch (err) {
         console.error('InBody Scan failed:', err);
         // Silently fail – InBody is optional
@@ -121,10 +137,35 @@ export class OnboardingComponent {
     this.isSaving.set(true);
     this.error.set(null);
     try {
-      await this.profileService.saveProfile(this.profile as UserProfile);
+      // Aseguramos que el payload incluya explícitamente los datos de InBody si existen
+      // Sanitización estricta: Firestore no acepta 'undefined'. 
+      // Convertimos campos opcionales a null o valores por defecto.
+      const finalProfile: UserProfile = {
+        displayName: this.profile.displayName || '',
+        age: this.profile.age ?? null,
+        sex: this.profile.sex || 'male',
+        weight: this.profile.weight || 0,
+        height: this.profile.height || 0,
+        goal: this.profile.goal || 'volumen',
+        fitnessLevel: this.profile.fitnessLevel || 'Intermedio',
+        availableDays: this.profile.availableDays || [],
+        equipment: this.profile.equipment || [],
+        baseGym: this.profile.baseGym || 'Gimnasio de Barrio',
+        inbodyData: this.profile.inbodyData ? {
+          muscleKg: this.profile.inbodyData.muscleKg ?? null,
+          fatPercent: this.profile.inbodyData.fatPercent ?? null,
+          bmr: this.profile.inbodyData.bmr ?? null,
+          waterPercentage: this.profile.inbodyData.waterPercentage ?? null,
+          visceralFat: this.profile.inbodyData.visceralFat ?? null,
+          boneMass: this.profile.inbodyData.boneMass ?? null
+        } : null as any
+      };
+
+      await this.profileService.saveProfile(finalProfile);
       this.profileState.refreshProfile();
-      this.router.navigate(['/weekly-plan']);
+      this.router.navigate(['/weekly-plan'], { queryParams: { autoGenerate: 'true' } });
     } catch (err: any) {
+      console.error('Save profile failed:', err);
       this.error.set('Error al guardar el perfil. Intenta de nuevo.');
     } finally {
       this.isSaving.set(false);

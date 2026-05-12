@@ -1,19 +1,22 @@
 export interface UserProfile {
   displayName?: string;
-  age?: number;
+  age?: number | null;
   weight: number;
   height: number;
-  sex?: 'male' | 'female' | 'other';
+  sex?: 'male' | 'female' | 'other' | null;
   goal: 'volumen' | 'definicion' | 'mantenimiento' | 'perdida_peso';
   fitnessLevel: 'Principiante' | 'Intermedio' | 'Avanzado';
   availableDays: string[];
   equipment: string[];
   fatigueLevels?: Record<string, number>;
   inbodyData?: {
-    muscleKg?: number;
-    fatPercent?: number;
-    bmr?: number;
-    score?: number;
+    muscleKg?: number | null;
+    fatPercent?: number | null;
+    bmr?: number | null;
+    waterPercentage?: number | null;
+    visceralFat?: number | null;
+    boneMass?: number | null;
+    score?: number | null;
     raw?: string;
   };
   baseGym?: string;

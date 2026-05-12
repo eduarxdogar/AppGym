@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { WorkoutService } from '../../core/services/workout.service';
@@ -144,7 +144,24 @@ import { ToastService } from '../../core/services/toast.service';
                     </button>
                  </div>
 
-                 <h3 class="text-xl font-bold text-white mb-1 group-hover:text-[#CCFF00] transition-colors">{{ workout.nombre }}</h3>
+                 <!-- Editable Title -->
+                 <div class="flex items-center gap-2 mb-1" (click)="$event.stopPropagation()">
+                   <ng-container *ngIf="editingWorkoutId() !== workout.id">
+                     <h3 class="text-xl font-bold text-white group-hover:text-[#CCFF00] transition-colors">{{ workout.nombre }}</h3>
+                     <button (click)="startEditTitle(workout)" class="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-[#CCFF00]" title="Editar nombre">
+                       <mat-icon class="text-sm">edit</mat-icon>
+                     </button>
+                   </ng-container>
+                   <ng-container *ngIf="editingWorkoutId() === workout.id">
+                     <input #titleInput
+                            [(ngModel)]="editingTitle"
+                            (blur)="saveTitle(workout)"
+                            (keydown.enter)="saveTitle(workout)"
+                            (keydown.escape)="cancelEditTitle()"
+                            class="flex-1 bg-transparent border-b-2 border-[#CCFF00] text-xl font-bold text-white outline-none py-0.5 pr-2"
+                            autocomplete="off">
+                   </ng-container>
+                 </div>
                  
                  <div class="flex items-center gap-4 text-xs text-zinc-400 mt-2">
                     <span class="flex items-center gap-1"><mat-icon class="text-sm">fitness_center</mat-icon> {{ workout.ejercicios.length }} Ejercicios</span>
@@ -225,6 +242,7 @@ export class WeeklyPlanComponent {
   private readonly recoveryService = inject(RecoveryService);
   private readonly profileState = inject(UserProfileStateService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly toastService = inject(ToastService);
 
   // Constants
@@ -244,7 +262,6 @@ export class WeeklyPlanComponent {
     effect(() => {
       const profile = this.profileState.profile();
       if (profile) {
-        // Only auto-fill if the user hasn't modified them manually or if it's the first load
         if (!this.selectedLevel) this.selectedLevel = profile.fitnessLevel;
         if (!this.userGoal) {
           const goalMap: Record<string, string> = {
@@ -258,6 +275,20 @@ export class WeeklyPlanComponent {
         if (this.daysPerWeek === 3 && profile.availableDays?.length > 0) {
           this.daysPerWeek = Math.min(Math.max(profile.availableDays.length, 2), 6);
         }
+      }
+    });
+
+    // AUTO-GENERATE: Lee el query param y dispara la generación automáticamente
+    this.route.queryParamMap.subscribe(params => {
+      if (params.get('autoGenerate') === 'true') {
+        // ACTIVACIÓN INMEDIATA DEL SPINNER para evitar flash del formulario
+        this.isLoading.set(true);
+        
+        // Limpia el param para evitar re-generación al recargar
+        this.router.navigate([], { replaceUrl: true, queryParams: {} });
+        
+        // Espera un tick para que los signals del perfil y del effect se estabilicen
+        setTimeout(() => this.generatePlan(), 100);
       }
     });
   }
@@ -279,6 +310,35 @@ export class WeeklyPlanComponent {
 
   // AI State
   isGeneratingDay = signal<boolean>(false);
+
+  // Edit Title State
+  editingWorkoutId = signal<string | null>(null);
+  editingTitle = '';
+
+  startEditTitle(workout: any) {
+    this.editingWorkoutId.set(workout.id);
+    this.editingTitle = workout.nombre;
+  }
+
+  cancelEditTitle() {
+    this.editingWorkoutId.set(null);
+    this.editingTitle = '';
+  }
+
+  async saveTitle(workout: any) {
+    const newName = this.editingTitle.trim();
+    if (newName && newName !== workout.nombre) {
+      try {
+        const updatedWorkout = { ...workout, nombre: newName };
+        await this.workoutService.updateWorkout(updatedWorkout);
+        // Optimistic local update so the UI reflects immediately
+        workout.nombre = newName;
+      } catch (e) {
+        console.error('Error saving title:', e);
+      }
+    }
+    this.editingWorkoutId.set(null);
+  }
 
   goBack() {
     this.router.navigate(['/dashboard']);
