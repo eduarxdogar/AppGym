@@ -101,10 +101,11 @@ export class RecoveryService {
     const findTargetMuscle = (rawGroup: string | undefined): string | undefined => {
         if (!rawGroup) return undefined;
         
-        // 1. Exact Match (Highest Priority - Case Sensitive)
-        if (this.MAIN_MUSCLES.includes(rawGroup)) return rawGroup;
-        
         const normalized = rawGroup.toLowerCase().trim();
+        
+        // 1. Exact case-insensitive match against MAIN_MUSCLES
+        const exactMain = this.MAIN_MUSCLES.find(m => m.toLowerCase() === normalized);
+        if (exactMain) return exactMain;
         
         // 2. Direct Map (Normalized)
         if (this.MUSCLE_MAP[normalized]) return this.MUSCLE_MAP[normalized];
@@ -112,7 +113,7 @@ export class RecoveryService {
         // 3. Fuzzy Match
         return this.MAIN_MUSCLES.find(m => {
             const internal = m.toLowerCase();
-            return internal === normalized || internal.includes(normalized) || normalized.includes(internal);
+            return internal.includes(normalized) || normalized.includes(internal);
         });
     };
 

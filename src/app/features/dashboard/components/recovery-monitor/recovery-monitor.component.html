@@ -237,7 +237,10 @@
             <!-- Last session + status -->
             <div class="flex justify-between items-center mt-1">
               <span class="text-[9px] text-zinc-600 font-mono">
-                {{ m.lastWorkoutDate ? (m.lastWorkoutDate | date:'dd/MM') : 'Sin sesión' }}
+                <ng-container *ngIf="m.lastWorkoutDate; else noSession">
+                   Última: {{ m.lastWorkoutDate | date:'shortDate' }}
+                </ng-container>
+                <ng-template #noSession>Sin sesión</ng-template>
               </span>
               <span class="text-[9px] font-bold uppercase font-mono"
                     [ngClass]="m.percentage <= 30 ? 'text-[#FF0033]' : m.percentage <= 75 ? 'text-[#FFB300]' : 'text-[#CCFF00]'">
@@ -245,10 +248,9 @@
               </span>
             </div>
             <!-- Segmental InBody data row -->
-            <div *ngIf="getSegmentalInfo(m.name) as seg" class="mt-2 pt-2 border-t border-zinc-800/60 flex items-center gap-3">
-              <span class="text-[10px] text-zinc-400 font-mono">Masa: <span class="text-white">{{ seg.muscle }}</span></span>
-              <span class="text-zinc-700 text-[10px]">|</span>
-              <span class="text-[10px] text-zinc-400 font-mono">Grasa: <span class="text-white">{{ seg.fat }}</span></span>
+            <div class="flex justify-between mt-2 pt-2 border-t border-zinc-800/60 text-[10px] text-zinc-400 font-mono">
+              <span>Masa: <span class="text-white">{{ getSegmentalInfo(m.name)?.muscle || 'N/A' }}</span></span>
+              <span>Grasa: <span class="text-white">{{ getSegmentalInfo(m.name)?.fat || 'N/A' }}</span></span>
             </div>
           </div>
 

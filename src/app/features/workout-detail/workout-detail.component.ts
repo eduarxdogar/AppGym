@@ -14,6 +14,7 @@ import { ExerciseService } from '../../core/services/exercise.service';
 import { SafeUrlPipe } from '../../shared/pipes/safe-url.pipe';
 import { ChatAiService } from '../../core/services/ai/chat-ai.service';
 import { RestTimerService, REST_PRESETS_SECONDS } from '../../core/services/rest-timer.service';
+import { RecoveryService } from '../../core/services/recovery.service';
 import { WorkoutSession, WorkoutSessionExercise } from '../../models/workout-session.model';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ToastService } from '../../core/services/toast.service';
@@ -53,6 +54,7 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   public  readonly exerciseService       = inject(ExerciseService);
   public  readonly chatService           = inject(ChatAiService);
   public  readonly restTimer             = inject(RestTimerService);
+  private readonly recoveryService       = inject(RecoveryService);
   private readonly toastService          = inject(ToastService);
 
   /** Expose presets for template */
@@ -111,6 +113,11 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   newExerciseName       = signal<string>('');
   showRestModal         = signal<boolean>(false);
   expandedIndex: number | null = null;
+  
+  // Fatigue Warning Modal
+  showFatigueWarning    = signal<boolean>(false);
+  fatiguedMusclesDesc   = signal<string>('');
+  fatiguedAverage       = signal<number>(0);
 
   // --- Edit-in-place state ---
   editingExerciseIndex  = signal<number | null>(null);
@@ -233,6 +240,58 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   iniciarRutina() {
     const w = this.workout();
     if (!w) return;
+
+    // Check muscle fatigue before starting
+    const muscles = new Set<string>();
+    w.musculos?.forEach(m => muscles.add(m));
+    w.ejercicios.forEach(ex => {
+        if(ex.grupoMuscular) muscles.add(ex.grupoMuscular);
+    });
+
+    const statusMap = this.recoveryService.getMuscleRecoveryStatus()();
+    let totalFatigue = 0;
+    let countedMuscles = 0;
+    const veryFatiguedNames: string[] = [];
+
+    muscles.forEach(mName => {
+        // Try to match exact or lowercase inside the recovery service status
+        // Since RecoveryService normalizes to MAIN_MUSCLES, we should just iterate
+        const status = Array.from(statusMap.values()).find(s => 
+            s.name.toLowerCase() === mName.toLowerCase() ||
+            mName.toLowerCase().includes(s.name.toLowerCase()) ||
+            s.name.toLowerCase().includes(mName.toLowerCase())
+        );
+        
+        if (status) {
+            totalFatigue += status.percentage;
+            countedMuscles++;
+            if (status.percentage <= 60) {
+                veryFatiguedNames.push(status.name);
+            }
+        }
+    });
+
+    if (countedMuscles > 0) {
+        const average = totalFatigue / countedMuscles;
+        if (average <= 60) {
+            this.fatiguedAverage.set(Math.round(average));
+            this.fatiguedMusclesDesc.set(veryFatiguedNames.length > 0 ? veryFatiguedNames.join(', ') : 'Los músculos objetivo');
+            this.showFatigueWarning.set(true);
+            return; // Block start, show warning
+        }
+    }
+
+    this.confirmStartRoutine();
+  }
+
+  cancelFatigueWarning() {
+      this.showFatigueWarning.set(false);
+  }
+
+  confirmStartRoutine() {
+    const w = this.workout();
+    if (!w) return;
+    this.showFatigueWarning.set(false);
     this.isActive.set(true);
     this.startSessionTimer();
     this.trainingSessionService.startSession(w);
@@ -258,20 +317,22 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       const workout = this.workout();
       const startTime = this.trainingSessionService.getCurrentSession()?.fechaInicio || new Date();
       
-      if (workout) {
-           const sessionExercises: WorkoutSessionExercise[] = workout.ejercicios.map((ex, index) => {
-               const sets = this.activeSets().get(index) || [];
-               return {
-                   exerciseId: ex.id || index,
-                   name: ex.nombre,
-                   targetSets: ex.series || 0,
-                   sets: sets.map(s => ({
-                       weight: s.weight,
-                       reps: s.reps,
-                       completed: s.completed
-                   }))
-               };
-           });
+           if (workout) {
+               const sessionExercises: WorkoutSessionExercise[] = workout.ejercicios.map((ex, index) => {
+                   const sets = this.activeSets().get(index) || [];
+                   return {
+                       exerciseId: ex.id || index,
+                       name: ex.nombre,
+                       grupoMuscular: ex.grupoMuscular || '', // AGREGADO PARA RECOVERY SERVICE
+                       targetSets: ex.series || 0,
+                       sets: sets.map(s => ({
+                           weight: s.weight,
+                           reps: s.reps,
+                           completed: s.completed,
+                           type: s.type
+                       }))
+                   };
+               });
 
            const muscles = new Set<string>();
            workout.musculos?.forEach(m => muscles.add(m));

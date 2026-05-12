@@ -68,7 +68,7 @@ function resolveMuscleFromMeshName(meshName: string): string | null {
         [position]="modelOffset"
         [scale]="modelScale"
         (click)="onMeshClick($event)">
-        <ngt-primitive *args="[modelScene()]" />
+        <ngt-primitive *args="[modelScene()]" [dispose]="null" />
       </ngt-group>
     }
   `,

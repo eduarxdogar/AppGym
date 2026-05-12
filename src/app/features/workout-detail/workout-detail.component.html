@@ -450,6 +450,38 @@
 
 
     <!-- PRO SUPERSERIE MODAL (inline anchor, replaced below) -->
+    <!-- Modal: Fatigue Warning -->
+    <div *ngIf="showFatigueWarning()" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div class="bg-[#151921] border border-orange-500/50 rounded-2xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+           <div class="flex items-center gap-3 text-orange-500 mb-4">
+              <div class="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                 <mat-icon>health_and_safety</mat-icon>
+              </div>
+              <h3 class="text-lg font-bold text-white tracking-wide">Alerta de Fatiga</h3>
+           </div>
+           
+           <p class="text-sm text-zinc-400 mb-4">
+              Tus músculos objetivo promedio (<span class="font-bold text-white">{{ fatiguedAverage() }}% de recuperación</span>) se encuentran muy fatigados. 
+              <br><br>
+              Músculos en riesgo: <span class="text-orange-400 font-bold">{{ fatiguedMusclesDesc() }}</span>.
+           </p>
+
+           <div class="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 mb-6">
+               <p class="text-[10px] text-orange-400 uppercase tracking-widest font-bold">Riesgo de Sobre-entrenamiento</p>
+               <p class="text-xs text-orange-500/80 mt-1">Recomendamos descansar o enfocar otro grupo muscular para evitar lesiones y optimizar resultados.</p>
+           </div>
+
+           <div class="flex gap-3 justify-end mt-4">
+              <button (click)="cancelFatigueWarning()" class="px-5 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 font-bold tracking-wider text-xs hover:bg-zinc-800 transition">
+                 CANCELAR
+              </button>
+              <button (click)="confirmStartRoutine()" class="px-5 py-2.5 rounded-xl bg-orange-500/20 text-orange-500 border border-orange-500/30 font-bold tracking-wider text-xs hover:bg-orange-500 hover:text-white transition shadow-[0_0_15px_rgba(249,115,22,0.2)] hover:shadow-[0_0_20px_rgba(249,115,22,0.4)]">
+                 ENTRENAR IGUAL
+              </button>
+           </div>
+        </div>
+    </div>
+
     <!-- Modal: Confirmation (Exit/Save) -->
     <div *ngIf="showExitModal()" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
         <div class="bg-[#151921] border border-zinc-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
