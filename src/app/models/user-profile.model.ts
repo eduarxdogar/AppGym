@@ -1,3 +1,11 @@
+export interface SegmentalData {
+  rightArm?: string | null;
+  leftArm?: string | null;
+  trunk?: string | null;
+  rightLeg?: string | null;
+  leftLeg?: string | null;
+}
+
 export interface UserProfile {
   displayName?: string;
   age?: number | null;
@@ -18,6 +26,8 @@ export interface UserProfile {
     boneMass?: number | null;
     score?: number | null;
     raw?: string;
+    segmentalMuscle?: SegmentalData;
+    segmentalFat?: SegmentalData;
   };
   baseGym?: string;
   createdAt?: string;

@@ -4,13 +4,14 @@ import {
   inject,
   effect,
   signal,
-  Injector,
 } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { CommonModule } from '@angular/common';
 import { extend, beforeRender, injectLoader, NgtRenderState, NgtThreeEvent, NgtArgs } from 'angular-three';
+import { MatIconModule } from '@angular/material/icon';
 import { RecoveryService } from '../../../core/services/recovery.service';
+import { UserProfileStateService } from '../../../core/services/user-profile-state.service';
 
 extend(THREE);
 
@@ -20,7 +21,6 @@ const MESH_MAP: Record<string, string> = {
   'Object_3': 'Bíceps',
   'Object_4': 'Cuádriceps',
   'Object_5': 'Espalda',
-  // Add more mappings as they are identified in the console
 };
 
 /** Maps GLB mesh names (partial, case-insensitive) → internal muscle key */
@@ -41,10 +41,7 @@ const MESH_TO_MUSCLE: Array<[RegExp, string]> = [
 ];
 
 function resolveMuscleFromMeshName(meshName: string): string | null {
-  // 1. Check manual mapping first
   if (MESH_MAP[meshName]) return MESH_MAP[meshName];
-
-  // 2. Fallback to regex patterns
   for (const [pattern, muscle] of MESH_TO_MUSCLE) {
     if (pattern.test(meshName)) return muscle;
   }
@@ -54,22 +51,18 @@ function resolveMuscleFromMeshName(meshName: string): string | null {
 @Component({
   selector: 'app-biometric-model',
   standalone: true,
-  imports: [CommonModule, NgtArgs],
+  imports: [CommonModule, NgtArgs, MatIconModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <!-- Cinematic holographic lighting rig -->
-    <ngt-ambient-light [intensity]="0.4" color="#001830"></ngt-ambient-light>
-    <ngt-directional-light
-      [position]="[0, 8, 4]"
-      [intensity]="1.5"
-      color="#00AFFF">
-    </ngt-directional-light>
-    <ngt-point-light [position]="[2, 3, 3]"  [intensity]="6"  color="#00D2FF" [distance]="20" [decay]="2"></ngt-point-light>
-    <ngt-point-light [position]="[-2, 3, 3]" [intensity]="6"  color="#00D2FF" [distance]="20" [decay]="2"></ngt-point-light>
-    <ngt-point-light [position]="[0, -2, 2]" [intensity]="3"  color="#0055AA" [distance]="15" [decay]="2"></ngt-point-light>
-    <ngt-point-light [position]="[0, 2, -4]" [intensity]="4"  color="#003366" [distance]="15" [decay]="2"></ngt-point-light>
+    <ngt-ambient-light [intensity]="0.3" color="#001830"></ngt-ambient-light>
+    <ngt-directional-light [position]="[0, 8, 4]" [intensity]="1.2" color="#00f3ff"></ngt-directional-light>
+    <ngt-point-light [position]="[2, 3, 3]" [intensity]="8" color="#00f3ff" [distance]="20" [decay]="2"></ngt-point-light>
+    <ngt-point-light [position]="[-2, 3, 3]" [intensity]="8" color="#00f3ff" [distance]="20" [decay]="2"></ngt-point-light>
+    <ngt-point-light [position]="[0, -2, 2]" [intensity]="3" color="#0044cc" [distance]="15" [decay]="2"></ngt-point-light>
+    <ngt-point-light [position]="[0, 2, -4]" [intensity]="4" color="#003366" [distance]="15" [decay]="2"></ngt-point-light>
 
-    <!-- GLTF model primitive — rendered safely -->
+    <!-- GLTF model primitive -->
     @if (gltfReady() && modelScene()) {
       <ngt-group
         [position]="modelOffset"
@@ -82,11 +75,12 @@ function resolveMuscleFromMeshName(meshName: string): string | null {
 })
 export class BiometricModelComponent {
   private readonly recoveryService = inject(RecoveryService);
-  private readonly injector = inject(Injector);
+  private readonly profileState = inject(UserProfileStateService);
 
-  // GLTF via injectLoader (returns Signal<GLTF & NgtObjectMap | null>)
+  profile = this.profileState.profile;
+
   private readonly gltf = injectLoader(
-    (urls) => GLTFLoader,
+    () => GLTFLoader,
     () => 'assets/models/human-anatomy.glb'
   );
 
@@ -94,172 +88,93 @@ export class BiometricModelComponent {
   loadError = signal(false);
   modelScene = signal<THREE.Group | null>(null);
 
-  // Runtime state
   private elapsed = 0;
-  private scanDir = 1;
-  private scanY = -1.2;
-
-  // Position / scale tweaks — TITAN SCALE UP for maximum impact
   readonly modelOffset: [number, number, number] = [0, 10, 0];
   readonly modelScale: [number, number, number] = [150, 130, 100];
-
-  // Map from mesh UUID → muscle name (populated on model load)
   private readonly meshMuscleMap = new Map<string, string>();
 
   constructor() {
-    // Watch GLTF signal and apply holographic materials safely
     effect(() => {
       try {
-        const result = this.gltf();
-        if (!result) return;
-
+        const result = this.gltf() as any;
+        if (!result || !result.scene) return;
         const scene = result.scene as THREE.Group;
-        if (!scene) {
-          console.warn('[BiometricModel] GLTF loaded but scene is null');
-          return;
-        }
+        if (!scene) return;
 
         this.applyHolographicMaterials(scene);
         this.modelScene.set(scene);
         this.gltfReady.set(true);
-        this.loadError.set(false);
-        console.log('[BiometricModel] GLB successfully processed');
       } catch (err) {
-        console.error('[BiometricModel] Critical error during GLTF processing:', err);
+        console.error('[BiometricModel] error:', err);
         this.loadError.set(true);
       }
     });
 
     beforeRender(({ delta }: NgtRenderState) => {
       this.elapsed += delta;
-      
-      // Auto-rotation
       const scene = this.modelScene();
-      if (scene) {
-        scene.rotation.y += delta * 0.5;
-      }
-
-      this.scanY += delta * 0.8 * this.scanDir;
-      if (this.scanY > 1.6)  this.scanDir = -1;
-      if (this.scanY < -1.2) this.scanDir = 1;
-
+      if (scene) scene.rotation.y += delta * 0.4;
       this.updateEmissiveMaterials();
     });
   }
 
-  // ─── Material application ────────────────────────────────────────────────
-
   private applyHolographicMaterials(scene: THREE.Group): void {
     scene.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
-
       const meshName = child.name;
-      console.log('Mesh name detected:', meshName);
-
-      // SPECIFIC TARGETING: Body and Eyes
       const isTarget = meshName.includes('body_low') || meshName.includes('Eye');
-      
       if (!isTarget) {
-        child.visible = false; // Hide clutter meshes
+        child.visible = false;
         return;
       }
-
       const muscle = resolveMuscleFromMeshName(meshName);
-      if (muscle) {
-        this.meshMuscleMap.set(child.uuid, muscle);
-      }
+      if (muscle) this.meshMuscleMap.set(child.uuid, muscle);
 
-      // Force holographic override — STRICT MEDICAL SCANNER STYLE
       child.material = new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#00D2FF'),
-        emissive: new THREE.Color('#004466'),
-        emissiveIntensity: 0.5,
+        color: new THREE.Color('#00040d'),
+        emissive: new THREE.Color('#00f3ff'), // Cian holográfico base
+        emissiveIntensity: 0.6,
         transparent: true,
         opacity: 0.3,
         wireframe: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
         roughness: 0.1,
         metalness: 0.5,
-        side: THREE.DoubleSide,
-        depthWrite: false,
       });
-
-      child.castShadow = false;
-      child.receiveShadow = false;
     });
   }
-
-  // ─── Per-frame emissive update ───────────────────────────────────────────
 
   private updateEmissiveMaterials(): void {
     const scene = this.modelScene();
     if (!scene) return;
 
-    const statusMap = this.recoveryService.muscleRecoveryStatus();
+    const inbody = this.profile()?.inbodyData;
     const t = this.elapsed;
+
+    // Opacidad ligada al agua corporal (más agua = holograma más sólido)
+    const waterFactor = inbody?.waterPercentage
+      ? Math.min(1, inbody.waterPercentage / 70) // 70% de agua = 100% opacity
+      : 0.45;
+
+    // Pulso suave constante cian holográfico
+    const pulsedOpacity = (0.15 + waterFactor * 0.45) + Math.sin(t * 2.2) * 0.06;
+    const pulsedIntensity = 0.6 + Math.sin(t * 3) * 0.35;
 
     scene.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
-
       const mat = child.material as THREE.MeshStandardMaterial;
-      if (!mat || !mat.isMeshStandardMaterial) return;
+      if (!mat?.isMeshStandardMaterial) return;
 
-      const muscle = this.meshMuscleMap.get(child.uuid);
-      const status = muscle ? statusMap.get(muscle) : null;
-
-      if (status) {
-        // Fatigue-based emissive color
-        const emissiveHex = this.fatigueColor(status.percentage);
-        mat.emissive.setHex(emissiveHex);
-        mat.emissiveIntensity = this.fatigueIntensity(status.percentage, t);
-        mat.opacity = 0.65 + Math.sin(t * 3.5) * 0.1;
-      } else {
-        // Unmapped mesh: gentle holographic base pulse
-        mat.emissive.setHex(0x001a33);
-        mat.emissiveIntensity = 0.4 + Math.sin(t * 2.2 + child.id * 0.7) * 0.2;
-        mat.opacity = 0.3 + Math.sin(t * 1.8) * 0.08;
-      }
+      mat.opacity = pulsedOpacity;
+      mat.emissiveIntensity = pulsedIntensity;
     });
   }
-
-  private fatigueColor(pct: number): number {
-    if (pct <= 30) return 0xff0022;  // Critical — Red
-    if (pct <= 75) return 0xff9900;  // Compromised — Amber
-    return 0x00ccff;                 // Optimal — Cyan
-  }
-
-  private fatigueIntensity(pct: number, t: number): number {
-    if (pct <= 30) {
-      return 2.5 + Math.sin(t * 18) * 2.5; // Rapid flicker
-    }
-    if (pct <= 75) {
-      return 1.2 + Math.sin(t * 6) * 0.8;
-    }
-    return 0.8 + Math.sin(t * 3) * 0.5;
-  }
-
-  // ─── Event handlers ──────────────────────────────────────────────────────
-
   onMeshClick(event: NgtThreeEvent<MouseEvent>): void {
     event.stopPropagation();
-    
     const mesh = event.object as THREE.Mesh;
-    if (!mesh) return;
-
     const muscle = this.meshMuscleMap.get(mesh.uuid);
-    if (muscle) {
-      console.log(`[BiometricModel] User clicked muscle: ${muscle}`);
-      this.recoveryService.setSelectedMuscle(muscle);
-    } else {
-      // Try traversal up the hierarchy
-      let parent = mesh.parent;
-      while (parent) {
-        const parentMuscle = this.meshMuscleMap.get(parent.uuid);
-        if (parentMuscle) {
-          this.recoveryService.setSelectedMuscle(parentMuscle);
-          break;
-        }
-        parent = parent.parent;
-      }
-    }
+    if (muscle) this.recoveryService.setSelectedMuscle(muscle);
   }
 }

@@ -136,9 +136,21 @@ import { ToastService } from '../../core/services/toast.service';
 
               <div class="p-5 pl-7">
                  <div class="flex justify-between items-start mb-3">
-                    <span class="inline-block px-2 py-1 rounded bg-[#CCFF00]/10 text-[#CCFF00] text-[10px] font-bold uppercase tracking-widest border border-[#CCFF00]/20">
-                       {{ workout.fecha | date:'EEEE' : '' : 'es-CO' }}
-                    </span>
+                    <div (click)="$event.stopPropagation()" class="relative">
+                      <span *ngIf="editingDayId() !== workout.id"
+                            (click)="editingDayId.set(workout.id!)"
+                            class="inline-block px-2 py-1 rounded bg-[#CCFF00]/10 text-[#CCFF00] text-[10px] font-bold uppercase tracking-widest border border-[#CCFF00]/20 cursor-pointer hover:bg-[#CCFF00]/20 transition-colors">
+                         {{ workout.fecha | date:'EEEE' : '' : 'es-CO' }}
+                      </span>
+                      <select *ngIf="editingDayId() === workout.id"
+                              (change)="changeWorkoutDay(workout, $any($event.target).value)"
+                              (blur)="editingDayId.set(null)"
+                              class="bg-[#1a1f26] border border-[#CCFF00]/30 text-[#CCFF00] text-[10px] rounded px-1 py-0.5 outline-none font-bold uppercase tracking-widest">
+                        <option *ngFor="let day of weekDays" [value]="day" [selected]="(workout.fecha | date:'EEEE' : '' : 'es-CO') === day.toLowerCase()">
+                          {{ day }}
+                        </option>
+                      </select>
+                    </div>
                     <button (click)="deleteWorkout($event, workout.id!)" class="text-zinc-600 hover:text-red-500 transition">
                        <mat-icon class="text-lg">delete</mat-icon>
                     </button>
@@ -318,9 +330,12 @@ export class WeeklyPlanComponent {
   // AI State
   isGeneratingDay = signal<boolean>(false);
 
-  // Edit Title State
+  // Edit Title & Day State
   editingWorkoutId = signal<string | null>(null);
+  editingDayId = signal<string | null>(null);
   editingTitle = '';
+  
+  weekDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
   startEditTitle(workout: any) {
     this.editingWorkoutId.set(workout.id);
@@ -338,13 +353,38 @@ export class WeeklyPlanComponent {
       try {
         const updatedWorkout = { ...workout, nombre: newName };
         await this.workoutService.updateWorkout(updatedWorkout);
-        // Optimistic local update so the UI reflects immediately
-        workout.nombre = newName;
-      } catch (e) {
-        console.error('Error saving title:', e);
+        this.toastService.showSuccess('Título actualizado.');
+      } catch (err) {
+        this.toastService.showError('Error al actualizar el título.');
       }
     }
     this.editingWorkoutId.set(null);
+  }
+
+  async changeWorkoutDay(workout: any, newDayName: string) {
+    try {
+      const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const targetDayIndex = days.indexOf(newDayName);
+      if (targetDayIndex === -1) return;
+
+      const currentFecha = new Date(workout.fecha);
+      const currentDayIndex = currentFecha.getDay();
+      
+      // Calcular la diferencia de días
+      let diff = targetDayIndex - currentDayIndex;
+      // Si el día ya pasó o es el mismo, pero queremos moverlo "adelante" en la semana (o simplemente ajustar la fecha)
+      // Para este MVP, ajustamos a la fecha más cercana con ese día de la semana.
+      const newDate = new Date(currentFecha);
+      newDate.setDate(currentFecha.getDate() + diff);
+
+      const updatedWorkout = { ...workout, fecha: newDate.toISOString() };
+      await this.workoutService.updateWorkout(updatedWorkout);
+      this.toastService.showSuccess(`Cambiado a ${newDayName}`);
+    } catch (err) {
+      this.toastService.showError('Error al cambiar el día.');
+    } finally {
+      this.editingDayId.set(null);
+    }
   }
 
   goBack() {

@@ -122,18 +122,24 @@ export class TrainerAiService {
       ? `UN ARRAY JSON de ${daysToGenerate} objetos Workout: [ {WORKOUT_1}, {WORKOUT_2}... ]`
       : `UN SOLO objeto JSON (Workout)`;
 
+    const now = new Date();
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const currentDayName = days[now.getDay()];
+    const formattedDate = now.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' });
+
     return `
       ${SYSTEM_PROMPT}
       
       CONTEXTO DEL USUARIO:
+      - Fecha Actual: Hoy es ${currentDayName}, ${formattedDate}.
       - Objetivo: ${profile.goal || 'volumen'}
       - Nivel Fitness: ${profile.fitnessLevel || 'Intermedio'}
       - Equipamiento: ${profile.equipment?.join(', ') || 'Gimnasio completo'}
-      - Días disponibles: ${profile.availableDays?.join(', ') || 'Cualquiera'}
+      - Días disponibles (Cronológico): ${profile.availableDays?.join(', ') || 'Cualquiera'}
       - Fatiga Muscular Reciente: ${JSON.stringify(profile.fatigueLevels || {})}
       - Solicitud específica del usuario: "${userPrompt}"
 
-      TAREA: ${isWeekly ? `Genera un plan de ${daysToGenerate} días.` : 'Genera una rutina única.'}
+      TAREA: ${isWeekly ? `Genera un plan de ${daysToGenerate} días iniciando la programación del Día 1 basándote en el día actual del usuario, siguiendo el orden cronológico de sus días disponibles.` : 'Genera una rutina única.'}
 
       REGLA DE ORO: Debes responder EXCLUSIVAMENTE con un JSON válido. No incluyas markdown, solo el JSON raw.
       Tu respuesta debe ser: ${outputStructure}.

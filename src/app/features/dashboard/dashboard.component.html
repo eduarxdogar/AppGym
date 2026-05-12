@@ -121,10 +121,10 @@
              </div>
          </div>
 
-         <div class="flex items-end justify-between">
+          <div class="flex items-end justify-between">
             <div>
                <div class="flex items-baseline gap-1">
-                 <span class="text-3xl font-bold" [ngClass]="recoveryColorClass()">{{ globalRecoveryScore() }}%</span>
+                 <span class="text-3xl font-bold" [ngClass]="recoveryColorClass()">{{ recoveryScore() }}%</span>
                </div>
                <p class="text-xs text-slate-500 font-medium mt-1">System Recovery</p>
             </div>
@@ -133,7 +133,7 @@
             <div class="relative h-10 w-10">
                <svg class="h-full w-full rotate-[-90deg]" viewBox="0 0 36 36">
                   <path class="text-zinc-800" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="4" />
-                  <path [attr.stroke-dasharray]="globalRecoveryScore() + ', 100'" 
+                  <path [attr.stroke-dasharray]="recoveryScore() + ', 100'" 
                         [ngClass]="recoveryColorClass()"
                         d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
                         fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" />

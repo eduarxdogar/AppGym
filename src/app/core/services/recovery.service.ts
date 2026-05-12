@@ -137,6 +137,7 @@ export class RecoveryService {
               return;
             }
 
+            // Ensure the muscle is registered in sessionStats even if sets are empty
             if (!sessionStats.has(target)) sessionStats.set(target, { fatigue: 0, volume: 0 });
             const stats = sessionStats.get(target)!;
 
@@ -162,6 +163,14 @@ export class RecoveryService {
                 else if (type.startsWith('w')) stats.fatigue += FATIGUE_SCORES.WARMUP;
                 else stats.fatigue += FATIGUE_SCORES.DEFAULT;
             });
+
+            // === FIX: Guarantee minimum session fatigue ===
+            // Even if the session had no sets tracked, any appearance of a muscle group
+            // in a workout must apply at least a baseline impact (-10%)
+            const MIN_SESSION_FATIGUE = 10;
+            if (stats.fatigue < MIN_SESSION_FATIGUE) {
+              stats.fatigue = MIN_SESSION_FATIGUE;
+            }
         });
 
         // Update global map
@@ -186,9 +195,20 @@ export class RecoveryService {
     // Post-calculation: Final recovery pass up to current time
     statusMap.forEach(status => {
         if (status.lastWorkoutDate) {
-            const hours = (now - status.lastWorkoutDate.getTime()) / RECOVERY_CONSTANTS.MS_PER_HOUR;
-            if (hours > 0) {
-                status.percentage = Math.min(100, status.percentage + (hours * actualRecoveryPerHour));
+            const hoursSince = (now - status.lastWorkoutDate.getTime()) / RECOVERY_CONSTANTS.MS_PER_HOUR;
+            if (hoursSince > 0) {
+                status.percentage = Math.min(100, status.percentage + (hoursSince * actualRecoveryPerHour));
+            }
+
+            // === DECAY FIX: Enforce minimum fatigue lockout ===
+            // A muscle trained within the last 12h can't be at 100%.
+            // Between 12h and 48h it gradually approaches 100% but is capped at 99%.
+            if (hoursSince < RECOVERY_CONSTANTS.MIN_RECOVERY_HOURS_CAP) {
+                // Hard cap: can't exceed 90% within first 12h no matter what
+                status.percentage = Math.min(status.percentage, 90);
+            } else if (hoursSince < RECOVERY_CONSTANTS.FULL_RECOVERY_HOURS) {
+                // Soft cap: can't show 100% until 48h have passed
+                status.percentage = Math.min(status.percentage, 99);
             }
         }
         status.percentage = Math.round(status.percentage);

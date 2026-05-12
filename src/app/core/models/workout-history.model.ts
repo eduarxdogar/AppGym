@@ -43,12 +43,14 @@ export interface WorkoutSession {
 }
 
 export const RECOVERY_CONSTANTS = {
-  BASE_RECOVERY_PER_HOUR: 2,
+  BASE_RECOVERY_PER_HOUR: 1.5,       // Slower: full recovery takes ~67h at default
   INBODY_THRESHOLD: 85,
-  RECOVERY_MULTIPLIER_ELITE: 1.2,
+  RECOVERY_MULTIPLIER_ELITE: 1.15,
   RECOVERY_MULTIPLIER_NORMAL: 1,
   SEVEN_DAYS_MS: 7 * 24 * 60 * 60 * 1000,
   MS_PER_HOUR: 3600000,
+  MIN_RECOVERY_HOURS_CAP: 12,        // Can't return to 100% within 12h of a workout
+  FULL_RECOVERY_HOURS: 48,           // Full recovery ceiling window
 };
 
 export const FATIGUE_SCORES = {
