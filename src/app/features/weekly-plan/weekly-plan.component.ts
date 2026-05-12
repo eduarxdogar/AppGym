@@ -257,6 +257,8 @@ export class WeeklyPlanComponent {
   userGoal: string = '';
   daysPerWeek: number = 3;
 
+  private shouldAutoGenerate = signal<boolean>(false);
+
   constructor() {
     // AUTO-FILL GENERATOR: Sync with User Profile from Onboarding
     effect(() => {
@@ -275,20 +277,25 @@ export class WeeklyPlanComponent {
         if (this.daysPerWeek === 3 && profile.availableDays?.length > 0) {
           this.daysPerWeek = Math.min(Math.max(profile.availableDays.length, 2), 6);
         }
+
+        // TRIGGER AUTO-GENERATE: Solo si el flag está activo y el perfil tiene datos de días (indicando carga completa)
+        if (this.shouldAutoGenerate() && profile.availableDays?.length > 0) {
+          this.shouldAutoGenerate.set(false); // Consumimos el trigger
+          this.isLoading.set(true); // Aseguramos spinner activo
+          // Pequeño delay para que los signals de arriba (userGoal, selectedLevel) se propaguen
+          setTimeout(() => this.generatePlan(), 200);
+        }
       }
     });
 
-    // AUTO-GENERATE: Lee el query param y dispara la generación automáticamente
+    // AUTO-GENERATE: Lee el query param y activa el flag
     this.route.queryParamMap.subscribe(params => {
       if (params.get('autoGenerate') === 'true') {
-        // ACTIVACIÓN INMEDIATA DEL SPINNER para evitar flash del formulario
+        this.shouldAutoGenerate.set(true);
+        // ACTIVACIÓN INMEDIATA DEL SPINNER (visual)
         this.isLoading.set(true);
-        
         // Limpia el param para evitar re-generación al recargar
         this.router.navigate([], { replaceUrl: true, queryParams: {} });
-        
-        // Espera un tick para que los signals del perfil y del effect se estabilicen
-        setTimeout(() => this.generatePlan(), 100);
       }
     });
   }
@@ -446,6 +453,13 @@ export class WeeklyPlanComponent {
      });
 
      const userProfile = this.profileState.profile();
+     
+     // ORDENAR LOS DÍAS CRONOLÓGICAMENTE: Evita que la IA genere planes en desorden
+     const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+     const sortedDays = userProfile?.availableDays ? [...userProfile.availableDays].sort((a, b) => 
+       diasSemana.indexOf(a) - diasSemana.indexOf(b)
+     ) : [];
+
      const request: WeeklyPlanRequest = {
         userPrompt: this.userGoal,
         daysToGenerate: this.daysPerWeek,
@@ -458,6 +472,7 @@ export class WeeklyPlanComponent {
              fitnessLevel: this.selectedLevel,
              goal: 'volumen'
            }),
+           availableDays: sortedDays.length > 0 ? sortedDays : (userProfile?.availableDays || []),
            fitnessLevel: this.selectedLevel,
            fatigueLevels: fatigueRecord
         }
