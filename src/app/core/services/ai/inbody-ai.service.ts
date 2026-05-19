@@ -33,7 +33,7 @@ export class InbodyAiService {
 
     const prompt = `Eres un médico deportivo experto en análisis de composición corporal. Analiza este reporte InBody (o composición corporal equivalente) con máxima precisión.
 
-Extrae TODOS los valores numéricos que encuentres. Si un valor no está visible, devuelve null.
+Extrae TODOS los valores numéricos que encuentres. Los reportes pueden provenir de diferentes máquinas (InBody, Biody, etc.). Si un dato como Grasa Visceral o Análisis Segmental NO ESTÁ EXPLÍCITO, devuelve 'null' sin intentar adivinar.
 
 Para la sección "Análisis de Masa Magra Segmental" (Segmental Lean Analysis), extrae el valor de cada segmento en formato "Xkg (Y%)" donde X es el valor en kg y Y es el porcentaje respecto al valor de referencia.
 
@@ -67,7 +67,7 @@ Instrucciones de extracción:
 - muscleKg: Masa Muscular Esquelética (SMM) o Masa Muscular total en Kg.
 - fatPercent: Porcentaje de Grasa Corporal (PBF o % Body Fat).
 - bmr: Tasa Metabólica Basal (BMR) en kcal.
-- waterPercentage: Agua Corporal Total (TBW) en porcentaje o litros.
+- waterPercentage: Extrae EXCLUSIVAMENTE el porcentaje (%) de agua o hidratación. NUNCA extraigas los litros (L). Si el reporte dice 'Tasa de hidratación 58.7%', extrae 58.7. Si solo hay litros, calcula: (Litros / Peso) * 100.
 - visceralFat: Nivel de Grasa Visceral (1-20).
 - boneMass: Masa Ósea en Kg.
 - segmentalMuscle: Para cada segmento, combina kg y % en formato "Xkg (Y%)". Si la sección no existe en el reporte, devuelve el objeto con todos los campos en null.

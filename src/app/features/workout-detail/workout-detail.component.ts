@@ -104,6 +104,7 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
 
   // Global session timer (seconds elapsed)
   sessionSeconds = signal<number>(0);
+  private sessionStartTime: number | null = null;
   private sessionInterval: ReturnType<typeof setInterval> | null = null;
 
   // --- Modals State ---
@@ -212,11 +213,12 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       this.isActive.set(true);
 
       // Restore elapsed time
-      const elapsed = w.activeStartTime
-          ? Math.max(0, Math.floor((Date.now() - new Date(w.activeStartTime).getTime()) / 1000))
-          : 0;
+      const startTime = w.activeStartTime ? new Date(w.activeStartTime).getTime() : Date.now();
+      this.sessionStartTime = startTime;
+      
+      const elapsed = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
       this.sessionSeconds.set(elapsed);
-      this.startSessionTimer(elapsed); // non-zero → won't reset to 0
+      this.startSessionTimer(); 
 
       // Restore sets state or fall back to init
       if (w.activeSetsState && Object.keys(w.activeSetsState).length > 0) {
@@ -293,6 +295,8 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
     if (!w) return;
     this.showFatigueWarning.set(false);
     this.isActive.set(true);
+    const startTimeStr = new Date().toISOString();
+    this.sessionStartTime = new Date(startTimeStr).getTime();
     this.startSessionTimer();
     this.trainingSessionService.startSession(w);
     // Persist active status + startTime to Firestore
@@ -553,11 +557,18 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
 
   // --- GLOBAL TIMER ---
   
-  startSessionTimer(fromSecond: number = 0) {
+  startSessionTimer() {
       if (this.sessionInterval) clearInterval(this.sessionInterval);
-      if (fromSecond === 0) this.sessionSeconds.set(0);
+      
+      if (!this.sessionStartTime) {
+          this.sessionStartTime = Date.now();
+      }
+
       this.sessionInterval = setInterval(() => {
-          this.sessionSeconds.update(v => v + 1);
+          if (!this.sessionStartTime) return;
+          const now = Date.now();
+          const elapsed = Math.floor((now - this.sessionStartTime) / 1000);
+          this.sessionSeconds.set(elapsed);
       }, 1000);
   }
 

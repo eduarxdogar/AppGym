@@ -79,7 +79,7 @@ export class RecoveryMonitorComponent {
     if (!file) return;
 
     this.rescanState.set('scanning');
-    this.rescanMessage.set('Analizando imagen con IA...');
+    this.rescanMessage.set('Analizando archivo con IA...');
 
     try {
       const base64 = await this.fileToBase64(file);
@@ -108,7 +108,7 @@ export class RecoveryMonitorComponent {
       setTimeout(() => this.closeRescan(), 2500);
     } catch (err: any) {
       this.rescanState.set('error');
-      this.rescanMessage.set(err?.message || 'Error al procesar la imagen. Inténtalo de nuevo.');
+      this.rescanMessage.set(err?.message || 'Error al procesar el archivo. Inténtalo de nuevo.');
     } finally {
       input.value = ''; // Reset input
     }

@@ -35,6 +35,8 @@ export class OnboardingComponent {
   isSaving = signal(false);
   error = signal<string | null>(null);
   inbodyPreview = signal<string | null>(null);
+  inbodyFileName = signal<string | null>(null);
+  inbodyIsPdf = signal(false);
   scanningInBody = signal(false);
   inbodyScanResult = signal<{
     muscleKg?: number | null;
@@ -97,6 +99,9 @@ export class OnboardingComponent {
     const file = event.target.files[0];
     if (!file) return;
 
+    this.inbodyFileName.set(file.name);
+    this.inbodyIsPdf.set(file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'));
+
     const reader = new FileReader();
     reader.onload = async (e: any) => {
       const dataUrl = e.target.result as string;
@@ -120,7 +125,9 @@ export class OnboardingComponent {
           bmr: result.bmr || null,
           waterPercentage: result.waterPercentage || null,
           visceralFat: result.visceralFat || null,
-          boneMass: result.boneMass || null
+          boneMass: result.boneMass || null,
+          segmentalMuscle: result.segmentalMuscle || undefined,
+          segmentalFat: result.segmentalFat || undefined
         };
       } catch (err) {
         console.error('InBody Scan failed:', err);
@@ -157,7 +164,9 @@ export class OnboardingComponent {
           bmr: this.profile.inbodyData.bmr ?? null,
           waterPercentage: this.profile.inbodyData.waterPercentage ?? null,
           visceralFat: this.profile.inbodyData.visceralFat ?? null,
-          boneMass: this.profile.inbodyData.boneMass ?? null
+          boneMass: this.profile.inbodyData.boneMass ?? null,
+          segmentalMuscle: this.profile.inbodyData.segmentalMuscle ?? undefined,
+          segmentalFat: this.profile.inbodyData.segmentalFat ?? undefined
         } : null as any
       };
 

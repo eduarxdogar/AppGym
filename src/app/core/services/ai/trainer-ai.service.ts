@@ -95,12 +95,11 @@ export class TrainerAiService {
          throw new Error('AI did not return an array of workouts');
       }
 
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      const today = new Date();
 
       return workoutsData.map((data, index) => {
-         const workoutDate = new Date(tomorrow);
-         workoutDate.setDate(tomorrow.getDate() + index);
+         const workoutDate = new Date(today);
+         workoutDate.setDate(today.getDate() + index);
 
          return {
             ...data,
@@ -139,7 +138,7 @@ export class TrainerAiService {
       - Fatiga Muscular Reciente: ${JSON.stringify(profile.fatigueLevels || {})}
       - Solicitud específica del usuario: "${userPrompt}"
 
-      TAREA: ${isWeekly ? `Genera un plan de ${daysToGenerate} días iniciando la programación del Día 1 basándote en el día actual del usuario, siguiendo el orden cronológico de sus días disponibles.` : 'Genera una rutina única.'}
+      TAREA: ${isWeekly ? `Genera un plan de ${daysToGenerate} días. REGLA ESTRICTA: El Día 1 DEBE ser asignado a HOY (${currentDayName}) si es uno de los días disponibles del usuario, o al primer día disponible a partir de mañana. NO saltes días innecesariamente.` : 'Genera una rutina única.'}
 
       REGLA DE ORO: Debes responder EXCLUSIVAMENTE con un JSON válido. No incluyas markdown, solo el JSON raw.
       Tu respuesta debe ser: ${outputStructure}.

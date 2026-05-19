@@ -52,17 +52,19 @@
             <div>
                 <h3 class="text-lg font-bold text-white mb-4">Músculos a entrenar</h3>
                 <div class="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x">
-                    <div *ngFor="let m of workout.musculos" class="snap-start flex-shrink-0 bg-[#151921] rounded-xl p-3 w-[140px] border border-zinc-800 flex flex-col items-center gap-2 group hover:border-[#CCFF00]/50 transition-colors">
-                        <div class="h-16 w-16 bg-zinc-800 rounded-full flex items-center justify-center overflow-hidden border border-zinc-700 relative">
-                            <img [src]="'https://placehold.co/100x100/1c1c1c/CCFF00?text=' + m.substring(0,2).toUpperCase()" class="opacity-80 group-hover:opacity-100 transition-opacity" [alt]="m">
-                        </div>
-                        <div class="text-center w-full">
-                            <p class="text-white font-bold text-sm truncate w-full">{{ m }}</p>
-                            <span class="inline-block mt-1 px-2 py-0.5 bg-[#CCFF00] text-black text-[10px] font-bold rounded-full">
-                                {{ musclePercentages()[m] || 0 }}%
-                            </span>
-                        </div>
-                    </div>
+                    @for (m of workout.musculos; track m) {
+                      <div class="snap-start flex-shrink-0 bg-[#151921] rounded-xl p-3 w-[140px] border border-zinc-800 flex flex-col items-center gap-2 group hover:border-[#CCFF00]/50 transition-colors">
+                          <div class="h-16 w-16 bg-zinc-800 rounded-full flex items-center justify-center overflow-hidden border border-zinc-700 relative">
+                              <img [src]="'https://placehold.co/100x100/1c1c1c/CCFF00?text=' + m.substring(0,2).toUpperCase()" class="opacity-80 group-hover:opacity-100 transition-opacity" [alt]="m">
+                          </div>
+                          <div class="text-center w-full">
+                              <p class="text-white font-bold text-sm truncate w-full">{{ m }}</p>
+                              <span class="inline-block mt-1 px-2 py-0.5 bg-[#CCFF00] text-black text-[10px] font-bold rounded-full">
+                                  {{ musclePercentages()[m] || 0 }}%
+                              </span>
+                          </div>
+                      </div>
+                    }
                 </div>
             </div>
     
@@ -72,26 +74,27 @@
                     <h3 class="text-xl font-bold text-white">{{ workout.ejercicios.length }} ejercicios</h3>
                 </div>
                 
-                <div *ngFor="let ex of workout.ejercicios; let i = index" 
-                     class="bg-[#151921] p-3 rounded-2xl flex items-center gap-4 relative group hover:bg-[#1a1f29] transition-colors cursor-pointer border border-transparent hover:border-zinc-800"
-                     (click)="toggleExpand(i)"
-                     role="button"
-                     tabindex="0"
-                     (keydown.enter)="toggleExpand(i)">
-                    
-                    <div class="h-20 w-20 flex-shrink-0 rounded-xl bg-zinc-800 overflow-hidden relative border border-zinc-700">
-                        <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" alt="Exercise" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
-                    </div>
-                    <div class="flex-1 min-w-0 pr-8">
-                         <h4 class="text-white font-bold text-base mb-1 truncate leading-tight">{{ ex.nombre }}</h4>
-                         <p class="text-zinc-400 text-xs font-medium">
-                             {{ ex.series }} series - {{ ex.repeticiones }} reps <span *ngIf="ex.pesokg">- {{ ex.pesokg }} kg</span>
-                         </p>
-                    </div>
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                        <mat-icon class="text-zinc-600">favorite_border</mat-icon>
-                    </div>
-                </div>
+                @for (ex of workout.ejercicios; track ex.nombre; let i = $index) {
+                  <div class="bg-[#151921] p-3 rounded-2xl flex items-center gap-4 relative group hover:bg-[#1a1f29] transition-colors cursor-pointer border border-transparent hover:border-zinc-800"
+                       (click)="toggleExpand(i)"
+                       role="button"
+                       tabindex="0"
+                       (keydown.enter)="toggleExpand(i)">
+                      
+                      <div class="h-20 w-20 flex-shrink-0 rounded-xl bg-zinc-800 overflow-hidden relative border border-zinc-700">
+                          <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" alt="Exercise" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                      </div>
+                      <div class="flex-1 min-w-0 pr-8">
+                           <h4 class="text-white font-bold text-base mb-1 truncate leading-tight">{{ ex.nombre }}</h4>
+                           <p class="text-zinc-400 text-xs font-medium">
+                               {{ ex.series }} series - {{ ex.repeticiones }} reps <span *ngIf="ex.pesokg">- {{ ex.pesokg }} kg</span>
+                           </p>
+                      </div>
+                      <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                          <mat-icon class="text-zinc-600">favorite_border</mat-icon>
+                      </div>
+                  </div>
+                }
             </div>
     
             <!-- Start Button Sticky -->
@@ -136,10 +139,12 @@
 
                  <!-- Presets -->
                  <div class="grid grid-cols-4 gap-2 w-full mt-2">
-                     <button *ngFor="let p of restPresets" (click)="restTimer.quickStart(p)"
-                             class="py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-bold transition">
-                         {{ p }}s
-                     </button>
+                     @for (p of restPresets; track p) {
+                       <button (click)="restTimer.quickStart(p)"
+                               class="py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-bold transition">
+                           {{ p }}s
+                       </button>
+                     }
                  </div>
                  
                  <button (click)="restTimer.stop(); closeRestModal()" class="mt-2 text-red-500/80 hover:text-red-500 font-bold uppercase text-xs tracking-widest hover:underline">
@@ -179,8 +184,9 @@
 
         <div class="p-4 space-y-6 pb-32 no-scrollbar" cdkDropList (cdkDropListDropped)="drop($event)">
             
-            <div *ngFor="let ex of workout.ejercicios; let i = index" cdkDrag class="bg-[#151921]/50 p-2 sm:p-4 rounded-2xl border border-transparent hover:border-zinc-800 transition-all"
-                 role="listitem">
+            @for (ex of workout.ejercicios; track ex.nombre; let i = $index) {
+              <div cdkDrag class="bg-[#151921]/50 p-2 sm:p-4 rounded-2xl border border-transparent hover:border-zinc-800 transition-all"
+                   role="listitem">
                 
                 <!-- Main Exercise Header -->
                 <div class="flex items-center gap-2 sm:gap-4 mb-4 relative">
@@ -251,7 +257,8 @@
                     </div>
 
                     <!-- Rows -->
-                    <div *ngFor="let set of getSetsForExercise(i); let sIndex = index" class="border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-colors">
+                    @for (set of getSetsForExercise(i); track $index; let sIndex = $index) {
+                      <div class="border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-colors">
                         
                         <!-- Parent Row -->
                         <div [id]="'set-row-' + i + '-' + sIndex" class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 items-center"
@@ -350,94 +357,97 @@
                         </div>
                         
                         <!-- Nested Drop Sets -->
-                        <ng-container *ngIf="set.dropSets && set.dropSets.length > 0">
-                            <div *ngFor="let dropSet of set.dropSets; let dIndex = index" class="mt-1">
-                                
-                                <!-- Drop Set Row -->
-                                <div class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c1815] border-l-2 border-orange-500 ml-4 sm:ml-6 rounded-r-lg mb-1 animate-in fade-in slide-in-from-top-2 duration-200"
-                                     [ngClass]="{'opacity-50': set.completed}">
+                        @if (set.dropSets && set.dropSets.length > 0) {
+                            @for (dropSet of set.dropSets; track $index; let dIndex = $index) {
+                                <div class="mt-1">
                                     
-                                    <div class="col-span-1 flex justify-center items-center gap-1">
-                                        <div class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-orange-500/20 text-orange-500 border border-orange-500/50">D</div>
+                                    <!-- Drop Set Row -->
+                                    <div class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c1815] border-l-2 border-orange-500 ml-4 sm:ml-6 rounded-r-lg mb-1 animate-in fade-in slide-in-from-top-2 duration-200"
+                                         [ngClass]="{'opacity-50': set.completed}">
+                                        
+                                        <div class="col-span-1 flex justify-center items-center gap-1">
+                                            <div class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-orange-500/20 text-orange-500 border border-orange-500/50">D</div>
+                                        </div>
+
+                                        <!-- KG Input DropSet -->
+                                        <div class="col-span-3">
+                                            <input type="number" [(ngModel)]="dropSet.weight" 
+                                                   class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                                                   placeholder="0">
+                                        </div>
+
+                                        <!-- Reps Input DropSet -->
+                                        <div class="col-span-3">
+                                            <input type="number" [(ngModel)]="dropSet.reps" 
+                                                   class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                                                   placeholder="0">
+                                        </div>
+
+                                        <div class="col-span-2"></div> <!-- Empty space under check -->
+                                        
+                                        <!-- Delete Button DropSet -->
+                                        <div class="col-span-1 flex justify-center">
+                                            <button (click)="deleteDropSet(i, sIndex, dIndex)" 
+                                                    class="text-zinc-600 hover:text-red-500 transition-colors">
+                                                <mat-icon class="text-[16px] leading-[16px] w-[16px] h-[16px]">delete</mat-icon>
+                                            </button>
+                                        </div>
                                     </div>
 
-                                    <!-- KG Input DropSet -->
-                                    <div class="col-span-3">
-                                        <input type="number" [(ngModel)]="dropSet.weight" 
-                                               class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
-                                               placeholder="0">
-                                    </div>
+                                    <!-- Drop Set Superset Row (If parent exercise is a superset) -->
+                                    <div *ngIf="ex.superSetEjercicio && (dropSet.superWeight !== undefined || dropSet.superReps !== undefined)" 
+                                         class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c212a] border-l-2 border-purple-500 ml-8 sm:ml-10 rounded-r-lg mb-2 animate-in fade-in slide-in-from-top-2 duration-200"
+                                         [ngClass]="{'opacity-50': set.completed}">
+                                        
+                                        <div class="col-span-1 flex justify-center">
+                                            <mat-icon class="text-purple-500 text-sm">subdirectory_arrow_right</mat-icon>
+                                        </div>
 
-                                    <!-- Reps Input DropSet -->
-                                    <div class="col-span-3">
-                                        <input type="number" [(ngModel)]="dropSet.reps" 
-                                               class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
-                                               placeholder="0">
-                                    </div>
+                                        <div class="col-span-3">
+                                            <input type="number" [(ngModel)]="dropSet.superWeight" 
+                                                   class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                                                   placeholder="0">
+                                        </div>
 
-                                    <div class="col-span-2"></div> <!-- Empty space under check -->
-                                    
-                                    <!-- Delete Button DropSet -->
-                                    <div class="col-span-1 flex justify-center">
-                                        <button (click)="deleteDropSet(i, sIndex, dIndex)" 
-                                                class="text-zinc-600 hover:text-red-500 transition-colors">
-                                            <mat-icon class="text-[16px] leading-[16px] w-[16px] h-[16px]">delete</mat-icon>
-                                        </button>
+                                        <div class="col-span-3">
+                                            <input type="number" [(ngModel)]="dropSet.superReps" 
+                                                   class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                                                   placeholder="0">
+                                        </div>
+                                        
+                                        <div class="col-span-2"></div> <!-- Empty space under check -->
+                                        
+                                        <!-- Delete Button DropSet Superset Child -->
+                                        <div class="col-span-1 flex justify-center">
+                                            <button *ngIf="dropSet.superWeight !== undefined || dropSet.superReps !== undefined"
+                                                    (click)="clearDropSetSupersetData(i, sIndex, dIndex)" 
+                                                    class="text-zinc-600 hover:text-red-500 transition-colors">
+                                                <mat-icon class="text-[16px] leading-[16px] w-[16px] h-[16px]">delete</mat-icon>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <!-- Drop Set Superset Row (If parent exercise is a superset) -->
-                                <div *ngIf="ex.superSetEjercicio && (dropSet.superWeight !== undefined || dropSet.superReps !== undefined)" 
-                                     class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c212a] border-l-2 border-purple-500 ml-8 sm:ml-10 rounded-r-lg mb-2 animate-in fade-in slide-in-from-top-2 duration-200"
-                                     [ngClass]="{'opacity-50': set.completed}">
-                                    
-                                    <div class="col-span-1 flex justify-center">
-                                        <mat-icon class="text-purple-500 text-sm">subdirectory_arrow_right</mat-icon>
-                                    </div>
-
-                                    <div class="col-span-3">
-                                        <input type="number" [(ngModel)]="dropSet.superWeight" 
-                                               class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
-                                               placeholder="0">
-                                    </div>
-
-                                    <div class="col-span-3">
-                                        <input type="number" [(ngModel)]="dropSet.superReps" 
-                                               class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
-                                               placeholder="0">
-                                    </div>
-                                    
-                                    <div class="col-span-2"></div> <!-- Empty space under check -->
-                                    
-                                    <!-- Delete Button DropSet Superset Child -->
-                                    <div class="col-span-1 flex justify-center">
-                                        <button *ngIf="dropSet.superWeight !== undefined || dropSet.superReps !== undefined"
-                                                (click)="clearDropSetSupersetData(i, sIndex, dIndex)" 
-                                                class="text-zinc-600 hover:text-red-500 transition-colors">
-                                            <mat-icon class="text-[16px] leading-[16px] w-[16px] h-[16px]">delete</mat-icon>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </ng-container>
-                    </div>
-
-                    <!-- Actions Footer -->
-                    <div class="flex items-center divide-x divide-zinc-800 border-t border-zinc-800">
-                        <button (click)="addSet(i)" class="flex-1 py-3 bg-[#151921] hover:bg-zinc-800 text-zinc-400 hover:text-[#CCFF00] text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[44px]">
-                            <mat-icon class="text-sm">add</mat-icon> Set
-                        </button>
-                        <button (click)="addDropSet(i)" class="flex-1 py-3 bg-[#151921] hover:bg-zinc-800 text-zinc-400 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[44px]">
-                            <mat-icon class="text-sm">trending_down</mat-icon> Drop
-                        </button>
-                        <button (click)="openSuperserieModal(i)" class="flex-1 py-3 bg-[#151921] hover:bg-zinc-800 text-zinc-400 hover:text-blue-400 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[44px]">
-                            <mat-icon class="text-sm">link</mat-icon> Super
-                        </button>
-                    </div>
-
+                            }
+                        }
+                      </div>
+                    }
                 </div>
 
-            </div>
+                <!-- Actions Footer -->
+                <div class="flex items-center divide-x divide-zinc-800 border-t border-zinc-800">
+                    <button (click)="addSet(i)" class="flex-1 py-3 bg-[#151921] hover:bg-zinc-800 text-zinc-400 hover:text-[#CCFF00] text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[44px]">
+                        <mat-icon class="text-sm">add</mat-icon> Set
+                    </button>
+                    <button (click)="addDropSet(i)" class="flex-1 py-3 bg-[#151921] hover:bg-zinc-800 text-zinc-400 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[44px]">
+                        <mat-icon class="text-sm">trending_down</mat-icon> Drop
+                    </button>
+                    <button (click)="openSuperserieModal(i)" class="flex-1 py-3 bg-[#151921] hover:bg-zinc-800 text-zinc-400 hover:text-blue-400 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[44px]">
+                        <mat-icon class="text-sm">link</mat-icon> Super
+                    </button>
+                </div>
+
+              </div>
+            }
 
             <!-- Botón Añadir Ejercicio Manual -->
             <button (click)="openAddExerciseModal()" class="w-full mt-6 py-4 border-2 border-dashed border-zinc-700 hover:border-[#CCFF00] hover:bg-zinc-800/50 rounded-2xl flex items-center justify-center gap-3 text-zinc-400 hover:text-[#CCFF00] transition-all font-bold text-sm tracking-widest uppercase outline-none focus:ring-2 focus:ring-[#CCFF00]">

@@ -139,7 +139,7 @@
           </div>
 
           <!-- Upload Zone -->
-          <input type="file" #inbodyInput class="hidden" (change)="onInBodySelected($event)" accept="image/*">
+          <input type="file" #inbodyInput class="hidden" (change)="onInBodySelected($event)" accept="image/*,.pdf">
           <div (click)="inbodyInput.click()"
                (keydown.enter)="inbodyInput.click()"
                (keydown.space)="inbodyInput.click()"
@@ -151,11 +151,17 @@
             <ng-container *ngIf="!inbodyPreview()">
               <mat-icon class="text-zinc-600 text-4xl mb-3">upload_file</mat-icon>
               <p class="text-zinc-400 text-sm font-bold">Sube tu reporte InBody</p>
-              <p class="text-zinc-600 text-xs mt-1">Tap para seleccionar imagen</p>
+              <p class="text-zinc-600 text-xs mt-1">Tap para seleccionar archivo</p>
             </ng-container>
             <ng-container *ngIf="inbodyPreview()">
-              <img [src]="inbodyPreview()!" alt="Previsualización del reporte InBody" class="h-32 mx-auto rounded-lg object-contain mb-2">
-              <p class="text-[#CCFF00] text-xs font-bold">Imagen lista para análisis ✓</p>
+              <ng-container *ngIf="inbodyIsPdf(); else imgPreview">
+                <mat-icon class="text-[#CCFF00] text-4xl mb-3">picture_as_pdf</mat-icon>
+                <p class="text-[#CCFF00] text-xs font-bold">{{ inbodyFileName() || 'Documento PDF listo ✓' }}</p>
+              </ng-container>
+              <ng-template #imgPreview>
+                <img [src]="inbodyPreview()!" alt="Previsualización del reporte InBody" class="h-32 mx-auto rounded-lg object-contain mb-2">
+                <p class="text-[#CCFF00] text-xs font-bold">Imagen lista para análisis ✓</p>
+              </ng-template>
             </ng-container>
           </div>
 

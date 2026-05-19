@@ -43,7 +43,7 @@ export interface WorkoutSession {
 }
 
 export const RECOVERY_CONSTANTS = {
-  BASE_RECOVERY_PER_HOUR: 1.5,       // Slower: full recovery takes ~67h at default
+  BASE_RECOVERY_PER_HOUR: 0.85,       // Slower: full recovery takes ~117h (5 days) at default
   INBODY_THRESHOLD: 85,
   RECOVERY_MULTIPLIER_ELITE: 1.15,
   RECOVERY_MULTIPLIER_NORMAL: 1,
