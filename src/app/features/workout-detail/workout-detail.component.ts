@@ -83,21 +83,32 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
     return this.workoutService.getWorkoutById(currentId)();
   });
 
-  // Fix NG0100: Computed stable percentages
+  // Reads REAL fatigue % from RecoveryService — no mocks
   musclePercentages = computed(() => {
     const w = this.workout();
     if (!w) return {};
-    
+
+    const statusMap = this.recoveryService.getMuscleRecoveryStatus()();
     const percentages: Record<string, number> = {};
-    const baseMap: Record<string, number> = {
-        'Pectorales': 94, 'Deltoides': 83, 'Tríceps': 78,
-        'Espalda': 88, 'Bíceps': 91, 'Cuádriceps': 65, 'Isquios': 70
-    };
 
     (w.musculos || []).forEach(m => {
-        // Use predefined map or stable random based on code point to ensure consistency
-        percentages[m] = baseMap[m] || 70 + ((m.codePointAt(0) || 0) % 30); 
+      const normalizedM = m.toLowerCase().trim();
+      // Find matching muscle in statusMap by normalized name
+      let found: number | undefined;
+      statusMap.forEach((status, key) => {
+        if (
+          key.toLowerCase() === normalizedM ||
+          status.name.toLowerCase() === normalizedM ||
+          status.name.toLowerCase().includes(normalizedM) ||
+          normalizedM.includes(status.name.toLowerCase())
+        ) {
+          found = status.percentage;
+        }
+      });
+      // Default to 100% (fully recovered / never trained)
+      percentages[m] = found ?? 100;
     });
+
     return percentages;
   });
 
