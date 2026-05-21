@@ -83,22 +83,64 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
     return this.workoutService.getWorkoutById(currentId)();
   });
 
-  // Fix NG0100: Computed stable percentages
+  // Reads REAL fatigue % from RecoveryService — no mocks
   musclePercentages = computed(() => {
     const w = this.workout();
     if (!w) return {};
-    
+
+    const statusMap = this.recoveryService.getMuscleRecoveryStatus()();
     const percentages: Record<string, number> = {};
-    const baseMap: Record<string, number> = {
-        'Pectorales': 94, 'Deltoides': 83, 'Tríceps': 78,
-        'Espalda': 88, 'Bíceps': 91, 'Cuádriceps': 65, 'Isquios': 70
-    };
 
     (w.musculos || []).forEach(m => {
-        // Use predefined map or stable random based on code point to ensure consistency
-        percentages[m] = baseMap[m] || 70 + ((m.codePointAt(0) || 0) % 30); 
+      const normalizedM = m.toLowerCase().trim();
+      // Find matching muscle in statusMap by normalized name
+      let found: number | undefined;
+      statusMap.forEach((status, key) => {
+        if (
+          key.toLowerCase() === normalizedM ||
+          status.name.toLowerCase() === normalizedM ||
+          status.name.toLowerCase().includes(normalizedM) ||
+          normalizedM.includes(status.name.toLowerCase())
+        ) {
+          found = status.percentage;
+        }
+      });
+      // Default to 100% (fully recovered / never trained)
+      percentages[m] = found ?? 100;
     });
+
     return percentages;
+  });
+
+  activeModalMetrics = computed(() => {
+    const ex = this.selectedExercise();
+    const w = this.workout();
+    if (!ex || !w) return null;
+    
+    const index = w.ejercicios.findIndex(e => e.nombre === ex.nombre);
+    if (index === -1) return null;
+
+    const sets = this.activeSets().get(index) || [];
+    if (sets.length === 0) return null;
+
+    const completedSets = sets.filter(s => s.completed);
+    const totalSeries = sets.length;
+    const seriesCompletadas = completedSets.length;
+    
+    let currentKg = sets[0].weight || 0;
+    let currentReps = sets[0].reps || 0;
+
+    if (completedSets.length > 0) {
+      currentKg = completedSets[completedSets.length - 1].weight;
+      currentReps = completedSets[completedSets.length - 1].reps;
+    }
+
+    return {
+      seriesCompletadas,
+      totalSeries,
+      currentKg,
+      currentReps
+    };
   });
 
   // Active Mode State
@@ -378,6 +420,10 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
 
            await this.trainingHistoryService.addSession(session);
 
+           if (muscles.size > 0) {
+               this.toastService.showSuccess(`Sesión guardada. Desgaste registrado en: ${Array.from(muscles).join(', ')}`);
+           }
+
            // Mark workout as completed and clear active session fields
            const updatedWorkout: Workout = {
                ...workout,
@@ -555,11 +601,33 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       const map = new Map(this.activeSets());
       const sets = map.get(exIndex);
       if(sets?.[setIndex]) {
-          sets[setIndex].completed = !sets[setIndex].completed;
+          const isNowCompleted = !sets[setIndex].completed;
+          sets[setIndex].completed = isNowCompleted;
           map.set(exIndex, sets);
           this.activeSets.set(map);
           // Persist checks in real-time
           this.persistSetsState();
+
+          // Auto-start rest timer
+          if (isNowCompleted) {
+             const ex = this.workout()?.ejercicios[exIndex];
+             if (ex && ex.descanso) {
+                 const match = String(ex.descanso).match(/(\d+)\s*(s|m)/i);
+                 if (match) {
+                     const val = parseInt(match[1]);
+                     const unit = match[2].toLowerCase();
+                     const seconds = unit === 'm' ? val * 60 : val;
+                     this.openRestModal(seconds);
+                 } else if (Number(ex.descanso)) {
+                     // Si es solo el número
+                     this.openRestModal(Number(ex.descanso));
+                 } else {
+                     this.openRestModal(90);
+                 }
+             } else {
+                 this.openRestModal(90);
+             }
+          }
       }
   }
 
