@@ -11,7 +11,8 @@ import { TrainingHistoryService } from '../../core/services/training-history.ser
 import { FormsModule } from '@angular/forms';
 import { ExerciseImageService } from '../../core/services/exercise-image.service';
 import { ExerciseService } from '../../core/services/exercise.service';
-import { SafeUrlPipe } from '../../shared/pipes/safe-url.pipe';
+
+import { SafeYoutubePipe } from '../../shared/pipes/safe-youtube.pipe';
 import { ChatAiService } from '../../core/services/ai/chat-ai.service';
 import { RestTimerService, REST_PRESETS_SECONDS } from '../../core/services/rest-timer.service';
 import { RecoveryService } from '../../core/services/recovery.service';
@@ -40,7 +41,7 @@ export interface WorkoutSet {
 @Component({
   selector: 'app-workout-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, FormsModule, SafeUrlPipe, DragDropModule],
+  imports: [CommonModule, RouterModule, MatIconModule, FormsModule, SafeYoutubePipe, DragDropModule],
   templateUrl: './workout-detail.component.html',
 })
 export class WorkoutDetailComponent implements OnInit, OnDestroy {
