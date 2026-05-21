@@ -18,6 +18,7 @@ export class RestTimerService implements OnDestroy {
   readonly isRunning = signal<boolean>(false);
 
   private intervalId: ReturnType<typeof setInterval> | null = null;
+  private targetTime: number | null = null;
 
   // Formatted MM:SS string
   readonly formatted = computed<string>(() => {
@@ -39,16 +40,26 @@ export class RestTimerService implements OnDestroy {
       this.durationSeconds.set(durationSeconds);
       this.remaining.set(durationSeconds);
     }
+    
+    // Set target time based on remaining seconds
+    this.targetTime = Date.now() + (this.remaining() * 1000);
+
     if (this.isRunning()) return; // already running
     this.isRunning.set(true);
+
     this.intervalId = setInterval(() => {
-      const r = this.remaining();
-      if (r <= 0) {
+      if (!this.targetTime) return;
+      
+      const now = Date.now();
+      const left = Math.ceil((this.targetTime - now) / 1000);
+      
+      if (left <= 0) {
+        this.remaining.set(0);
         this.stop();
       } else {
-        this.remaining.update(v => v - 1);
+        this.remaining.set(left);
       }
-    }, 1000);
+    }, 500); // Check every 500ms for better responsiveness
   }
 
   /** Pause without resetting */
@@ -58,6 +69,7 @@ export class RestTimerService implements OnDestroy {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
+    this.targetTime = null;
   }
 
   /** Stop and reset to full duration */

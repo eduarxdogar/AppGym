@@ -36,6 +36,7 @@ export const routes: Routes = [
         { path: 'nutrition', canActivate: [profileGuard], loadComponent: () => import('./features/nutrition/nutrition.component').then(m => m.NutritionComponent) },
         { path: 'cardio', canActivate: [profileGuard], loadComponent: () => import('./features/cardio/cardio-boxing.component').then(m => m.CardioBoxingComponent) },
         { path: 'progress', loadComponent: () => import('./features/progress/progress.component').then(m => m.ProgressComponent) },
+        { path: 'admin/exercises', loadComponent: () => import('./features/admin-exercises/admin-exercises.component').then(m => m.AdminExercisesComponent) },
       ]
   },
   { path: '**', redirectTo: '/' }, 

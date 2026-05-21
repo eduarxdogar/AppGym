@@ -65,62 +65,74 @@ export class DashboardComponent {
     return nextPending || null;
   });
 
-  // Computed: Obtener los músculos objetivo dinámicamente según la próxima rutina
+  // Computed: Obtener los músculos objetivo con su estado de recuperación REAL
   targetMuscles = computed(() => {
     const w = this.nextWorkout();
     if (!w) return [];
 
+    const statusMap = this.muscleStatus();
     const result: { name: string; percentage: number }[] = [];
-    const baseMap: Record<string, number> = {
-        'Pectorales': 94, 'Deltoides': 83, 'Tríceps': 78,
-        'Espalda': 88, 'Bíceps': 91, 'Cuádriceps': 65, 'Isquios': 70
-    };
 
-    // 1. Intentar con la propiedad `musculos` en la raíz del workout
-    const musculos = w.musculos || [];
-    
-    if (musculos.length > 0) {
-      musculos.forEach((m: string) => {
-        result.push({
-          name: m,
-          percentage: baseMap[m] || 70 + (m.charCodeAt(0) % 30)
-        });
-      });
+    // Extraer músculos del workout
+    const workoutMuscles = new Set<string>();
+    if (w.musculos?.length) {
+      w.musculos.forEach(m => workoutMuscles.add(this.normalizeMuscleName(m)));
     } else {
-      // 2. Si no hay array en la raíz, extraer de los ejercicios
-      const extraidos = new Set<string>();
-      w.ejercicios.forEach((ex: Ejercicio) => {
-        if (ex.grupoMuscular && ex.grupoMuscular !== 'General' && ex.grupoMuscular !== 'otros') {
-          extraidos.add(ex.grupoMuscular);
-        }
-      });
-      extraidos.forEach((m: string) => {
-        result.push({
-          name: m,
-          percentage: baseMap[m] || 70 + (m.charCodeAt(0) % 30)
-        });
+      w.ejercicios.forEach(ex => {
+        if (ex.grupoMuscular) workoutMuscles.add(this.normalizeMuscleName(ex.grupoMuscular));
       });
     }
+
+    workoutMuscles.forEach(m => {
+      const status = statusMap.get(m);
+      if (status) {
+        result.push({
+          name: m,
+          percentage: status.percentage
+        });
+      }
+    });
 
     return result;
   });
 
-  // Computed: Promedio de recuperación global (0-100)
-  globalRecoveryScore = computed(() => {
+  private normalizeMuscleName(name: string): string {
+    const map: Record<string, string> = {
+      'pecho': 'Pecho', 'pectorales': 'Pecho',
+      'espalda': 'Espalda', 'dorsales': 'Espalda',
+      'hombros': 'Hombros', 'deltoides': 'Hombros',
+      'bíceps': 'Bíceps', 'tríceps': 'Tríceps',
+      'cuádriceps': 'Cuádriceps', 'isquios': 'Isquios',
+      'glúteos': 'Glúteos', 'gemelos': 'Gemelos', 'core': 'Core'
+    };
+    const norm = name.toLowerCase().trim();
+    return map[norm] || name;
+  }
+
+  // Computed: Promedio de recuperación global (SNC)
+  recoveryScore = computed(() => {
     const statusMap = this.muscleStatus();
-    if (statusMap.size === 0) return 100; // Asumir fresco si no hay datos
+    if (statusMap.size === 0) return 100;
     
     let totalPercent = 0;
-    statusMap.forEach(s => totalPercent += s.percentage);
-    return Math.round(totalPercent / statusMap.size);
+    let minPercent = 100;
+    
+    statusMap.forEach(s => {
+      totalPercent += s.percentage;
+      if (s.percentage < minPercent) minPercent = s.percentage;
+    });
+
+    // El score global es un promedio ponderado que castiga más la fatiga extrema (SNC)
+    const average = totalPercent / statusMap.size;
+    return Math.round((average * 0.7) + (minPercent * 0.3));
   });
 
-  // Computed: Color del anillo basado en score
+  // Computed: Color del anillo basado en score (Cyberpunk Palette)
   recoveryColorClass = computed(() => {
-    const score = this.globalRecoveryScore();
-    if (score <= 40) return 'text-red-500';
-    if (score <= 80) return 'text-yellow-400';
-    return 'text-green-500';
+    const score = this.recoveryScore();
+    if (score <= 30) return 'text-[#FF0033]'; // Rojo Alerta
+    if (score <= 75) return 'text-[#FFB300]'; // Ámbar
+    return 'text-[#CCFF00]';                 // Verde Neón
   });
 
   constructor() {}

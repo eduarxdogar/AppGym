@@ -33,6 +33,8 @@ export class ExerciseService {
           series: 3,
           repeticiones: 10,
           videoUrl: data.videoUrl,
+          imageUrl: data.imageUrl,
+          equipmentRequired: data.equipmentRequired || [],
           notas: data.instructions ? data.instructions.join('\n') : ''
         });
       });

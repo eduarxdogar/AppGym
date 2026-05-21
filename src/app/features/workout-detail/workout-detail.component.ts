@@ -11,12 +11,15 @@ import { TrainingHistoryService } from '../../core/services/training-history.ser
 import { FormsModule } from '@angular/forms';
 import { ExerciseImageService } from '../../core/services/exercise-image.service';
 import { ExerciseService } from '../../core/services/exercise.service';
-import { SafeUrlPipe } from '../../shared/pipes/safe-url.pipe';
+
+import { SafeYoutubePipe } from '../../shared/pipes/safe-youtube.pipe';
 import { ChatAiService } from '../../core/services/ai/chat-ai.service';
 import { RestTimerService, REST_PRESETS_SECONDS } from '../../core/services/rest-timer.service';
+import { RecoveryService } from '../../core/services/recovery.service';
 import { WorkoutSession, WorkoutSessionExercise } from '../../models/workout-session.model';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ToastService } from '../../core/services/toast.service';
+import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 
 export interface DropSet {
   reps: number;
@@ -38,7 +41,7 @@ export interface WorkoutSet {
 @Component({
   selector: 'app-workout-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, FormsModule, SafeUrlPipe, DragDropModule],
+  imports: [CommonModule, RouterModule, MatIconModule, FormsModule, SafeYoutubePipe, DragDropModule],
   templateUrl: './workout-detail.component.html',
 })
 export class WorkoutDetailComponent implements OnInit, OnDestroy {
@@ -53,7 +56,9 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   public  readonly exerciseService       = inject(ExerciseService);
   public  readonly chatService           = inject(ChatAiService);
   public  readonly restTimer             = inject(RestTimerService);
+  private readonly recoveryService       = inject(RecoveryService);
   private readonly toastService          = inject(ToastService);
+  private readonly userProfileState      = inject(UserProfileStateService);
 
   /** Expose presets for template */
   readonly restPresets = REST_PRESETS_SECONDS;
@@ -102,6 +107,7 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
 
   // Global session timer (seconds elapsed)
   sessionSeconds = signal<number>(0);
+  private sessionStartTime: number | null = null;
   private sessionInterval: ReturnType<typeof setInterval> | null = null;
 
   // --- Modals State ---
@@ -111,6 +117,11 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   newExerciseName       = signal<string>('');
   showRestModal         = signal<boolean>(false);
   expandedIndex: number | null = null;
+  
+  // Fatigue Warning Modal
+  showFatigueWarning    = signal<boolean>(false);
+  fatiguedMusclesDesc   = signal<string>('');
+  fatiguedAverage       = signal<number>(0);
 
   // --- Edit-in-place state ---
   editingExerciseIndex  = signal<number | null>(null);
@@ -123,19 +134,33 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   supersetSelectedMuscle = signal<string | null>(null);
 
   supersetMuscleGroups = signal<string[]>([
-      'Pecho', 'Espalda', 'Bíceps', 'Tríceps', 'Hombros', 
-      'Cuádriceps', 'Isquios', 'Pantorrilla', 'Core'
+      'pecho', 'espalda', 'bíceps', 'tríceps', 'hombros', 
+      'cuádriceps', 'isquios', 'glúteos', 'gemelos', 'core'
   ]);
+
+  userEquipment = computed(() => this.userProfileState.profile()?.equipment || []);
+
+  hasRequiredEquipment(ex: Ejercicio): boolean {
+      if (!ex.equipmentRequired || ex.equipmentRequired.length === 0) return true;
+      const userEq = this.userEquipment();
+      return ex.equipmentRequired.every(eq => eq === 'Calistenia' || userEq.includes(eq));
+  }
 
   filteredSupersetExercises = computed(() => {
       let exs = this.exerciseService.getAll();
       const muscle = this.supersetSelectedMuscle();
       const q = this.supersetSearchQuery().toLowerCase();
 
-      if (muscle) exs = exs.filter(e => e.grupoMuscular === muscle);
+      if (muscle) exs = exs.filter(e => e.grupoMuscular.toLowerCase() === muscle.toLowerCase());
       if (q) exs = exs.filter(e => e.nombre.toLowerCase().includes(q));
       
-      return exs;
+      return exs.sort((a, b) => {
+          const aHas = this.hasRequiredEquipment(a);
+          const bHas = this.hasRequiredEquipment(b);
+          if (aHas && !bHas) return -1;
+          if (!aHas && bHas) return 1;
+          return 0;
+      });
   });
   // Computed for UI
   sessionTimeFormatted = computed(() => {
@@ -205,11 +230,12 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       this.isActive.set(true);
 
       // Restore elapsed time
-      const elapsed = w.activeStartTime
-          ? Math.max(0, Math.floor((Date.now() - new Date(w.activeStartTime).getTime()) / 1000))
-          : 0;
+      const startTime = w.activeStartTime ? new Date(w.activeStartTime).getTime() : Date.now();
+      this.sessionStartTime = startTime;
+      
+      const elapsed = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
       this.sessionSeconds.set(elapsed);
-      this.startSessionTimer(elapsed); // non-zero → won't reset to 0
+      this.startSessionTimer(); 
 
       // Restore sets state or fall back to init
       if (w.activeSetsState && Object.keys(w.activeSetsState).length > 0) {
@@ -233,7 +259,61 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   iniciarRutina() {
     const w = this.workout();
     if (!w) return;
+
+    // Check muscle fatigue before starting
+    const muscles = new Set<string>();
+    w.musculos?.forEach(m => muscles.add(m));
+    w.ejercicios.forEach(ex => {
+        if(ex.grupoMuscular) muscles.add(ex.grupoMuscular);
+    });
+
+    const statusMap = this.recoveryService.getMuscleRecoveryStatus()();
+    let totalFatigue = 0;
+    let countedMuscles = 0;
+    const veryFatiguedNames: string[] = [];
+
+    muscles.forEach(mName => {
+        // Try to match exact or lowercase inside the recovery service status
+        // Since RecoveryService normalizes to MAIN_MUSCLES, we should just iterate
+        const status = Array.from(statusMap.values()).find(s => 
+            s.name.toLowerCase() === mName.toLowerCase() ||
+            mName.toLowerCase().includes(s.name.toLowerCase()) ||
+            s.name.toLowerCase().includes(mName.toLowerCase())
+        );
+        
+        if (status) {
+            totalFatigue += status.percentage;
+            countedMuscles++;
+            if (status.percentage <= 60) {
+                veryFatiguedNames.push(status.name);
+            }
+        }
+    });
+
+    if (countedMuscles > 0) {
+        const average = totalFatigue / countedMuscles;
+        if (average <= 60) {
+            this.fatiguedAverage.set(Math.round(average));
+            this.fatiguedMusclesDesc.set(veryFatiguedNames.length > 0 ? veryFatiguedNames.join(', ') : 'Los músculos objetivo');
+            this.showFatigueWarning.set(true);
+            return; // Block start, show warning
+        }
+    }
+
+    this.confirmStartRoutine();
+  }
+
+  cancelFatigueWarning() {
+      this.showFatigueWarning.set(false);
+  }
+
+  confirmStartRoutine() {
+    const w = this.workout();
+    if (!w) return;
+    this.showFatigueWarning.set(false);
     this.isActive.set(true);
+    const startTimeStr = new Date().toISOString();
+    this.sessionStartTime = new Date(startTimeStr).getTime();
     this.startSessionTimer();
     this.trainingSessionService.startSession(w);
     // Persist active status + startTime to Firestore
@@ -258,20 +338,22 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       const workout = this.workout();
       const startTime = this.trainingSessionService.getCurrentSession()?.fechaInicio || new Date();
       
-      if (workout) {
-           const sessionExercises: WorkoutSessionExercise[] = workout.ejercicios.map((ex, index) => {
-               const sets = this.activeSets().get(index) || [];
-               return {
-                   exerciseId: ex.id || index,
-                   name: ex.nombre,
-                   targetSets: ex.series || 0,
-                   sets: sets.map(s => ({
-                       weight: s.weight,
-                       reps: s.reps,
-                       completed: s.completed
-                   }))
-               };
-           });
+           if (workout) {
+               const sessionExercises: WorkoutSessionExercise[] = workout.ejercicios.map((ex, index) => {
+                   const sets = this.activeSets().get(index) || [];
+                   return {
+                       exerciseId: ex.id || index,
+                       name: ex.nombre,
+                       grupoMuscular: ex.grupoMuscular || '', // AGREGADO PARA RECOVERY SERVICE
+                       targetSets: ex.series || 0,
+                       sets: sets.map(s => ({
+                           weight: s.weight,
+                           reps: s.reps,
+                           completed: s.completed,
+                           type: s.type
+                       }))
+                   };
+               });
 
            const muscles = new Set<string>();
            workout.musculos?.forEach(m => muscles.add(m));
@@ -492,11 +574,18 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
 
   // --- GLOBAL TIMER ---
   
-  startSessionTimer(fromSecond: number = 0) {
+  startSessionTimer() {
       if (this.sessionInterval) clearInterval(this.sessionInterval);
-      if (fromSecond === 0) this.sessionSeconds.set(0);
+      
+      if (!this.sessionStartTime) {
+          this.sessionStartTime = Date.now();
+      }
+
       this.sessionInterval = setInterval(() => {
-          this.sessionSeconds.update(v => v + 1);
+          if (!this.sessionStartTime) return;
+          const now = Date.now();
+          const elapsed = Math.floor((now - this.sessionStartTime) / 1000);
+          this.sessionSeconds.set(elapsed);
       }, 1000);
   }
 

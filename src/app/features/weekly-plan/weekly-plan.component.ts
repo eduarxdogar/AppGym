@@ -1,6 +1,6 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { WorkoutService } from '../../core/services/workout.service';
@@ -136,15 +136,44 @@ import { ToastService } from '../../core/services/toast.service';
 
               <div class="p-5 pl-7">
                  <div class="flex justify-between items-start mb-3">
-                    <span class="inline-block px-2 py-1 rounded bg-[#CCFF00]/10 text-[#CCFF00] text-[10px] font-bold uppercase tracking-widest border border-[#CCFF00]/20">
-                       {{ workout.fecha | date:'EEEE' : '' : 'es-CO' }}
-                    </span>
+                    <div (click)="$event.stopPropagation()" class="relative">
+                      <span *ngIf="editingDayId() !== workout.id"
+                            (click)="editingDayId.set(workout.id!)"
+                            class="inline-block px-2 py-1 rounded bg-[#CCFF00]/10 text-[#CCFF00] text-[10px] font-bold uppercase tracking-widest border border-[#CCFF00]/20 cursor-pointer hover:bg-[#CCFF00]/20 transition-colors">
+                         {{ workout.fecha | date:'EEEE' : '' : 'es-CO' }}
+                      </span>
+                      <select *ngIf="editingDayId() === workout.id"
+                              (change)="changeWorkoutDay(workout, $any($event.target).value)"
+                              (blur)="editingDayId.set(null)"
+                              class="bg-[#1a1f26] border border-[#CCFF00]/30 text-[#CCFF00] text-[10px] rounded px-1 py-0.5 outline-none font-bold uppercase tracking-widest">
+                        <option *ngFor="let day of weekDays" [value]="day" [selected]="(workout.fecha | date:'EEEE' : '' : 'es-CO') === day.toLowerCase()">
+                          {{ day }}
+                        </option>
+                      </select>
+                    </div>
                     <button (click)="deleteWorkout($event, workout.id!)" class="text-zinc-600 hover:text-red-500 transition">
                        <mat-icon class="text-lg">delete</mat-icon>
                     </button>
                  </div>
 
-                 <h3 class="text-xl font-bold text-white mb-1 group-hover:text-[#CCFF00] transition-colors">{{ workout.nombre }}</h3>
+                 <!-- Editable Title -->
+                 <div class="flex items-center gap-2 mb-1" (click)="$event.stopPropagation()">
+                   <ng-container *ngIf="editingWorkoutId() !== workout.id">
+                     <h3 class="text-xl font-bold text-white group-hover:text-[#CCFF00] transition-colors">{{ workout.nombre }}</h3>
+                     <button (click)="startEditTitle(workout)" class="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-[#CCFF00]" title="Editar nombre">
+                       <mat-icon class="text-sm">edit</mat-icon>
+                     </button>
+                   </ng-container>
+                   <ng-container *ngIf="editingWorkoutId() === workout.id">
+                     <input #titleInput
+                            [(ngModel)]="editingTitle"
+                            (blur)="saveTitle(workout)"
+                            (keydown.enter)="saveTitle(workout)"
+                            (keydown.escape)="cancelEditTitle()"
+                            class="flex-1 bg-transparent border-b-2 border-[#CCFF00] text-xl font-bold text-white outline-none py-0.5 pr-2"
+                            autocomplete="off">
+                   </ng-container>
+                 </div>
                  
                  <div class="flex items-center gap-4 text-xs text-zinc-400 mt-2">
                     <span class="flex items-center gap-1"><mat-icon class="text-sm">fitness_center</mat-icon> {{ workout.ejercicios.length }} Ejercicios</span>
@@ -220,12 +249,13 @@ import { ToastService } from '../../core/services/toast.service';
 })
 export class WeeklyPlanComponent {
   // Services
-  private workoutService = inject(WorkoutService);
-  public aiService = inject(TrainerAiService);
-  private recoveryService = inject(RecoveryService);
-  private profileState = inject(UserProfileStateService);
-  private router = inject(Router);
-  private toastService = inject(ToastService);
+  private readonly workoutService = inject(WorkoutService);
+  public readonly aiService = inject(TrainerAiService);
+  private readonly recoveryService = inject(RecoveryService);
+  private readonly profileState = inject(UserProfileStateService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly toastService = inject(ToastService);
 
   // Constants
   levels: Array<'Principiante' | 'Intermedio' | 'Avanzado'> = ['Principiante', 'Intermedio', 'Avanzado'];
@@ -238,6 +268,49 @@ export class WeeklyPlanComponent {
   selectedLevel: 'Principiante' | 'Intermedio' | 'Avanzado' | null = null;
   userGoal: string = '';
   daysPerWeek: number = 3;
+
+  private shouldAutoGenerate = signal<boolean>(false);
+
+  constructor() {
+    // AUTO-FILL GENERATOR: Sync with User Profile from Onboarding
+    effect(() => {
+      const profile = this.profileState.profile();
+      if (profile) {
+        if (!this.selectedLevel) this.selectedLevel = profile.fitnessLevel;
+        if (!this.userGoal) {
+          const goalMap: Record<string, string> = {
+            'volumen': 'Ganar masa muscular y fuerza.',
+            'definicion': 'Definir músculos y perder grasa.',
+            'mantenimiento': 'Mantener forma física actual.',
+            'perdida_peso': 'Bajar de peso y mejorar condición.'
+          };
+          this.userGoal = goalMap[profile.goal] || '';
+        }
+        if (this.daysPerWeek === 3 && profile.availableDays?.length > 0) {
+          this.daysPerWeek = Math.min(Math.max(profile.availableDays.length, 2), 6);
+        }
+
+        // TRIGGER AUTO-GENERATE: Solo si el flag está activo y el perfil tiene datos de días (indicando carga completa)
+        if (this.shouldAutoGenerate() && profile.availableDays?.length > 0) {
+          this.shouldAutoGenerate.set(false); // Consumimos el trigger
+          this.isLoading.set(true); // Aseguramos spinner activo
+          // Pequeño delay para que los signals de arriba (userGoal, selectedLevel) se propaguen
+          setTimeout(() => this.generatePlan(), 200);
+        }
+      }
+    });
+
+    // AUTO-GENERATE: Lee el query param y activa el flag
+    this.route.queryParamMap.subscribe(params => {
+      if (params.get('autoGenerate') === 'true') {
+        this.shouldAutoGenerate.set(true);
+        // ACTIVACIÓN INMEDIATA DEL SPINNER (visual)
+        this.isLoading.set(true);
+        // Limpia el param para evitar re-generación al recargar
+        this.router.navigate([], { replaceUrl: true, queryParams: {} });
+      }
+    });
+  }
 
   // Workouts Signal (Filtered for "Weekly" Plan - in this MVP essentially just all future workouts, or current data)
   // For simplicity, we are showing ALL workouts sorted by date descending like a plan, but realistically we would filter by date range.
@@ -256,6 +329,63 @@ export class WeeklyPlanComponent {
 
   // AI State
   isGeneratingDay = signal<boolean>(false);
+
+  // Edit Title & Day State
+  editingWorkoutId = signal<string | null>(null);
+  editingDayId = signal<string | null>(null);
+  editingTitle = '';
+  
+  weekDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+  startEditTitle(workout: any) {
+    this.editingWorkoutId.set(workout.id);
+    this.editingTitle = workout.nombre;
+  }
+
+  cancelEditTitle() {
+    this.editingWorkoutId.set(null);
+    this.editingTitle = '';
+  }
+
+  async saveTitle(workout: any) {
+    const newName = this.editingTitle.trim();
+    if (newName && newName !== workout.nombre) {
+      try {
+        const updatedWorkout = { ...workout, nombre: newName };
+        await this.workoutService.updateWorkout(updatedWorkout);
+        this.toastService.showSuccess('Título actualizado.');
+      } catch (err) {
+        this.toastService.showError('Error al actualizar el título.');
+      }
+    }
+    this.editingWorkoutId.set(null);
+  }
+
+  async changeWorkoutDay(workout: any, newDayName: string) {
+    try {
+      const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const targetDayIndex = days.indexOf(newDayName);
+      if (targetDayIndex === -1) return;
+
+      const currentFecha = new Date(workout.fecha);
+      const currentDayIndex = currentFecha.getDay();
+      
+      // Calcular la diferencia de días
+      let diff = targetDayIndex - currentDayIndex;
+      // Si el día ya pasó o es el mismo, pero queremos moverlo "adelante" en la semana (o simplemente ajustar la fecha)
+      // Para este MVP, ajustamos a la fecha más cercana con ese día de la semana.
+      const newDate = new Date(currentFecha);
+      newDate.setDate(currentFecha.getDate() + diff);
+
+      const updatedWorkout = { ...workout, fecha: newDate.toISOString() };
+      await this.workoutService.updateWorkout(updatedWorkout);
+      this.toastService.showSuccess(`Cambiado a ${newDayName}`);
+    } catch (err) {
+      this.toastService.showError('Error al cambiar el día.');
+    } finally {
+      this.editingDayId.set(null);
+    }
+  }
 
   goBack() {
     this.router.navigate(['/dashboard']);
@@ -330,16 +460,14 @@ export class WeeklyPlanComponent {
       try {
            const newWorkout = await this.aiService.generateWorkout(prompt, profile);
 
-           // Re-ajustar la fecha basándose en la fecha del último entrenamiento del plan actual, si existe.
-           const currentWorkouts = this.weekWorkouts();
-           if (currentWorkouts.length > 0) {
-              const lastWorkout = currentWorkouts[currentWorkouts.length - 1];
-              if (lastWorkout && lastWorkout.fecha) {
-                 const newDate = new Date(lastWorkout.fecha);
-                 newDate.setDate(newDate.getDate() + 1);
-                 newWorkout.fecha = newDate.toISOString();
-              }
-           }
+            // Re-ajustar la fecha basándose en la fecha del último entrenamiento del plan actual, si existe.
+            const currentWorkouts = this.weekWorkouts();
+            const lastWorkout = currentWorkouts.at(-1);
+            if (lastWorkout?.fecha) {
+               const newDate = new Date(lastWorkout.fecha);
+               newDate.setDate(newDate.getDate() + 1);
+               newWorkout.fecha = newDate.toISOString();
+            }
 
            await this.workoutService.addWorkout(newWorkout);
            this.toastService.showSuccess('✨ Nuevo día generado y agregado al plan.');
@@ -365,6 +493,13 @@ export class WeeklyPlanComponent {
      });
 
      const userProfile = this.profileState.profile();
+     
+     // ORDENAR LOS DÍAS CRONOLÓGICAMENTE: Evita que la IA genere planes en desorden
+     const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+     const sortedDays = userProfile?.availableDays ? [...userProfile.availableDays].sort((a, b) => 
+       diasSemana.indexOf(a) - diasSemana.indexOf(b)
+     ) : [];
+
      const request: WeeklyPlanRequest = {
         userPrompt: this.userGoal,
         daysToGenerate: this.daysPerWeek,
@@ -377,6 +512,7 @@ export class WeeklyPlanComponent {
              fitnessLevel: this.selectedLevel,
              goal: 'volumen'
            }),
+           availableDays: sortedDays.length > 0 ? sortedDays : (userProfile?.availableDays || []),
            fitnessLevel: this.selectedLevel,
            fatigueLevels: fatigueRecord
         }

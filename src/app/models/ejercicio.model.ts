@@ -14,6 +14,8 @@ export interface Ejercicio {
   rir?: number;
   parciales?: boolean;
   videoUrl?: string;
+  imageUrl?: string;
+  equipmentRequired?: string[];
   notas?: string;
 
   // NUEVO PARA DROP SET

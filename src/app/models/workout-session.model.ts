@@ -9,6 +9,7 @@ export interface WorkoutSessionSet {
 export interface WorkoutSessionExercise {
     exerciseId: string | number;
     name: string;
+    grupoMuscular?: string;
     targetSets: number;
     sets: WorkoutSessionSet[];
     notes?: string;
