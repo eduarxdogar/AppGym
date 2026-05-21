@@ -6,19 +6,21 @@ import { MetricsService } from '../metrics.service';
 import { CardioSessionService } from '../cardio-session.service';
 import { StorageService, ChatMessage } from '../storage.service';
 import { ExerciseImageService } from '../exercise-image.service';
+import { RecoveryService } from '../recovery.service';
 import { Workout } from '../../../models/workout.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatAiService {
-  private readonly baseAi       = inject(BaseAiService);
-  private readonly profileState = inject(UserProfileStateService);
+  private readonly baseAi         = inject(BaseAiService);
+  private readonly profileState    = inject(UserProfileStateService);
   private readonly workoutService  = inject(WorkoutService);
   private readonly metricsService  = inject(MetricsService);
   private readonly cardioService   = inject(CardioSessionService);
   private readonly storageService  = inject(StorageService);
   private readonly imgService      = inject(ExerciseImageService);
+  private readonly recoveryService = inject(RecoveryService);
 
   /** Currently active workout context for the coach */
   private activeWorkoutId = signal<string | null>(null);
@@ -96,6 +98,23 @@ ${activeWorkout.ejercicios.map((e, i) => `  ${i+1}. ${e.nombre} - ${e.series}x${
 ESTA RUTINA ES TU PRIORIDAD. Cuando el usuario pregunte "qué toca hoy" o "cómo hago X", responde SIEMPRE en el contexto de ESTA rutina.`
           : `\nNo hay rutina activa ahora mismo. Historial de rutinas disponible.`;
 
+        // --- Build fatigue context from RecoveryService ---
+        const statusMap = this.recoveryService.getMuscleRecoveryStatus()();
+        const fatigueLines: string[] = [];
+        statusMap.forEach((status) => {
+          const icon = status.percentage <= 30 ? '🔴' : status.percentage <= 75 ? '🟡' : '🟢';
+          fatigueLines.push(`  ${icon} ${status.name}: ${status.percentage}% recuperado`);
+        });
+        const fatigueContext = fatigueLines.length > 0
+          ? fatigueLines.join('\n')
+          : '  Sin datos de sesiones previas (músculos al 100%)';
+
+        // --- Equipment context ---
+        const equipment: string[] = (userProfile as any)?.equipment || [];
+        const equipmentContext = equipment.length > 0
+          ? equipment.join(', ')
+          : 'No especificado';
+
         const contextText = `Eres "Coach Tríada", un entrenador personal de Medellín con 15 años de experiencia. Hablas como un profe de gimnasio: directo, técnico y motivador. NUNCA digas "como IA" o "mi red neuronal". Si el usuario pregunta algo médico serio, remítelo a un profesional.
 
 REGLAS DE RESPUESTA:
@@ -103,10 +122,17 @@ REGLAS DE RESPUESTA:
 - Usa negritas para resaltar números clave.
 - Si explicas la técnica de un ejercicio, al FINAL siempre agrega: "Acordate que en la tarjeta del ejercicio tenés el botón ⓘ para ver el video de la técnica."
 - NUNCA inventes datos que no estén en el contexto.
+- Usa el estado de fatiga y el equipamiento para dar recomendaciones INTELIGENTES. No los menciones mecánicamente, úsalos solo para tomar decisiones sobre qué recomendar.
 
 PERFIL DEL ATLETA:
 - Peso: ${userProfile?.weight}kg | Altura: ${userProfile?.height}cm | Nivel: ${userProfile?.fitnessLevel} | Objetivo: ${userProfile?.goal}
 - InBody — Músculo: ${userProfile?.inbodyData?.muscleKg || 'N/A'}kg | Grasa: ${userProfile?.inbodyData?.fatPercent || 'N/A'}%
+
+EQUIPAMIENTO DISPONIBLE EN SU GIMNASIO:
+${equipmentContext}
+
+ESTADO DE FATIGA MUSCULAR (TIEMPO REAL):
+${fatigueContext}
 
 MÉTRICAS SEMANA ACTUAL:
 - Sesiones: ${metrics.workoutsCount} | Tonelaje: ${metrics.totalVolume}kg | Series totales: ${metrics.totalSets} | Calorías: ${metrics.estimatedCalories}kcal
