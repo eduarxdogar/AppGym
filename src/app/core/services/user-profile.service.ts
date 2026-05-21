@@ -23,6 +23,17 @@ export class UserProfileService {
     }, { merge: true });
   }
 
+  /** Actualiza específicamente el equipamiento del usuario. */
+  async updateEquipment(equipment: string[]): Promise<void> {
+    const uid = this.auth.currentUser?.uid;
+    if (!uid) throw new Error('Usuario no autenticado');
+    const ref = doc(this.firestore, `users/${uid}/profile/data`);
+    await setDoc(ref, {
+      equipment,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  }
+
   /** Recupera el perfil del usuario actual. Devuelve null si no existe. */
   getProfile(): Observable<UserProfile | null> {
     return authState(this.auth).pipe(

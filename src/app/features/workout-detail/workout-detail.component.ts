@@ -18,6 +18,7 @@ import { RecoveryService } from '../../core/services/recovery.service';
 import { WorkoutSession, WorkoutSessionExercise } from '../../models/workout-session.model';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ToastService } from '../../core/services/toast.service';
+import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 
 export interface DropSet {
   reps: number;
@@ -56,6 +57,7 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   public  readonly restTimer             = inject(RestTimerService);
   private readonly recoveryService       = inject(RecoveryService);
   private readonly toastService          = inject(ToastService);
+  private readonly userProfileState      = inject(UserProfileStateService);
 
   /** Expose presets for template */
   readonly restPresets = REST_PRESETS_SECONDS;
@@ -131,19 +133,33 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   supersetSelectedMuscle = signal<string | null>(null);
 
   supersetMuscleGroups = signal<string[]>([
-      'Pecho', 'Espalda', 'Bíceps', 'Tríceps', 'Hombros', 
-      'Cuádriceps', 'Isquios', 'Pantorrilla', 'Core'
+      'pecho', 'espalda', 'bíceps', 'tríceps', 'hombros', 
+      'cuádriceps', 'isquios', 'glúteos', 'gemelos', 'core'
   ]);
+
+  userEquipment = computed(() => this.userProfileState.profile()?.equipment || []);
+
+  hasRequiredEquipment(ex: Ejercicio): boolean {
+      if (!ex.equipmentRequired || ex.equipmentRequired.length === 0) return true;
+      const userEq = this.userEquipment();
+      return ex.equipmentRequired.every(eq => eq === 'Calistenia' || userEq.includes(eq));
+  }
 
   filteredSupersetExercises = computed(() => {
       let exs = this.exerciseService.getAll();
       const muscle = this.supersetSelectedMuscle();
       const q = this.supersetSearchQuery().toLowerCase();
 
-      if (muscle) exs = exs.filter(e => e.grupoMuscular === muscle);
+      if (muscle) exs = exs.filter(e => e.grupoMuscular.toLowerCase() === muscle.toLowerCase());
       if (q) exs = exs.filter(e => e.nombre.toLowerCase().includes(q));
       
-      return exs;
+      return exs.sort((a, b) => {
+          const aHas = this.hasRequiredEquipment(a);
+          const bHas = this.hasRequiredEquipment(b);
+          if (aHas && !bHas) return -1;
+          if (!aHas && bHas) return 1;
+          return 0;
+      });
   });
   // Computed for UI
   sessionTimeFormatted = computed(() => {
