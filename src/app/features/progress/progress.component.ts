@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { TrainingHistoryService } from '../../core/services/training-history.service';
 import { TrainingSession } from '../../models/training-session.model';
 import { MatIconModule } from '@angular/material/icon';
+import { ProgressChartComponent } from '../../shared/components/progress-chart/progress-chart.component';
 
 @Component({
   selector: 'app-progress',
   standalone: true,
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, ProgressChartComponent],
   templateUrl: './progress.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

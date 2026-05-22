@@ -6,6 +6,7 @@ import localeEsCo from '@angular/common/locales/es-CO';
 registerLocaleData(localeEsCo);
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { routes } from './app.routes';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 // Providers de Angular Material necesarios:
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -32,6 +33,7 @@ export const appConfig: ApplicationConfig = {
     provideAuth(() => getAuth()),
     provideFunctions(() => getFunctions()),
     provideNgtRenderer(),
+    provideCharts(withDefaultRegisterables()),
     { provide: LOCALE_ID, useValue: 'es-CO' }
   ]
 };

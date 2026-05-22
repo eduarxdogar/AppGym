@@ -10,11 +10,13 @@ import { UserProfile } from '../../models/user-profile.model';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { RecoveryService } from '../../core/services/recovery.service';
 import { ToastService } from '../../core/services/toast.service';
+import { WeeklySummaryModalComponent } from '../../shared/components/weekly-summary-modal/weekly-summary-modal.component';
+import { ProgressionEngineService, ProgressionOptions } from '../../core/services/progression-engine.service';
 
 @Component({
   selector: 'app-weekly-plan',
   standalone: true,
-  imports: [CommonModule, MatIconModule, FormsModule, DatePipe],
+  imports: [CommonModule, MatIconModule, FormsModule, DatePipe, WeeklySummaryModalComponent],
   template: `
     <div class="min-h-screen bg-[#0B0E14] text-white p-4 pb-24 font-sans animate-fadeIn">
       
@@ -238,8 +240,11 @@ import { ToastService } from '../../core/services/toast.service';
                   CONFIRMAR
                </button>
             </div>
-         </div>
-      </div>
+          </div>
+       </div>
+
+       <!-- Weekly Summary Modal -->
+       <app-weekly-summary-modal *ngIf="showSummaryModal()" (onRollover)="doRollover($event)"></app-weekly-summary-modal>
     </div>
   `,
   styles: [`
@@ -256,6 +261,7 @@ export class WeeklyPlanComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly toastService = inject(ToastService);
+  private readonly progressionEngine = inject(ProgressionEngineService);
 
   // Constants
   levels: Array<'Principiante' | 'Intermedio' | 'Avanzado'> = ['Principiante', 'Intermedio', 'Avanzado'];
@@ -310,6 +316,14 @@ export class WeeklyPlanComponent {
         this.router.navigate([], { replaceUrl: true, queryParams: {} });
       }
     });
+
+    effect(() => {
+      const completed = this.isWeekCompleted();
+      // If completed and there are workouts, trigger the summary modal
+      if (completed && this.weekWorkouts().length > 0) {
+        this.showSummaryModal.set(true);
+      }
+    }, { allowSignalWrites: true });
   }
 
   // Workouts Signal (Filtered for "Weekly" Plan - in this MVP essentially just all future workouts, or current data)
@@ -322,8 +336,15 @@ export class WeeklyPlanComponent {
      );
   });
 
+  isWeekCompleted = computed(() => {
+    const workouts = this.weekWorkouts();
+    if (workouts.length === 0) return false;
+    return workouts.every(w => w.isCompleted === true || w.status === 'completed');
+  });
+
   // Modal State
   showConfirmModal = signal<boolean>(false);
+  showSummaryModal = signal<boolean>(false);
   pendingAction = signal<'delete' | 'reset' | null>(null);
   pendingWorkoutId = signal<string | null>(null);
 
@@ -429,6 +450,28 @@ export class WeeklyPlanComponent {
      }
 
      this.cancelAction();
+  }
+
+  async doRollover(options: ProgressionOptions) {
+    // Artificial delay to simulate AI processing (1.5s - 2s)
+    await new Promise(resolve => setTimeout(resolve, 1800));
+    
+    this.showSummaryModal.set(false);
+    
+    const previousWeekWorkouts = this.weekWorkouts();
+    const newMicrocycle = this.progressionEngine.generateNextMicrocycle(previousWeekWorkouts, options);
+
+    // Delete old week
+    for(const w of previousWeekWorkouts) {
+       if(w.id) await this.workoutService.deleteWorkout(w.id);
+    }
+
+    // Save new week
+    for(const newW of newMicrocycle) {
+       await this.workoutService.addWorkout(newW);
+    }
+
+    this.toastService.showSuccess('¡Nueva semana planificada con IA Coach! Cargas ajustadas.');
   }
 
   async addDayWithAI() {

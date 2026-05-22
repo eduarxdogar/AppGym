@@ -18,6 +18,8 @@ export interface WorkoutSet {
 }
 
 export interface WorkoutExercise {
+  name?: string;
+  nombre?: string;
   grupoMuscular?: string;
   groupMuscular?: string;
   muscleGroup?: string;
