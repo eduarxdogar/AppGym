@@ -16,13 +16,16 @@
 
     <div class="max-w-4xl mx-auto p-5 space-y-8 animate-fadeIn">
         
+        <!-- MONITOR DE GANANCIAS (Progreso) -->
+        <app-progress-chart></app-progress-chart>
+
         <!-- 2. TIME FILTERS -->
         <div class="flex gap-2 p-1 bg-zinc-900/50 rounded-xl w-full border border-zinc-800 overflow-x-auto">
             <button *ngFor="let r of ranges" 
                     (click)="setRange(r)"
                     class="flex-1 py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
                     [ngClass]="{'bg-[#CCFF00] text-black shadow-lg': range() === r, 'text-zinc-500 hover:text-zinc-300': range() !== r}">
-                {{ r === 'total' ? 'Todo' : (r | titlecase) }}
+                {{ rangeLabels[r] }}
             </button>
         </div>
 
@@ -39,6 +42,24 @@
                     <mat-icon class="animate-spin mr-2">donut_large</mat-icon> Loading...
                 </div>
             </ng-template>
+        </div>
+
+        <!-- FILTRO DE GRUPO MUSCULAR -->
+        <div class="flex items-center justify-between bg-zinc-900/50 p-3 rounded-xl border border-zinc-800">
+            <span class="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1">
+               <mat-icon class="text-[16px] h-4 w-4">filter_list</mat-icon> Filtro Muscular
+            </span>
+            <select [ngModel]="muscleGroup()" (ngModelChange)="setMuscleGroup($event)"
+                    class="bg-[#151921] border border-zinc-700 text-white text-sm font-bold rounded-lg px-3 py-1.5 outline-none focus:border-[#CCFF00] transition cursor-pointer">
+                <option value="Todos">Todos</option>
+                <option value="Pecho">Pecho</option>
+                <option value="Espalda">Espalda</option>
+                <option value="Pierna">Pierna</option>
+                <option value="Cuádriceps">Cuádriceps</option>
+                <option value="Hombro">Hombro</option>
+                <option value="Brazo">Brazo</option>
+                <option value="Core">Core</option>
+            </select>
         </div>
 
         <!-- 4. STATS GRID -->

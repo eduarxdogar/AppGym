@@ -3,14 +3,16 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { BaseChartDirective } from 'ng2-charts';
+import { FormsModule } from '@angular/forms';
 import { ChartConfiguration, ChartData, ChartType, Chart, registerables } from 'chart.js';
 import { TrainingHistoryService } from '../../../core/services/training-history.service';
 import { StatsData } from '../../../models/stats-data.model';
+import { ProgressChartComponent } from '../../../shared/components/progress-chart/progress-chart.component';
 
 @Component({
   selector: 'app-stats-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, BaseChartDirective],
+  imports: [CommonModule, RouterModule, MatIconModule, BaseChartDirective, ProgressChartComponent, FormsModule],
   templateUrl: './stats-detail.component.html'
 })
 export class StatsDetailComponent implements OnInit {
@@ -24,6 +26,15 @@ export class StatsDetailComponent implements OnInit {
   
   // Typed ranges for template iteration
   ranges: ('week' | 'month' | 'year' | 'total')[] = ['week', 'month', 'year', 'total'];
+  rangeLabels: Record<string, string> = {
+    'week': 'Semana',
+    'month': 'Mes',
+    'year': 'Año',
+    'total': 'Todo'
+  };
+
+  // Filter State
+  muscleGroup = signal<string>('Todos');
 
   // Data State
   stats = signal<StatsData | null>(null);
@@ -119,7 +130,7 @@ export class StatsDetailComponent implements OnInit {
            };
       }
 
-      this.historyService.getStats(this.type(), this.range()).subscribe(data => {
+      this.historyService.getStats(this.type(), this.range(), this.muscleGroup()).subscribe(data => {
           this.stats.set(data);
           this.cd.detectChanges(); // Force update
       });
@@ -178,6 +189,11 @@ export class StatsDetailComponent implements OnInit {
 
   setRange(r: 'week' | 'month' | 'year' | 'total') {
       this.range.set(r);
+  }
+
+  setMuscleGroup(m: string) {
+      this.muscleGroup.set(m);
+      this.loadStats();
   }
 
   getTitle(): string {

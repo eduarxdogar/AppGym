@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartOptions } from 'chart.js';
 import { TrainingHistoryService } from '../../../core/services/training-history.service';
@@ -9,7 +10,7 @@ import { WorkoutSession } from '../../../core/models/workout-history.model';
 @Component({
   selector: 'app-progress-chart',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseChartDirective],
+  imports: [CommonModule, FormsModule, BaseChartDirective, MatIconModule],
   providers: [DatePipe],
   template: `
     <div class="w-full flex flex-col gap-4 animate-in fade-in duration-500">
@@ -17,8 +18,8 @@ import { WorkoutSession } from '../../../core/models/workout-history.model';
       <!-- Controls -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 class="text-xl font-black text-white uppercase tracking-wider flex items-center gap-2">
-            <span class="text-[#CCFF00]">📈</span> Monitor de Ganancias
+          <h2 class="text-xl font-black text-white uppercase tracking-wider flex items-center">
+            <mat-icon class="text-[#CCFF00] drop-shadow-[0_0_6px_rgba(204,255,0,0.4)] mr-2">monitoring</mat-icon> Monitor de Ganancias
           </h2>
           <p class="text-zinc-400 text-xs tracking-widest uppercase mt-1">Sobrecarga Progresiva (Peso Máximo)</p>
         </div>
@@ -41,7 +42,7 @@ import { WorkoutSession } from '../../../core/models/workout-history.model';
         <div *ngIf="!selectedExercise()" class="absolute inset-0 flex flex-col items-center justify-center text-center z-10 p-6 bg-[#151921]/80 backdrop-blur-sm rounded-2xl">
            <span class="text-4xl mb-4 opacity-50">🏋️‍♂️</span>
            <h3 class="text-white font-bold text-lg mb-1">Sin Ejercicio Seleccionado</h3>
-           <p class="text-zinc-500 text-sm">Elige un ejercicio arriba para visualizar tu progresión de cargas a lo largo del tiempo.</p>
+           <p class="text-zinc-500 text-sm">Aún no hay datos para graficar. ¡Ve a entrenar!</p>
         </div>
 
         <div *ngIf="selectedExercise() && chartData().datasets[0].data.length === 0" class="absolute inset-0 flex flex-col items-center justify-center text-center z-10 p-6 bg-[#151921]/80 backdrop-blur-sm rounded-2xl">
