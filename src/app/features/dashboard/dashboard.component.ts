@@ -7,12 +7,13 @@ import { RecoveryService } from '../../core/services/recovery.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MetricsService } from '../../core/services/metrics.service';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
+import { StrengthTierWidgetComponent } from '../../shared/components/strength-tier-widget/strength-tier-widget.component';
 import { Workout, Ejercicio } from '../../models/workout.model';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, UiButtonComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, UiButtonComponent, StrengthTierWidgetComponent],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
