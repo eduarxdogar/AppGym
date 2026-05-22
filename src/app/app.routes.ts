@@ -7,6 +7,11 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   {
     path: 'trends/:type',
+    loadComponent: () => import('./features/stats/trend-detail/trend-detail.component').then(m => m.TrendDetailComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stats',
     loadComponent: () => import('./features/stats/stats-detail/stats-detail.component').then(m => m.StatsDetailComponent),
     canActivate: [authGuard]
   },

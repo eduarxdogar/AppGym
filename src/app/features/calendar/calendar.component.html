@@ -4,7 +4,7 @@
     📈 Historial de Entrenamientos
   </h2>
 
-  <div *ngIf="sesiones.length > 0; else noSessions" class="space-y-4">
+  <div *ngIf="sesiones.length > 0; else noSessions" class="space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar pr-2">
     <div
       *ngFor="let session of sesiones; let i = index"
       class="p-5 bg-gray-800/80 hover:bg-gray-700 rounded-xl shadow transition-all duration-300 animate-slideUp flex flex-col md:flex-row justify-between items-start md:items-center gap-4"

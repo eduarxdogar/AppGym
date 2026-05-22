@@ -42,6 +42,14 @@ export class DashboardComponent {
   // Expose User for Template
   currentUser = this.authService.currentUser;
 
+  // Computed: Saludo Dinámico (objeto con dos partes para estilizado premium)
+  dynamicGreeting = computed<{ prefix: string; highlight: string }>(() => {
+    const hours = new Date().getHours();
+    if (hours >= 5 && hours < 12) return { prefix: '¡Buenos días,', highlight: 'máquina!' };
+    if (hours >= 12 && hours < 18) return { prefix: '¡Buenas tardes,', highlight: 'fiera!' };
+    return { prefix: '¡A mutar,', highlight: 'iniciemos la rutina!' };
+  });
+
   // Computed: Obtener la última rutina (o la próxima sugerida)
   nextWorkout = computed(() => {
     const all = this.workouts();

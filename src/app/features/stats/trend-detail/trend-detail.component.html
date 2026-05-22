@@ -1,0 +1,110 @@
+<div class="min-h-screen bg-[#0B0E14] text-white pb-20 font-sans">
+
+  <!-- HEADER -->
+  <div class="sticky top-0 z-50 bg-[#0B0E14]/90 backdrop-blur-md border-b border-zinc-800 px-4 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <button [routerLink]="['/stats']" class="h-10 w-10 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1 class="text-xl font-bold uppercase tracking-wide">{{ getTitle() }}</h1>
+        <p class="text-xs text-zinc-500 tracking-widest uppercase">Tendencia histórica</p>
+      </div>
+    </div>
+    <div class="h-9 w-9 rounded-full flex items-center justify-center border border-zinc-800"
+         [style.color]="getAccentColor()" [style.borderColor]="getAccentColor() + '40'">
+      <mat-icon>{{ getIcon() }}</mat-icon>
+    </div>
+  </div>
+
+  <div class="max-w-2xl mx-auto p-5 space-y-6 animate-fadeIn">
+
+    <!-- FILTROS DE TIEMPO -->
+    <div class="flex gap-2 p-1 bg-zinc-900/50 rounded-xl w-full border border-zinc-800 overflow-x-auto">
+      <button *ngFor="let r of ranges"
+              (click)="setRange(r)"
+              class="flex-1 py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap"
+              [ngClass]="range() === r
+                ? 'bg-[#CCFF00] text-black shadow-lg'
+                : 'text-zinc-500 hover:text-zinc-300'">
+        {{ rangeLabels[r] }}
+      </button>
+    </div>
+
+    <!-- GRÁFICA PRINCIPAL -->
+    <div class="bg-[#151921] border border-zinc-800 rounded-3xl p-4 md:p-6 h-[280px] relative shadow-2xl">
+      <canvas baseChart
+              [data]="lineChartData"
+              [options]="lineChartOptions"
+              [type]="lineChartType"
+              *ngIf="stats(); else loadingTpl">
+      </canvas>
+      <ng-template #loadingTpl>
+        <div class="h-full flex flex-col items-center justify-center gap-3 text-zinc-600">
+          <div class="relative h-10 w-10">
+            <div class="absolute inset-0 border-4 border-zinc-800 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-[#CCFF00] rounded-full border-t-transparent animate-spin"></div>
+          </div>
+          <span class="text-xs tracking-widest uppercase">Cargando datos...</span>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- TARJETAS RESUMEN (4 métricas) -->
+    <div class="grid grid-cols-2 gap-4" *ngIf="stats() as s">
+
+      <!-- Total -->
+      <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 flex flex-col gap-1 group hover:border-[#CCFF00]/30 transition">
+        <div class="flex items-center gap-2 mb-1">
+          <mat-icon class="text-base text-[#CCFF00]">show_chart</mat-icon>
+          <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Total</span>
+        </div>
+        <span class="text-3xl font-black text-white group-hover:text-[#CCFF00] transition-colors">
+          {{ s.total | number:'1.0-0' }}
+        </span>
+      </div>
+
+      <!-- Máximo -->
+      <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 flex flex-col gap-1 group hover:border-blue-400/30 transition">
+        <div class="flex items-center gap-2 mb-1">
+          <mat-icon class="text-base text-blue-400">vertical_align_top</mat-icon>
+          <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Máximo</span>
+        </div>
+        <span class="text-3xl font-black text-white group-hover:text-blue-400 transition-colors">
+          {{ s.max | number:'1.0-0' }}
+        </span>
+      </div>
+
+      <!-- Promedio -->
+      <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 flex flex-col gap-1 group hover:border-purple-400/30 transition">
+        <div class="flex items-center gap-2 mb-1">
+          <mat-icon class="text-base text-purple-400">equalizer</mat-icon>
+          <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Promedio</span>
+        </div>
+        <span class="text-3xl font-black text-white group-hover:text-purple-400 transition-colors">
+          {{ s.avg | number:'1.0-0' }}
+        </span>
+      </div>
+
+      <!-- Sesiones -->
+      <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 flex flex-col gap-1 group hover:border-pink-400/30 transition">
+        <div class="flex items-center gap-2 mb-1">
+          <mat-icon class="text-base text-pink-400">fitness_center</mat-icon>
+          <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Sesiones</span>
+        </div>
+        <span class="text-3xl font-black text-white group-hover:text-pink-400 transition-colors">
+          {{ s.count }}
+        </span>
+      </div>
+
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div *ngIf="stats() && stats()!.total === 0" class="bg-[#151921] border border-zinc-800 rounded-2xl p-8 text-center">
+      <mat-icon class="text-zinc-700 text-4xl mb-3">bar_chart</mat-icon>
+      <p class="text-zinc-500 text-sm">Aún no hay datos para este período.</p>
+      <p class="text-zinc-600 text-xs mt-1">Completa entrenamientos para ver tus tendencias.</p>
+    </div>
+
+  </div>
+</div>
