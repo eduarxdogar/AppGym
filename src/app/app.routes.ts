@@ -4,7 +4,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { profileGuard } from './core/guards/profile.guard';
 
 export const routes: Routes = [
-  { path: 'login', component: LoginComponent },
+  { path: 'login', loadComponent: () => import('./features/login/login.component').then(m => m.LoginComponent) },
   {
     path: 'trends/:type',
     loadComponent: () => import('./features/stats/trend-detail/trend-detail.component').then(m => m.TrendDetailComponent),
