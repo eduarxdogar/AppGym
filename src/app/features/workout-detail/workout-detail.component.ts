@@ -313,6 +313,7 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
     let totalFatigue = 0;
     let countedMuscles = 0;
     const veryFatiguedNames: string[] = [];
+    let anyUnder48h = false;
 
     muscles.forEach(mName => {
         // Try to match exact or lowercase inside the recovery service status
@@ -326,15 +327,26 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
         if (status) {
             totalFatigue += status.percentage;
             countedMuscles++;
-            if (status.percentage <= 60) {
-                veryFatiguedNames.push(status.name);
+            
+            const hoursSince = status.lastWorkoutDate 
+                ? (Date.now() - status.lastWorkoutDate.getTime()) / (1000 * 60 * 60) 
+                : 999;
+
+            // Trigger warning if recovery is low OR trained < 48h ago
+            if (status.percentage <= 60 || hoursSince < 48) {
+                if (!veryFatiguedNames.includes(status.name)) {
+                    veryFatiguedNames.push(status.name);
+                }
+            }
+            if (hoursSince < 48) {
+                anyUnder48h = true;
             }
         }
     });
 
     if (countedMuscles > 0) {
         const average = totalFatigue / countedMuscles;
-        if (average <= 60) {
+        if (average <= 60 || anyUnder48h) {
             this.fatiguedAverage.set(Math.round(average));
             this.fatiguedMusclesDesc.set(veryFatiguedNames.length > 0 ? veryFatiguedNames.join(', ') : 'Los músculos objetivo');
             this.showFatigueWarning.set(true);
