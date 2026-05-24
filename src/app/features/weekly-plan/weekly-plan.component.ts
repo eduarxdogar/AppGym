@@ -32,7 +32,10 @@ import { ProgressionEngineService, ProgressionOptions } from '../../core/service
             </div>
         </div>
         
-        <div *ngIf="weekWorkouts().length > 0">
+        <div *ngIf="weekWorkouts().length > 0" class="flex items-center gap-3">
+           <button *ngIf="!isWeekCompleted()" (click)="forceCloseWeek()" class="px-3 py-1.5 rounded-lg border border-[#CCFF00] text-[#CCFF00] hover:bg-[#CCFF00]/10 text-[10px] font-bold uppercase tracking-widest transition shadow-[0_0_10px_rgba(204,255,0,0.15)]" title="Forzar cierre de semana para auto-regulación">
+              Cerrar Semana
+           </button>
            <button (click)="resetPlan()" class="text-red-500 text-xs uppercase font-bold tracking-widest hover:text-red-400 transition" title="Borrar Plan">
               Reset
            </button>
@@ -426,6 +429,10 @@ export class WeeklyPlanComponent {
   resetPlan() {
      this.pendingAction.set('reset');
      this.showConfirmModal.set(true);
+  }
+
+  forceCloseWeek() {
+     this.showSummaryModal.set(true);
   }
 
   cancelAction() {

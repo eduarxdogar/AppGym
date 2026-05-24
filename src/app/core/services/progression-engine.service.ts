@@ -18,21 +18,12 @@ export class ProgressionEngineService {
     let nextMicrocycle: Workout[] = [];
     const now = new Date();
     
-    // Calculate the start date of the new week (e.g., tomorrow, or maintain the day of the week logic)
-    // For simplicity, we align the first workout to "today" and keep relative offsets.
-    let baseTime = now.getTime();
-    if (previousWeekWorkouts.length > 0) {
-      // Find the earliest workout in the previous week to calculate relative days
-      const sortedPrev = [...previousWeekWorkouts].sort((a,b) => new Date(a.fecha!).getTime() - new Date(b.fecha!).getTime());
-      const firstOldDate = new Date(sortedPrev[0].fecha!).getTime();
-
+      let baseTime = now.getTime();
+      let dayIndex = 0;
       previousWeekWorkouts.forEach((oldWorkout) => {
-        // Calculate offset in days from the first workout
-        const oldTime = new Date(oldWorkout.fecha!).getTime();
-        const diffDays = Math.round((oldTime - firstOldDate) / (1000 * 60 * 60 * 24));
-        
-        // New date is "today" + diffDays
-        const newDate = new Date(baseTime + (diffDays * 24 * 60 * 60 * 1000));
+        // "Empaquetado Consecutivo": Día 0 = Hoy, Día 1 = Mañana...
+        const newDate = new Date(baseTime + (dayIndex * 24 * 60 * 60 * 1000));
+        dayIndex++;
         
         const newWorkout: Workout = {
           ...oldWorkout,
@@ -101,8 +92,6 @@ export class ProgressionEngineService {
         // Remove the last workout to drop a day
         nextMicrocycle.pop();
       }
-    }
-
     return nextMicrocycle;
   }
 }
