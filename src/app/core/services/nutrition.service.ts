@@ -5,6 +5,15 @@ import { from, Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { WeeklyDietPlan } from '../../models/ai-requests.model';
 
+export interface DailyNutritionLog {
+  date: string; // YYYY-MM-DD
+  consumedCalories: number;
+  consumedProtein: number;
+  consumedCarbs: number;
+  consumedFats: number;
+  consumedMeals: Record<number, boolean>; // key: meal index (0,1,2...), value: true if consumed
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -37,5 +46,24 @@ export class NutritionService {
         });
       })
     );
+  }
+
+  getDailyLog(date: string): Observable<DailyNutritionLog | null> {
+    return authState(this.auth).pipe(
+      switchMap((user: any) => {
+        if (!user) return of(null);
+        return runInInjectionContext(this.injector, () => {
+          const ref = doc(this.firestore, `users/${user.uid}/nutritionLogs/${date}`);
+          return docData(ref) as Observable<DailyNutritionLog | null>;
+        });
+      })
+    );
+  }
+
+  async updateDailyLog(date: string, log: DailyNutritionLog): Promise<void> {
+    const uid = this.auth.currentUser?.uid;
+    if (!uid) throw new Error('Usuario no autenticado');
+    const ref = doc(this.firestore, `users/${uid}/nutritionLogs/${date}`);
+    await setDoc(ref, log, { merge: true });
   }
 }

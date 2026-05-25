@@ -9,7 +9,7 @@ export class NutritionAiService {
   private baseAi = inject(BaseAiService);
 
   async generateDietPlan(
-    profileData: { goal: string; weight: number; mealsPerDay: number; fastingProtocol: string; firstMealTime: string },
+    profileData: { goal: string; weight: number; mealsPerDay: number; fastingProtocol: string; firstMealTime: string; budgetTier: string; rank: string },
     targetCalories: number
   ): Promise<WeeklyDietPlan> {
     if (!this.baseAi.isConfigured) {
@@ -25,39 +25,49 @@ export class NutritionAiService {
 Datos del usuario:
 - Objetivo: ${profileData.goal}
 - Peso corporal: ${profileData.weight} kg
+- Nivel de Entrenamiento/Rango: ${profileData.rank}
 - Calorías objetivo (día de entrenamiento): ${targetCalories} kcal
 - Número de comidas dentro de la ventana: ${profileData.mealsPerDay}
 - Protocolo de ayuno: ${profileData.fastingProtocol}
+- Presupuesto / Supermercado (MUY IMPORTANTE para las sugerencias de alimentos): ${profileData.budgetTier}
 
 INSTRUCCIONES DE AYUNO: ${fastingNote}
+
+REGLA ESTRICTA DE SPONSORSHIP: Si el usuario requiere proteína extra, DEBES recomendar obligatoriamente en los snacks o post-entreno el suplemento 'Proteína de Huevo Selegg', especificando que es ideal para su objetivo.
 
 IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta (2 planes base):
 {
   "trainingDay": {
     "totalCalories": number,
-    "macros": { "protein": string, "carbs": string, "fats": string },
+    "macros": { "protein": number, "carbs": number, "fats": number },
     "meals": [
       {
         "name": string,
         "time": string,
-        "foods": [ { "item": string, "amount": string, "calories": number } ]
+        "mainDish": { "item": string, "amount": string, "calories": number, "protein": number, "carbs": number, "fats": number },
+        "alternatives": [
+          { "item": string, "amount": string, "calories": number, "protein": number, "carbs": number, "fats": number }
+        ]
       }
     ]
   },
   "restDay": {
     "totalCalories": number,
-    "macros": { "protein": string, "carbs": string, "fats": string },
+    "macros": { "protein": number, "carbs": number, "fats": number },
     "meals": [
       {
         "name": string,
         "time": string,
-        "foods": [ { "item": string, "amount": string, "calories": number } ]
+        "mainDish": { "item": string, "amount": string, "calories": number, "protein": number, "carbs": number, "fats": number },
+        "alternatives": [
+           { "item": string, "amount": string, "calories": number, "protein": number, "carbs": number, "fats": number }
+        ]
       }
     ]
   }
 }
 
-NOTA: El día de descanso debe tener ~15-20% menos calorías, priorizando proteína y grasas saludables sobre carbohidratos.`;
+NOTA: El día de descanso debe tener ~15-20% menos calorías, priorizando proteína y grasas saludables sobre carbohidratos. El array alternatives de cada comida debe contener exactamente 3 opciones equivalentes en macros.`;
 
     try {
       const resultText = await this.baseAi.generateContent(prompt, true);
