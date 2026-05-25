@@ -184,12 +184,12 @@
             <div class="flex justify-between items-start mb-4 relative z-10">
               <div>
                 <h3 class="font-bold text-lg text-white tracking-wide">{{ meal.name }}</h3>
-                <span class="text-xs text-zinc-500 flex items-center gap-1 mt-1 font-mono bg-zinc-900/50 inline-block px-2 py-0.5 rounded-md border border-zinc-800">
+                <span class="text-xs text-zinc-500 inline-flex items-center gap-1 mt-1 font-mono bg-zinc-900/50 px-2 py-0.5 rounded-md border border-zinc-800">
                   <mat-icon class="text-[14px] w-[14px] h-[14px]">schedule</mat-icon> {{ meal.time }}
                 </span>
               </div>
               <div class="text-right">
-                <span class="text-lg font-black text-white block">{{ meal.mainDish?.calories || 0 }} <span class="text-xs text-zinc-500 font-normal">kcal</span></span>
+                <span class="text-lg font-black text-white block">{{ meal.mainDish.calories || 0 }} <span class="text-xs text-zinc-500 font-normal">kcal</span></span>
               </div>
             </div>
 
@@ -198,20 +198,20 @@
               <div class="flex justify-between items-start mb-2">
                 <div>
                   <span class="bg-[#CCFF00] text-black text-[9px] font-black uppercase px-2 py-0.5 rounded tracking-widest mb-2 inline-block">Plato Principal</span>
-                  <p class="text-sm font-medium text-white">{{ meal.mainDish?.item }}</p>
-                  <p class="text-xs text-zinc-400 mt-0.5">{{ meal.mainDish?.amount }}</p>
+                  <p class="text-sm font-medium text-white">{{ meal.mainDish.item }}</p>
+                  <p class="text-xs text-zinc-400 mt-0.5">{{ meal.mainDish.amount }}</p>
                 </div>
               </div>
               <!-- Macros pill -->
               <div class="flex gap-3 mt-3 text-[10px] font-mono text-zinc-500 border-t border-zinc-800/50 pt-3">
-                <span class="text-blue-400 font-bold">P: {{ meal.mainDish?.protein }}g</span>
-                <span class="text-yellow-400 font-bold">C: {{ meal.mainDish?.carbs }}g</span>
-                <span class="text-orange-400 font-bold">F: {{ meal.mainDish?.fats }}g</span>
+                <span class="text-blue-400 font-bold">P: {{ meal.mainDish.protein }}g</span>
+                <span class="text-yellow-400 font-bold">C: {{ meal.mainDish.carbs }}g</span>
+                <span class="text-orange-400 font-bold">F: {{ meal.mainDish.fats }}g</span>
               </div>
             </div>
 
             <!-- Alternatives Dropdown (Optional) -->
-            <details *ngIf="meal.alternatives?.length" class="group/details mb-5 relative z-10">
+            <details *ngIf="meal.alternatives.length" class="group/details mb-5 relative z-10">
               <summary class="text-xs text-zinc-400 font-bold uppercase tracking-widest cursor-pointer list-none flex items-center gap-1 hover:text-[#CCFF00] transition-colors select-none">
                 <mat-icon class="text-sm group-open/details:rotate-180 transition-transform">expand_more</mat-icon>
                 Ver {{ meal.alternatives.length }} Alternativas
