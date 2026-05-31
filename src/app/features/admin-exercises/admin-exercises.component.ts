@@ -344,8 +344,8 @@ export class AdminExercisesComponent implements OnInit {
     this.isSaving = true;
     const formValue = this.exerciseForm.value;
 
-    const instructionsArray = formValue.instructions 
-      ? formValue.instructions.split(';').map(s => s.trim()).filter(s => s.length > 0)
+    const instructionsArray = formValue.instructions
+      ? formValue.instructions.split(';').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
       : [];
 
     const dataToSave = {
@@ -371,13 +371,11 @@ export class AdminExercisesComponent implements OnInit {
         await setDoc(ref, dataToSave);
         this.toastService.showSuccess('¡Ejercicio guardado con éxito!');
       }
-      
       this.closeSideSheet();
       await this.loadExercises();
-      
     } catch (error) {
-      console.error('Error saving exercise:', error);
-      this.toastService.showError('Error al guardar el ejercicio.');
+      console.error('ERROR FIREBASE AL GUARDAR:', error);
+      this.toastService.showError('Error al guardar: Revisa la consola');
     } finally {
       this.isSaving = false;
     }
