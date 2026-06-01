@@ -7,6 +7,7 @@ import { Ejercicio } from '../../models/workout.model';
 export class ExerciseService {
   private firestore = inject(Firestore);
   private exercisesSignal = signal<Ejercicio[]>([]);
+  readonly exercises = this.exercisesSignal.asReadonly();
 
   constructor() {
     this.loadGlobalExercises();

@@ -36,13 +36,19 @@
     <div class="lg:col-span-8 flex flex-col h-full space-y-8">
        
        <!-- Header -->
-       <div class="space-y-2">
-           <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight">
-              DISEÑADOR <span class="text-[#CCFF00] drop-shadow-[0_0_10px_rgba(204,255,0,0.5)]">IA</span>
-           </h1>
-           <p class="text-zinc-400 max-w-2xl text-lg">
-              Describe tu objetivo de hoy. El sistema analizará tu fatiga actual (mapa izquierdo) y diseñará la sesión óptima para maximizar la hipertrofia sin sobreentrenamiento.
-           </p>
+       <div class="space-y-4">
+           <div class="space-y-2">
+               <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight">
+                  DISEÑADOR <span class="text-[#CCFF00] drop-shadow-[0_0_10px_rgba(204,255,0,0.5)]">IA</span>
+               </h1>
+               <p class="text-zinc-400 max-w-2xl text-lg">
+                  Describe tu objetivo de hoy. El sistema analizará tu fatiga actual (mapa izquierdo) y diseñará la sesión óptima para maximizar la hipertrofia sin sobreentrenamiento.
+               </p>
+           </div>
+           
+           <button routerLink="/workout-builder" class="text-xs font-bold bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg text-zinc-300 transition flex items-center w-fit gap-2">
+              <mat-icon class="text-[16px] w-[16px] h-[16px]">build</mat-icon> MODO CONSTRUCTOR MANUAL &rarr;
+           </button>
        </div>
 
        <!-- Input Area -->

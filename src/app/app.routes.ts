@@ -38,6 +38,7 @@ export const routes: Routes = [
         { path: 'timer', loadComponent: () => import('./features/timer/timer.component').then(m => m.TimerComponent) },
         { path: 'workout/:id/edit', loadComponent: () => import('./components/workout-edit/workout-edit.component').then(m => m.WorkoutEditComponent) },
         { path: 'generator', loadComponent: () => import('./features/generator/generator.component').then(m => m.GeneratorComponent) },
+        { path: 'workout-builder', loadComponent: () => import('./features/workout-builder/workout-builder.component').then(m => m.WorkoutBuilderComponent) },
         { path: 'nutrition', canActivate: [profileGuard], loadComponent: () => import('./features/nutrition/nutrition.component').then(m => m.NutritionComponent) },
         { path: 'cardio', canActivate: [profileGuard], loadComponent: () => import('./features/cardio/cardio-boxing.component').then(m => m.CardioBoxingComponent) },
         { path: 'progress', loadComponent: () => import('./features/progress/progress.component').then(m => m.ProgressComponent) },
