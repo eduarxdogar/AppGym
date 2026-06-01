@@ -11,7 +11,14 @@ interface GeminiPayload {
   history?: any[];
 }
 
-export const callGemini = onCall({ cors: true, region: 'us-central1', timeoutSeconds: 300, memory: '1GiB' }, async (request) => {
+export const callGemini = onCall({
+  cors: true,
+  region: 'us-central1',
+  timeoutSeconds: 300,
+  memory: '512MiB',
+  maxInstances: 10,
+  concurrency: 80,
+}, async (request) => {
   // 1. Validate Authentication
   if (!request.auth) {
     throw new HttpsError(

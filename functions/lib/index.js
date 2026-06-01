@@ -4,7 +4,14 @@ exports.callGemini = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const generative_ai_1 = require("@google/generative-ai");
-exports.callGemini = (0, https_1.onCall)({ cors: true, region: 'us-central1', timeoutSeconds: 300, memory: '1GiB' }, async (request) => {
+exports.callGemini = (0, https_1.onCall)({
+    cors: true,
+    region: 'us-central1',
+    timeoutSeconds: 300,
+    memory: '512MiB',
+    maxInstances: 10,
+    concurrency: 80,
+}, async (request) => {
     // 1. Validate Authentication
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "El usuario debe estar autenticado para usar la IA.");
