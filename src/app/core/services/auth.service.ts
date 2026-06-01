@@ -9,8 +9,8 @@ export class AuthService {
   private auth = inject(Auth);
   private router = inject(Router);
 
-  // Private writable signal
-  private _currentUser = signal<User | null>(null);
+  // Private writable signal initialized as undefined to represent 'loading' state
+  private _currentUser = signal<User | null | undefined>(undefined);
   
   // Public readonly signal
   readonly currentUser = this._currentUser.asReadonly();
@@ -29,6 +29,7 @@ export class AuthService {
   async loginWithGoogle(): Promise<void> {
     try {
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' }); // FORZAR SELECCIÓN DE CUENTA
       await signInWithPopup(this.auth, provider);
       // onAuthStateChanged will update the signal
       this.router.navigate(['/']); // Redirect to home/dashboard

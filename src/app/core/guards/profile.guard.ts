@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
-import { Auth, user } from '@angular/fire/auth';
+import { Auth, authState } from '@angular/fire/auth';
 import { UserProfileService } from '../services/user-profile.service';
 import { switchMap, map, take } from 'rxjs/operators';
 import { from } from 'rxjs';
@@ -15,7 +15,7 @@ export const profileGuard: CanActivateFn = () => {
   const auth = inject(Auth);
   const profileService = inject(UserProfileService);
 
-  return user(auth).pipe(
+  return authState(auth).pipe(
     take(1),
     switchMap(currentUser => {
       if (!currentUser) {
