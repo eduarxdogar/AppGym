@@ -7,6 +7,7 @@ import { UserProfileService } from '../../core/services/user-profile.service';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { UserProfile } from '../../models/user-profile.model';
 import { InbodyAiService } from '../../core/services/ai/inbody-ai.service';
+import { ToastService } from '../../core/services/toast.service';
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const EQUIPMENT = ['Mancuernas', 'Barra', 'Máquinas', 'Bandas', 'Polea', 'Kettlebells', 'Calistenia'];
@@ -29,6 +30,7 @@ export class OnboardingComponent {
   private readonly profileService = inject(UserProfileService);
   private readonly profileState = inject(UserProfileStateService);
   private readonly aiCoach = inject(InbodyAiService);
+  private readonly toastService = inject(ToastService);
   private readonly router = inject(Router);
 
   step = signal(0);
@@ -129,9 +131,13 @@ export class OnboardingComponent {
           segmentalMuscle: result.segmentalMuscle || undefined,
           segmentalFat: result.segmentalFat || undefined
         };
-      } catch (err) {
+      } catch (err: any) {
         console.error('InBody Scan failed:', err);
-        // Silently fail – InBody is optional
+        if (err.code === 'resource-exhausted' || (err.message && err.message.includes('429'))) {
+          this.toastService.showWarning('Límite de IA alcanzado. Por favor, intenta de nuevo en unos minutos.');
+        } else {
+          this.toastService.showError('Falla de conexión con el servidor IA.');
+        }
       } finally {
         this.scanningInBody.set(false);
       }

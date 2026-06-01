@@ -25,7 +25,7 @@ export class BaseAiService {
         return (result.data as any).text as string;
     } catch (e: any) {
         console.error("Error callGemini", e);
-        throw new Error(e.message || "Error al contactar IA.");
+        throw e;
     }
   }
 

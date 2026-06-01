@@ -73,6 +73,12 @@ export const callGemini = onCall({ cors: true, region: 'us-central1', timeoutSec
     return { text: result.response.text() };
   } catch (error: any) {
     logger.error("Gemini Error:", error);
-    throw new HttpsError("internal", error.message || "Error desconocido en Gemini");
+    
+    // Check if it's a quota/rate limit error (429)
+    if (error.status === 429 || (error.message && error.message.includes('429'))) {
+      throw new HttpsError('resource-exhausted', 'Límite de cuota excedido temporalmente.');
+    }
+    
+    throw new HttpsError("internal", "Error interno procesando el documento.");
   }
 });
