@@ -256,6 +256,7 @@ import { WorkoutSession } from '../../core/models/workout-history.model';
          *ngIf="showSummaryModal()"
          [cycleStartDate]="cycleStartDate()"
          [cycleEndDate]="cycleEndDate()"
+         (onClose)="showSummaryModal.set(false)"
          (onRollover)="doRollover($event)">
        </app-weekly-summary-modal>
     </div>

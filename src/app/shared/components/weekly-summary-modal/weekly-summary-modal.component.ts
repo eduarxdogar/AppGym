@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
@@ -13,11 +13,19 @@ import { WorkoutSession } from '../../../core/models/workout-history.model';
   template: `
     <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
       <div class="bg-[#151921] border border-zinc-700 rounded-3xl p-8 w-full max-w-md shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-500 min-h-[400px] flex flex-col justify-center">
-        
+
         <!-- Ambient Glow -->
         <div class="absolute top-[-20%] left-[-20%] w-[200px] h-[200px] bg-[#CCFF00]/20 blur-[80px] pointer-events-none"></div>
 
-        <!-- LOADING STATE (Spinner) -->
+        <!-- ── CLOSE BUTTON (always visible, never hidden during generation) ── -->
+        <button *ngIf="!isGenerating()"
+                (click)="close()"
+                class="absolute top-4 right-4 z-20 h-8 w-8 rounded-full bg-zinc-800/80 border border-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 hover:border-zinc-500 transition-all duration-200"
+                title="Cerrar resumen">
+          <mat-icon class="text-base" style="font-size:18px;width:18px;height:18px;line-height:18px;">close</mat-icon>
+        </button>
+
+        <!-- LOADING STATE -->
         <div *ngIf="isGenerating()" class="flex flex-col items-center justify-center space-y-6 relative z-10 py-10">
            <div class="relative h-20 w-20">
               <div class="absolute inset-0 border-4 border-zinc-800 rounded-full"></div>
@@ -39,14 +47,17 @@ import { WorkoutSession } from '../../../core/models/workout-history.model';
             <p class="text-zinc-400 text-sm mt-2">Has dominado tu plan semanal. Este es tu impacto real:</p>
           </div>
 
-          <!-- Metrics Grid — driven by microcycle-scoped sessions -->
+          <!-- Metrics Grid — microcycle-scoped, real data -->
           <div class="grid grid-cols-2 gap-4 mb-8 relative z-10">
+
+            <!-- Días Entrenados -->
             <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 text-center">
               <mat-icon class="text-blue-400 mb-1">event_available</mat-icon>
               <div class="text-2xl font-black text-white">{{ cycleSessionsCount() }}</div>
               <div class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Días Entrenados</div>
             </div>
 
+            <!-- Tonelaje -->
             <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 text-center">
               <mat-icon class="text-[#CCFF00] mb-1">fitness_center</mat-icon>
               <div class="text-2xl font-black text-white">
@@ -55,11 +66,12 @@ import { WorkoutSession } from '../../../core/models/workout-history.model';
               <div class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Tonelaje Total</div>
             </div>
 
+            <!-- Calorías quemadas (real sum) + Series — full-width row -->
             <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 text-center col-span-2 flex items-center justify-center gap-6">
               <div>
-                <mat-icon class="text-orange-400 mb-1">timer</mat-icon>
-                <div class="text-2xl font-black text-white">~{{ cycleSessionsCount() * 60 }}</div>
-                <div class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Minutos Bajo Tensión</div>
+                <mat-icon class="text-orange-400 mb-1">local_fire_department</mat-icon>
+                <div class="text-2xl font-black text-white">~{{ cycleCalories() | number:'1.0-0' }}</div>
+                <div class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Calorías Quemadas</div>
               </div>
               <div class="h-10 w-px bg-zinc-800"></div>
               <div>
@@ -71,9 +83,9 @@ import { WorkoutSession } from '../../../core/models/workout-history.model';
           </div>
 
           <!-- CTA Button -->
-          <button (click)="step.set(2)" 
+          <button (click)="step.set(2)"
                   class="w-full py-4 bg-[#CCFF00] hover:bg-[#bbe600] text-black font-extrabold text-sm uppercase tracking-widest rounded-xl shadow-[0_0_20px_rgba(204,255,0,0.3)] hover:shadow-[0_0_30px_rgba(204,255,0,0.5)] transition-all flex items-center justify-center gap-2 relative z-10 group">
-            <mat-icon class="group-hover:rotate-12 transition-transform">tune</mat-icon> 
+            <mat-icon class="group-hover:rotate-12 transition-transform">tune</mat-icon>
             Configurar Próxima Semana
           </button>
         </div>
@@ -127,7 +139,7 @@ import { WorkoutSession } from '../../../core/models/workout-history.model';
             <button (click)="step.set(1)" class="px-4 py-4 rounded-xl border border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white transition flex items-center justify-center">
                <mat-icon>arrow_back</mat-icon>
             </button>
-            <button (click)="submitRollover()" 
+            <button (click)="submitRollover()"
                     class="flex-1 py-4 bg-[#CCFF00] hover:bg-[#bbe600] text-black font-extrabold text-sm uppercase tracking-widest rounded-xl shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-all flex items-center justify-center gap-2">
               <mat-icon>auto_awesome</mat-icon> Planificar con IA Coach
             </button>
@@ -142,6 +154,8 @@ export class WeeklySummaryModalComponent {
   private metricsService = inject(MetricsService);
 
   @Output() onRollover = new EventEmitter<ProgressionOptions>();
+  /** Emitted when the user clicks the X or "Cerrar" without configuring the next cycle. */
+  @Output() onClose = new EventEmitter<void>();
 
   /** Start date of the current microcycle (earliest workout fecha in the plan). */
   @Input() cycleStartDate: Date = new Date();
@@ -158,15 +172,9 @@ export class WeeklySummaryModalComponent {
 
   // ── Microcycle-scoped metrics ─────────────────────────────────────────────
 
-  private get cycleSessions(): WorkoutSession[] {
-    return this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
-  }
-
-  cycleSessionsCount = computed(() => {
-    // Re-evaluate whenever inputs change. We reference cycleStartDate/cycleEndDate
-    // as plain values so Angular change detection re-runs this on input change.
-    return this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate).length;
-  });
+  cycleSessionsCount = computed(() =>
+    this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate).length
+  );
 
   cycleVolume = computed(() => {
     const sessions = this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
@@ -183,6 +191,25 @@ export class WeeklySummaryModalComponent {
     }, 0);
   });
 
+  /**
+   * Real calorie sum from WorkoutSession.calories.
+   * Falls back to duration-based estimate (MET 5 × 75 kg) when calories
+   * were not stored — consistent with MetricsService.gymCalories logic.
+   */
+  cycleCalories = computed(() => {
+    const sessions = this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
+    return Math.round(sessions.reduce((acc, s) => {
+      if (s.calories && s.calories > 0) return acc + s.calories;
+      // Estimate from session timing
+      let durationH = 1;
+      if (s.endTime && s.startTime) {
+        const ms = new Date(s.endTime).getTime() - new Date(s.startTime).getTime();
+        if (ms > 0) durationH = ms / 3_600_000;
+      }
+      return acc + 5.0 * 75 * durationH;
+    }, 0));
+  });
+
   cycleTotalSets = computed(() => {
     const sessions = this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
     return sessions.reduce((total, session) => {
@@ -193,6 +220,13 @@ export class WeeklySummaryModalComponent {
       }, 0);
     }, 0);
   });
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+
+  /** Dismiss the modal without triggering progression/rollover. */
+  close() {
+    this.onClose.emit();
+  }
 
   submitRollover() {
     this.isGenerating.set(true);

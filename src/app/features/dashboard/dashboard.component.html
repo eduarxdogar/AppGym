@@ -197,7 +197,7 @@
     <!-- SECTION: TRENDS -->
     <div>
        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xs font-bold text-slate-500 tracking-widest uppercase">Tendencias · Últimos 7 días</h3>
+          <h3 class="text-xs font-bold text-slate-500 tracking-widest uppercase">Tendencias · Microciclo Actual</h3>
        </div>
        
        <div class="grid grid-cols-2 gap-3">
@@ -207,7 +207,7 @@
                 <mat-icon class="text-zinc-500 group-hover:text-white transition">event_note</mat-icon>
                 <div>
                   <span class="block text-slate-300 text-sm font-bold">Sesiones</span>
-                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">{{ metrics().workoutsCount }}</span>
+                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">{{ cycleWorkoutsCount() }}</span>
                 </div>
              </div>
              <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
@@ -220,9 +220,9 @@
                 <div>
                   <span class="block text-slate-300 text-sm font-bold">Tonelaje</span>
                   <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">
-                    {{ metrics().totalVolume >= 1000
-                         ? (metrics().totalVolume / 1000 | number:'1.1-1') + 't'
-                         : (metrics().totalVolume | number:'1.0-0') + ' kg' }}
+                    {{ cycleTotalVolume() >= 1000
+                         ? (cycleTotalVolume() / 1000 | number:'1.1-1') + 't'
+                         : (cycleTotalVolume() | number:'1.0-0') + ' kg' }}
                   </span>
                 </div>
              </div>
@@ -235,7 +235,7 @@
                 <mat-icon class="text-zinc-500 group-hover:text-white transition">local_fire_department</mat-icon>
                 <div>
                   <span class="block text-slate-300 text-sm font-bold">Calorías</span>
-                  <span class="block text-orange-400 text-lg font-extrabold leading-none mt-0.5">~{{ metrics().estimatedCalories | number:'1.0-0' }}</span>
+                  <span class="block text-orange-400 text-lg font-extrabold leading-none mt-0.5">~{{ cycleEstimatedCalories() | number:'1.0-0' }}</span>
                 </div>
              </div>
              <mat-icon class="text-zinc-600 group-hover:text-[#ff6600]">chevron_right</mat-icon>
@@ -247,7 +247,7 @@
                 <mat-icon class="text-zinc-500 group-hover:text-white transition">repeat</mat-icon>
                 <div>
                   <span class="block text-slate-300 text-sm font-bold">Series</span>
-                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">{{ metrics().totalSets }}</span>
+                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">{{ cycleTotalSets() }}</span>
                 </div>
              </div>
              <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>

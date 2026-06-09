@@ -42,6 +42,73 @@ export class DashboardComponent {
   // Expose User for Template
   currentUser = this.authService.currentUser;
 
+  // ── Microcycle date range (from the active plan workouts) ──────────────────
+  // These become the Single Source of Truth for the Trends section,
+  // replacing the fixed 7-day rolling window.
+  private sortedPlanWorkouts = computed<Workout[]>(() =>
+    [...this.workouts()].sort(
+      (a, b) => new Date(a.fecha ?? 0).getTime() - new Date(b.fecha ?? 0).getTime()
+    )
+  );
+
+  /** Earliest workout date in the current plan (start of active microcycle). */
+  cycleStartDate = computed<Date>(() => {
+    const ws = this.sortedPlanWorkouts();
+    return ws.length > 0 ? new Date(ws[0].fecha!) : new Date();
+  });
+
+  /** Latest workout date in the current plan (end of active microcycle). */
+  cycleEndDate = computed<Date>(() => {
+    const ws = this.sortedPlanWorkouts();
+    return ws.length > 0 ? new Date(ws[ws.length - 1].fecha!) : new Date();
+  });
+
+  // ── Cycle-scoped metrics (SSoT — same query as the summary modal) ──────────
+
+  /** Sessions completed within the current microcycle date range. */
+  private cycleSessions = computed(() =>
+    this.metricsService.getMicrocycleSessions(this.cycleStartDate(), this.cycleEndDate())
+  );
+
+  cycleWorkoutsCount = computed(() => this.cycleSessions().length);
+
+  cycleTotalVolume = computed(() =>
+    this.cycleSessions().reduce((total, s) => {
+      const exs = s.exercises || s.ejercicios || [];
+      return total + exs.reduce((acc, ex) => {
+        const sets = ex.sets || ex.series || [];
+        return acc + sets.reduce((sv, set) => {
+          const reps   = Number(set.reps   || set.repeticiones || 0);
+          const weight = Number(set.weight || set.peso || set.pesokg || 0);
+          return sv + reps * weight;
+        }, 0);
+      }, 0);
+    }, 0)
+  );
+
+  cycleEstimatedCalories = computed(() =>
+    Math.round(this.cycleSessions().reduce((acc, s) => {
+      // Use stored calories if available, otherwise estimate from duration
+      if (s.calories && s.calories > 0) return acc + s.calories;
+      let durationH = 1;
+      if (s.endTime && s.startTime) {
+        const ms = new Date(s.endTime).getTime() - new Date(s.startTime).getTime();
+        if (ms > 0) durationH = ms / 3_600_000;
+      }
+      return acc + 5.0 * 75 * durationH; // MET 5 × default weight 75 kg
+    }, 0))
+  );
+
+  cycleTotalSets = computed(() =>
+    this.cycleSessions().reduce((total, s) => {
+      const exs = s.exercises || s.ejercicios || [];
+      return total + exs.reduce((acc, ex) => {
+        const sets = ex.sets || ex.series || [];
+        return acc + sets.filter(set => set.completed !== false).length;
+      }, 0);
+    }, 0)
+  );
+
   // Computed: Saludo Dinámico (objeto con dos partes para estilizado premium)
   dynamicGreeting = computed<{ prefix: string; highlight: string }>(() => {
     const hours = new Date().getHours();
