@@ -142,5 +142,85 @@
       </div>
     </div>
 
+    <!-- ════════════════════════════════════════════════════════════════════
+         DEV-ONLY: Database Migration Panel
+         Visible ONLY when running with `ng serve` (isDevMode() === true).
+         This section is tree-shaken out of production builds.
+         ════════════════════════════════════════════════════════════════════ -->
+    <div *ngIf="isDev" class="bg-[#0f1117] border border-amber-500/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+      <!-- Corner badge -->
+      <div class="absolute top-3 right-3 px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded-full">
+        <span class="text-[9px] font-black text-amber-400 uppercase tracking-widest">DEV ONLY</span>
+      </div>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="h-10 w-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+          <mat-icon class="text-amber-400">storage</mat-icon>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-white">Migración de Base de Datos</h3>
+          <p class="text-[11px] text-zinc-500 mt-0.5">Retrocompatibilidad: backfill de <code class="text-amber-400">microcycleId</code>, <code class="text-amber-400">originWorkoutId</code> y remapeo de grupos musculares legacy.</p>
+        </div>
+      </div>
+
+      <!-- Warning note -->
+      <div class="flex items-start gap-2 bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 mb-5">
+        <mat-icon class="text-amber-400 text-base flex-shrink-0 mt-0.5">warning</mat-icon>
+        <p class="text-[11px] text-amber-300/80 leading-relaxed">
+          Ejecutar una sola vez por usuario. El script es <strong class="text-amber-300">idempotente</strong> (seguro de re-ejecutar), pero las escrituras a Firestore tienen costo. Documentos ya migrados son omitidos automáticamente.
+        </p>
+      </div>
+
+      <!-- Run Button -->
+      <button (click)="runMigration()" [disabled]="isMigrating()"
+              class="w-full py-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-300 font-bold text-sm uppercase tracking-widest hover:bg-amber-500/20 hover:border-amber-500/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+        <ng-container *ngIf="!isMigrating()">
+          <mat-icon class="text-amber-400">bolt</mat-icon> Ejecutar Migración
+        </ng-container>
+        <ng-container *ngIf="isMigrating()">
+          <div class="h-4 w-4 border-2 border-amber-500/30 border-t-amber-400 rounded-full animate-spin"></div>
+          <span>Migrando documentos...</span>
+        </ng-container>
+      </button>
+
+      <!-- Migration Report -->
+      <div *ngIf="migrationReport()" class="mt-5 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div class="h-px bg-amber-500/15"></div>
+        <p class="text-[10px] font-bold text-amber-400/60 uppercase tracking-widest">Reporte de Migración</p>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div class="bg-zinc-900/60 border border-zinc-800 rounded-xl p-3 text-center">
+            <div class="text-xl font-black text-white">{{ migrationReport()!.totalRead }}</div>
+            <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mt-0.5">Leídos</div>
+          </div>
+          <div class="bg-zinc-900/60 border border-zinc-800 rounded-xl p-3 text-center">
+            <div class="text-xl font-black" [class.text-[#CCFF00]]="migrationReport()!.totalPatched > 0" [class.text-zinc-500]="migrationReport()!.totalPatched === 0">{{ migrationReport()!.totalPatched }}</div>
+            <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mt-0.5">Migrados</div>
+          </div>
+          <div class="bg-zinc-900/60 border border-zinc-800 rounded-xl p-3 text-center">
+            <div class="text-xl font-black text-zinc-400">{{ migrationReport()!.totalSkipped }}</div>
+            <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mt-0.5">Omitidos</div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] text-zinc-500 px-1">
+          <span>Batches: <strong class="text-zinc-300">{{ migrationReport()!.batchesCommitted }}</strong></span>
+          <span>Duración: <strong class="text-zinc-300">{{ migrationReport()!.durationMs }}ms</strong></span>
+        </div>
+
+        <!-- Errors -->
+        <div *ngIf="migrationReport()!.errors.length > 0" class="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+          <p class="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-2">Errores ({{ migrationReport()!.errors.length }})</p>
+          <p *ngFor="let err of migrationReport()!.errors" class="text-[11px] text-red-300/80 font-mono">{{ err }}</p>
+        </div>
+
+        <!-- Success state -->
+        <div *ngIf="migrationReport()!.errors.length === 0" class="flex items-center gap-2 text-[11px] text-[#CCFF00]/80">
+          <mat-icon class="text-[#CCFF00] text-base">check_circle</mat-icon>
+          Migración completada sin errores.
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>

@@ -1,4 +1,4 @@
-import { Component, inject, effect, signal } from '@angular/core';
+import { Component, inject, effect, signal, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
@@ -9,6 +9,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { GamificationService } from '../../core/services/gamification.service';
+import { DatabaseMigrationService, MigrationReport } from '../../core/services/database-migration.service';
 
 @Component({
   selector: 'app-profile',
@@ -24,6 +25,10 @@ export class ProfileComponent {
   private userProfileState = inject(UserProfileStateService);
   private userProfileService = inject(UserProfileService);
   private gamificationService = inject(GamificationService);
+  private migrationService = inject(DatabaseMigrationService);
+
+  /** True when running under `ng serve` (development mode). Controls dev-only UI. */
+  readonly isDev = isDevMode();
 
   currentUser = this.authService.currentUser;
   userProfile = this.userProfileState.profile;
@@ -43,6 +48,10 @@ export class ProfileComponent {
   selectedEquipment = signal<string[]>([]);
   isSaving = signal<boolean>(false);
   isUploading = signal<boolean>(false);
+
+  // ── Migration state (dev-only) ────────────────────────────────────────────
+  isMigrating = signal<boolean>(false);
+  migrationReport = signal<MigrationReport | null>(null);
 
   constructor() {
     effect(() => {
@@ -109,5 +118,23 @@ export class ProfileComponent {
 
   goBack() {
     this.router.navigate(['/dashboard']);
+  }
+
+  /**
+   * DEV-ONLY: Runs the Firestore backfill migration.
+   * Visible only in development builds (isDevMode() === true).
+   */
+  async runMigration() {
+    if (this.isMigrating()) return;
+    this.isMigrating.set(true);
+    this.migrationReport.set(null);
+    try {
+      const report = await this.migrationService.migrateLegacyWorkoutHistory();
+      this.migrationReport.set(report);
+    } catch (err) {
+      console.error('Migration failed:', err);
+    } finally {
+      this.isMigrating.set(false);
+    }
   }
 }

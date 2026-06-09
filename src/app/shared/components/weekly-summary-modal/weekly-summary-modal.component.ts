@@ -1,9 +1,10 @@
-import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { MetricsService } from '../../../core/services/metrics.service';
 import { ProgressionOptions } from '../../../core/services/progression-engine.service';
+import { WorkoutSession } from '../../../core/models/workout-history.model';
 
 @Component({
   selector: 'app-weekly-summary-modal',
@@ -38,18 +39,18 @@ import { ProgressionOptions } from '../../../core/services/progression-engine.se
             <p class="text-zinc-400 text-sm mt-2">Has dominado tu plan semanal. Este es tu impacto real:</p>
           </div>
 
-          <!-- Metrics Grid -->
+          <!-- Metrics Grid — driven by microcycle-scoped sessions -->
           <div class="grid grid-cols-2 gap-4 mb-8 relative z-10">
             <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 text-center">
               <mat-icon class="text-blue-400 mb-1">event_available</mat-icon>
-              <div class="text-2xl font-black text-white">{{ metrics().workoutsCount }}</div>
+              <div class="text-2xl font-black text-white">{{ cycleSessionsCount() }}</div>
               <div class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Días Entrenados</div>
             </div>
 
             <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 text-center">
               <mat-icon class="text-[#CCFF00] mb-1">fitness_center</mat-icon>
               <div class="text-2xl font-black text-white">
-                {{ metrics().totalVolume >= 1000 ? (metrics().totalVolume / 1000 | number:'1.1-1') + 't' : (metrics().totalVolume | number:'1.0-0') + 'kg' }}
+                {{ cycleVolume() >= 1000 ? (cycleVolume() / 1000 | number:'1.1-1') + 't' : (cycleVolume() | number:'1.0-0') + 'kg' }}
               </div>
               <div class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Tonelaje Total</div>
             </div>
@@ -57,13 +58,13 @@ import { ProgressionOptions } from '../../../core/services/progression-engine.se
             <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 text-center col-span-2 flex items-center justify-center gap-6">
               <div>
                 <mat-icon class="text-orange-400 mb-1">timer</mat-icon>
-                <div class="text-2xl font-black text-white">~{{ metrics().workoutsCount * 60 }}</div>
+                <div class="text-2xl font-black text-white">~{{ cycleSessionsCount() * 60 }}</div>
                 <div class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Minutos Bajo Tensión</div>
               </div>
               <div class="h-10 w-px bg-zinc-800"></div>
               <div>
                 <mat-icon class="text-purple-400 mb-1">repeat</mat-icon>
-                <div class="text-2xl font-black text-white">{{ metrics().totalSets }}</div>
+                <div class="text-2xl font-black text-white">{{ cycleTotalSets() }}</div>
                 <div class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Series Efectivas</div>
               </div>
             </div>
@@ -139,21 +140,62 @@ import { ProgressionOptions } from '../../../core/services/progression-engine.se
 })
 export class WeeklySummaryModalComponent {
   private metricsService = inject(MetricsService);
-  metrics = this.metricsService.weeklyMetrics;
 
   @Output() onRollover = new EventEmitter<ProgressionOptions>();
+
+  /** Start date of the current microcycle (earliest workout fecha in the plan). */
+  @Input() cycleStartDate: Date = new Date();
+  /** End date of the current microcycle (latest workout fecha in the plan). */
+  @Input() cycleEndDate: Date = new Date();
 
   // State
   step = signal<1 | 2>(1);
   isGenerating = signal(false);
-  
+
   // Form Models
   selectedFocus = signal<'weight' | 'volume'>('weight');
   frequencyAdj = signal<number>(0);
 
+  // ── Microcycle-scoped metrics ─────────────────────────────────────────────
+
+  private get cycleSessions(): WorkoutSession[] {
+    return this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
+  }
+
+  cycleSessionsCount = computed(() => {
+    // Re-evaluate whenever inputs change. We reference cycleStartDate/cycleEndDate
+    // as plain values so Angular change detection re-runs this on input change.
+    return this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate).length;
+  });
+
+  cycleVolume = computed(() => {
+    const sessions = this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
+    return sessions.reduce((total, session) => {
+      const exercises = session.exercises || session.ejercicios || [];
+      return total + exercises.reduce((acc, ex) => {
+        const sets = ex.sets || ex.series || [];
+        return acc + sets.reduce((s, set) => {
+          const reps = Number(set.reps || set.repeticiones || 0);
+          const weight = Number(set.weight || set.peso || set.pesokg || 0);
+          return s + (reps * weight);
+        }, 0);
+      }, 0);
+    }, 0);
+  });
+
+  cycleTotalSets = computed(() => {
+    const sessions = this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
+    return sessions.reduce((total, session) => {
+      const exercises = session.exercises || session.ejercicios || [];
+      return total + exercises.reduce((acc, ex) => {
+        const sets = ex.sets || ex.series || [];
+        return acc + sets.filter(s => s.completed !== false).length;
+      }, 0);
+    }, 0);
+  });
+
   submitRollover() {
     this.isGenerating.set(true);
-    // Let the parent component handle the delay and saving logic
     this.onRollover.emit({
       focus: this.selectedFocus(),
       frequencyAdjustment: this.frequencyAdj()

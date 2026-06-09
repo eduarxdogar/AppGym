@@ -109,7 +109,13 @@ export class DashboardComponent {
     const map: Record<string, string> = {
       'pecho': 'Pecho', 'pectorales': 'Pecho',
       'espalda': 'Espalda', 'dorsales': 'Espalda',
-      'hombros': 'Hombros', 'deltoides': 'Hombros',
+      // Generic shoulder → Hombro Lateral (default head)
+      'hombros': 'Hombro Lateral', 'deltoides': 'Hombro Lateral',
+      // Specific deltoid heads
+      'hombro anterior': 'Hombro Anterior', 'deltoides anterior': 'Hombro Anterior',
+      'hombro lateral': 'Hombro Lateral',   'deltoides lateral': 'Hombro Lateral',
+      'hombro posterior': 'Hombro Posterior', 'deltoides posterior': 'Hombro Posterior',
+      // Arms / legs
       'bíceps': 'Bíceps', 'tríceps': 'Tríceps',
       'cuádriceps': 'Cuádriceps', 'isquios': 'Isquios',
       'glúteos': 'Glúteos', 'gemelos': 'Gemelos', 'core': 'Core'

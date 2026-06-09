@@ -54,13 +54,30 @@ export class MetricsService {
   // ─── History-based computeds (SOURCE OF TRUTH for completions) ────────
 
   readonly last7DaysSessions = computed<WorkoutSession[]>(() =>
-    this.history().filter(s =>
+    (this.history() ?? []).filter(s =>
       this.isWithinLastNDays(s.endTime || s.startTime || s.fecha, 7)
     )
   );
 
   /** Number of distinct gym sessions in the last 7 days */
   readonly workoutsCount = computed<number>(() => this.last7DaysSessions().length);
+
+  /**
+   * Returns sessions completed within an exact microcycle date range.
+   * Used by the weekly-summary modal so the count matches the real cycle,
+   * not a rolling 7-day window.
+   */
+  getMicrocycleSessions(startDate: Date, endDate: Date): WorkoutSession[] {
+    const start = startDate.getTime();
+    // Include the full end day (23:59:59.999)
+    const end = new Date(endDate).setHours(23, 59, 59, 999);
+    return (this.history() ?? []).filter(s => {
+      const raw = s.endTime || s.startTime || s.fecha;
+      if (!raw) return false;
+      const t = new Date(raw).getTime();
+      return t >= start && t <= end;
+    });
+  }
 
   /** Total lifted volume from history (reps × weight) in the last 7 days */
   readonly totalVolume = computed<number>(() =>
