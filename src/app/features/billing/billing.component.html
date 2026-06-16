@@ -1,0 +1,46 @@
+<div class="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+  <div class="max-w-md w-full bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-700">
+    <div class="p-8">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 mb-2">
+          Lleva tu entrenamiento al siguiente nivel
+        </h2>
+        <p class="text-slate-400">Tu periodo de prueba ha terminado. Suscríbete para continuar transformando tu físico.</p>
+      </div>
+
+      <div class="space-y-4 mb-8">
+        <div class="flex items-center text-slate-300">
+          <svg class="w-6 h-6 text-emerald-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span class="font-medium">Entrenador IA Personalizado</span>
+        </div>
+        <div class="flex items-center text-slate-300">
+          <svg class="w-6 h-6 text-emerald-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span class="font-medium">Planes Nutricionales a Medida</span>
+        </div>
+        <div class="flex items-center text-slate-300">
+          <svg class="w-6 h-6 text-emerald-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span class="font-medium">Análisis y Tracker de Progreso</span>
+        </div>
+      </div>
+
+      <button 
+        (click)="pay()" 
+        [disabled]="isLoading()"
+        class="w-full flex items-center justify-center px-6 py-4 border border-transparent text-base font-bold rounded-xl text-slate-900 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:ring-offset-slate-900 transition-all shadow-lg hover:shadow-emerald-500/25 disabled:opacity-70 disabled:cursor-not-allowed">
+        
+        <svg *ngIf="isLoading()" class="animate-spin -ml-1 mr-3 h-5 w-5 text-slate-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        
+        <span>{{ isLoading() ? 'Generando sesión...' : 'Suscribirse por 30.000 COP / mes' }}</span>
+      </button>
+    </div>
+  </div>
+</div>
