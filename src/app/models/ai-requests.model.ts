@@ -20,6 +20,13 @@ export interface MealPlan {
   time: string;
   mainDish: MealFood;
   alternatives: MealFood[];
+  /**
+   * Set to true by Gemini when the meal is a sponsored Seeleg product recommendation.
+   * Only present when the user has opted in via useSeelegSupplements.
+   */
+  isSponsored?: boolean;
+  /** Brand name for the sponsorship badge. Currently: 'Seeleg'. */
+  sponsorBrand?: string;
 }
 
 export interface DayDietPlan {

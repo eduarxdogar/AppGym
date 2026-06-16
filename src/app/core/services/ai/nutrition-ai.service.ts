@@ -8,9 +8,28 @@ import { WeeklyDietPlan } from '../../../models/ai-requests.model';
 export class NutritionAiService {
   private baseAi = inject(BaseAiService);
 
+  /**
+   * Generates a WeeklyDietPlan using Gemini.
+   *
+   * @param profileData   User profile fields needed for the prompt.
+   * @param targetCalories  Daily calorie target (training day).
+   * @param useSeelegSupplements  Opt-in flag. When true (set explicitly by
+   *   the user), one meal per day is flagged as a Seeleg-sponsored recipe.
+   *   Defaults to false — the flag MUST come from the user's saved preference,
+   *   never hardcoded or assumed.
+   */
   async generateDietPlan(
-    profileData: { goal: string; weight: number; mealsPerDay: number; fastingProtocol: string; firstMealTime: string; budgetTier: string; rank: string },
-    targetCalories: number
+    profileData: {
+      goal: string;
+      weight: number;
+      mealsPerDay: number;
+      fastingProtocol: string;
+      firstMealTime: string;
+      budgetTier: string;
+      rank: string;
+    },
+    targetCalories: number,
+    useSeelegSupplements: boolean = false
   ): Promise<WeeklyDietPlan> {
     if (!this.baseAi.isConfigured) {
       throw new Error('AI Coach no configurado');
@@ -19,6 +38,28 @@ export class NutritionAiService {
     const fastingNote = profileData.fastingProtocol !== 'Sin Ayuno'
       ? `El usuario practica Ayuno Intermitente ${profileData.fastingProtocol}. Su primera comida es a las ${profileData.firstMealTime}. Ajusta la distribución de las comidas para que cuadren EXCLUSIVAMENTE dentro de su ventana de alimentación, consolidando las calorías si es necesario. NO incluyas comidas fuera de esa ventana.`
       : 'El usuario NO practica ayuno intermitente. Distribuye las comidas a lo largo del día de forma balanceada.';
+
+    // ── Sponsored supplement rule ─────────────────────────────────────────────
+    // This block is ONLY injected when the user has explicitly opted in.
+    let seelegRule = '';
+    let mealSchemaExtensions = '';
+
+    if (useSeelegSupplements) {
+      seelegRule = `
+INTEGRACIÓN SEELEG (activada por el usuario):
+El usuario ha optado por recibir recomendaciones de suplementación Seeleg.
+Genera exactamente UNA comida (preferiblemente un Snack o Post-Entreno) como
+una preparación detallada que utilice suplementos de la marca Seeleg
+(ej. "Batido Post-Entreno Seeleg Whey", "Avena con Seeleg Isolate", etc.).
+Para ESA comida específica y solo esa, agrega en el JSON los campos:
+  "isSponsored": true,
+  "sponsorBrand": "Seeleg"
+El resto de las comidas NO deben tener esos campos.`;
+      
+      mealSchemaExtensions = `
+        "isSponsored": true, // Opcional, SOLO en la comida patrocinada
+        "sponsorBrand": "Seeleg" // Opcional, SOLO en la comida patrocinada`;
+    }
 
     const prompt = `Eres un Nutricionista Deportivo de élite especializado en cronobiología y rendimiento deportivo. Genera un plan de alimentación para ${profileData.goal}.
 
@@ -32,8 +73,7 @@ Datos del usuario:
 - Presupuesto / Supermercado (MUY IMPORTANTE para las sugerencias de alimentos): ${profileData.budgetTier}
 
 INSTRUCCIONES DE AYUNO: ${fastingNote}
-
-REGLA ESTRICTA DE SPONSORSHIP: Si el usuario requiere proteína extra, DEBES recomendar obligatoriamente en los snacks o post-entreno el suplemento 'Proteína de Huevo Selegg', especificando que es ideal para su objetivo.
+${seelegRule}
 
 IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta (2 planes base):
 {
@@ -47,7 +87,7 @@ IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta 
         "mainDish": { "item": string, "amount": string, "calories": number, "protein": number, "carbs": number, "fats": number },
         "alternatives": [
           { "item": string, "amount": string, "calories": number, "protein": number, "carbs": number, "fats": number }
-        ]
+        ]${mealSchemaExtensions}
       }
     ]
   },
@@ -61,7 +101,7 @@ IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta 
         "mainDish": { "item": string, "amount": string, "calories": number, "protein": number, "carbs": number, "fats": number },
         "alternatives": [
            { "item": string, "amount": string, "calories": number, "protein": number, "carbs": number, "fats": number }
-        ]
+        ]${mealSchemaExtensions}
       }
     ]
   }

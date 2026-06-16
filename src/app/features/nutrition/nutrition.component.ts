@@ -7,6 +7,7 @@ import { NutritionAiService } from '../../core/services/ai/nutrition-ai.service'
 import { WeeklyDietPlan, DayDietPlan, MealPlan } from '../../models/ai-requests.model';
 import { NutritionService, DailyNutritionLog } from '../../core/services/nutrition.service';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
+import { UserProfileService } from '../../core/services/user-profile.service';
 import { GamificationService } from '../../core/services/gamification.service';
 
 @Component({
@@ -20,7 +21,15 @@ export class NutritionComponent implements OnInit {
   private aiCoach = inject(NutritionAiService);
   private nutritionService = inject(NutritionService);
   private profileState = inject(UserProfileStateService);
+  private profileService = inject(UserProfileService);
   private gamification = inject(GamificationService);
+
+  /** Opt-in flag — read from Firestore profile, never assumed true. */
+  useSeelegSupplements = computed(() =>
+    this.profileState.profile()?.useSeelegSupplements ?? false
+  );
+
+  isSavingSeeleg = signal(false);
 
   // Form
   goal = 'volumen';
@@ -141,7 +150,8 @@ export class NutritionComponent implements OnInit {
             budgetTier: this.budgetTier,
             rank: this.rankName()
         },
-        this.targetCalories
+        this.targetCalories,
+        this.useSeelegSupplements() // pass the user's explicit opt-in choice
       );
       this.plan.set(result);
       this.showForm.set(false);
@@ -186,11 +196,28 @@ export class NutritionComponent implements OnInit {
           }
       };
       
-      // Optimistic UI update
       this.dailyLog.set(newLog);
-      
-      // Persist to Firestore
       const today = new Date().toISOString().split('T')[0];
       await this.nutritionService.updateDailyLog(today, newLog);
+  }
+
+  /**
+   * Persists the Seeleg opt-in toggle to Firestore.
+   * Called from the preference toggle in the form UI.
+   * Uses merge: true so it never overwrites other profile fields.
+   */
+  async toggleSeeleg() {
+    if (this.isSavingSeeleg()) return;
+    this.isSavingSeeleg.set(true);
+    try {
+      const current = this.profileState.profile();
+      if (!current) return;
+      const next = !this.useSeelegSupplements();
+      await this.profileService.saveProfile({ ...current, useSeelegSupplements: next });
+      // Refresh in-memory state so the computed re-evaluates
+      await this.profileState.refreshProfile();
+    } finally {
+      this.isSavingSeeleg.set(false);
+    }
   }
 }

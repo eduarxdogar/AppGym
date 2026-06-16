@@ -30,6 +30,12 @@ export interface UserProfile {
     segmentalFat?: SegmentalData;
   };
   baseGym?: string;
+  /**
+   * Opt-in flag for sponsored supplement recommendations (Seeleg).
+   * Default: false / undefined. Set to true by the user explicitly via the
+   * nutrition preference toggle. Must never be true by default.
+   */
+  useSeelegSupplements?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -80,6 +80,7 @@ export const callGemini = onCall({
     return { text: result.response.text() };
   } catch (error: any) {
     logger.error("Gemini Error:", error);
+    console.error("Detalle del error de Gemini:", error);
     
     // Check if it's a quota/rate limit error (429)
     if (error.status === 429 || (error.message && error.message.includes('429'))) {

@@ -61,6 +61,7 @@ exports.callGemini = (0, https_1.onCall)({
     }
     catch (error) {
         logger.error("Gemini Error:", error);
+        console.error("Detalle del error de Gemini:", error);
         // Check if it's a quota/rate limit error (429)
         if (error.status === 429 || (error.message && error.message.includes('429'))) {
             throw new https_1.HttpsError('resource-exhausted', 'Límite de cuota excedido temporalmente.');
