@@ -11,7 +11,7 @@ export class BaseAiService {
 
   constructor() {}
 
-  public async generateContent(prompt: string, isJson: boolean = true, imageBase64?: string, mimeType?: string, history?: any[]): Promise<string> {
+  public async generateContent(prompt: string, isJson: boolean = true, imageBase64?: string, mimeType?: string, history?: any[], useSeelegSupplements?: boolean): Promise<string> {
     const callGemini = httpsCallable(this.functions, 'callGemini', { timeout: 300000 });
     try {
         const result = await callGemini({
@@ -20,7 +20,8 @@ export class BaseAiService {
             isJson,
             imageBase64,
             mimeType,
-            history
+            history,
+            useSeelegSupplements
         });
         return (result.data as any).text as string;
     } catch (e: any) {

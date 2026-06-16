@@ -73,7 +73,6 @@ Datos del usuario:
 - Presupuesto / Supermercado (MUY IMPORTANTE para las sugerencias de alimentos): ${profileData.budgetTier}
 
 INSTRUCCIONES DE AYUNO: ${fastingNote}
-${seelegRule}
 
 IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta (2 planes base):
 {
@@ -110,7 +109,7 @@ IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta 
 NOTA: El día de descanso debe tener ~15-20% menos calorías, priorizando proteína y grasas saludables sobre carbohidratos. El array alternatives de cada comida debe contener exactamente 3 opciones equivalentes en macros.`;
 
     try {
-      const resultText = await this.baseAi.generateContent(prompt, true);
+      const resultText = await this.baseAi.generateContent(prompt, true, undefined, undefined, undefined, useSeelegSupplements);
       const text = this.baseAi.cleanJson(resultText);
       return JSON.parse(text) as WeeklyDietPlan;
     } catch (error: any) {

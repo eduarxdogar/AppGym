@@ -9,6 +9,7 @@ interface GeminiPayload {
   imageBase64?: string;
   mimeType?: string;
   history?: any[];
+  useSeelegSupplements?: boolean;
 }
 
 export const callGemini = onCall({
@@ -29,7 +30,7 @@ export const callGemini = onCall({
 
   // 2. Extract payload
   const data = request.data as GeminiPayload;
-  const prompt = data.prompt;
+  let prompt = data.prompt;
   const modelName = data.model;
   const isJson = data.isJson;
 
@@ -38,6 +39,21 @@ export const callGemini = onCall({
       "invalid-argument",
       "Faltan argumentos requeridos (prompt o model)."
     );
+  }
+
+  // Inject Seeleg rule if requested
+  if (data.useSeelegSupplements) {
+    const seelegRule = `
+INTEGRACIÓN SEELEG (activada por el usuario):
+El usuario ha optado por recibir recomendaciones de suplementación Seeleg.
+Genera exactamente UNA comida (preferiblemente un Snack o Post-Entreno) como
+una preparación detallada que utilice suplementos de la marca Seeleg
+(ej. "Batido Post-Entreno Seeleg Whey", "Avena con Seeleg Isolate", etc.).
+Para ESA comida específica y solo esa, agrega en el JSON los campos:
+  "isSponsored": true,
+  "sponsorBrand": "Seeleg"
+El resto de las comidas NO deben tener esos campos.`;
+    prompt = prompt + '\n' + seelegRule;
   }
 
   // 3. Initialize Gemini
@@ -51,6 +67,9 @@ export const callGemini = onCall({
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
+  
+  // Nota: No se está usando responseSchema aquí, pero si se usara, se añadirían
+  // las propiedades isSponsored (BOOLEAN) y sponsorBrand (STRING) al esquema de meals.
   const model = genAI.getGenerativeModel({
     model: modelName,
     generationConfig: isJson ? { responseMimeType: "application/json" } : undefined,
@@ -64,16 +83,16 @@ export const callGemini = onCall({
         const chat = model.startChat({ history: data.history });
         if (data.imageBase64 && data.mimeType) {
             const imagePart = { inlineData: { data: data.imageBase64, mimeType: data.mimeType } };
-            result = await chat.sendMessage([data.prompt, imagePart]);
+            result = await chat.sendMessage([prompt, imagePart]);
         } else {
-            result = await chat.sendMessage(data.prompt);
+            result = await chat.sendMessage(prompt);
         }
     } else {
         if (data.imageBase64 && data.mimeType) {
             const imagePart = { inlineData: { data: data.imageBase64, mimeType: data.mimeType } };
-            result = await model.generateContent([data.prompt, imagePart]);
+            result = await model.generateContent([prompt, imagePart]);
         } else {
-            result = await model.generateContent(data.prompt);
+            result = await model.generateContent(prompt);
         }
     }
     
