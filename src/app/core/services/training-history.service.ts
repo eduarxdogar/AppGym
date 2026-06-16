@@ -50,7 +50,7 @@ export class TrainingHistoryService {
 
   // --- STATS LOGIC ---
 
-  getStats(type: 'volume' | 'workouts' | 'sets' | 'calories', range: 'week' | 'month' | 'year' | 'total'): Observable<any> { // Typing 'any' briefly to avoid circular dep issues with new model file in same step, will import next
+  getStats(type: 'volume' | 'workouts' | 'sets' | 'calories', range: 'week' | 'month' | 'year' | 'total', muscleGroup: string = 'Todos'): Observable<any> { // Typing 'any' briefly to avoid circular dep issues with new model file in same step, will import next
       return this.storageService.getHistory().pipe(
           map(history => {
               const now = new Date();
@@ -60,10 +60,23 @@ export class TrainingHistoryService {
               else if (range === 'month') startDate = new Date(now.setMonth(now.getMonth() - 1));
               else if (range === 'year') startDate = new Date(now.setFullYear(now.getFullYear() - 1));
 
-              // Filter by date
+              // Filter by date and muscle group
               const filtered = history.filter(h => {
                   const date = new Date(h.endTime || h.startTime || h.fecha || '');
-                  return date >= startDate;
+                  let matchesDate = date >= startDate;
+                  
+                  let matchesMuscle = true;
+                  if (muscleGroup !== 'Todos') {
+                     const muscles = h.musclesWorked || h.musculos || [];
+                     const matchesArr = muscles.some((m: string) => m.toLowerCase().includes(muscleGroup.toLowerCase()));
+                     let matchesEx = false;
+                     if (h.exercises) {
+                         matchesEx = h.exercises.some((ex: any) => ex.grupoMuscular && ex.grupoMuscular.toLowerCase().includes(muscleGroup.toLowerCase()));
+                     }
+                     matchesMuscle = matchesArr || matchesEx;
+                  }
+
+                  return matchesDate && matchesMuscle;
               }).sort((a, b) => new Date(a.startTime || '').getTime() - new Date(b.startTime || '').getTime());
 
               // Process based on type

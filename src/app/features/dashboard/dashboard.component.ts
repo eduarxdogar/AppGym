@@ -7,12 +7,13 @@ import { RecoveryService } from '../../core/services/recovery.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MetricsService } from '../../core/services/metrics.service';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
+import { StrengthTierWidgetComponent } from '../../shared/components/strength-tier-widget/strength-tier-widget.component';
 import { Workout, Ejercicio } from '../../models/workout.model';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, UiButtonComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, UiButtonComponent, StrengthTierWidgetComponent],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
@@ -40,6 +41,81 @@ export class DashboardComponent {
 
   // Expose User for Template
   currentUser = this.authService.currentUser;
+
+  // ── Microcycle date range (from the active plan workouts) ──────────────────
+  // These become the Single Source of Truth for the Trends section,
+  // replacing the fixed 7-day rolling window.
+  private sortedPlanWorkouts = computed<Workout[]>(() =>
+    [...this.workouts()].sort(
+      (a, b) => new Date(a.fecha ?? 0).getTime() - new Date(b.fecha ?? 0).getTime()
+    )
+  );
+
+  /** Earliest workout date in the current plan (start of active microcycle). */
+  cycleStartDate = computed<Date>(() => {
+    const ws = this.sortedPlanWorkouts();
+    return ws.length > 0 ? new Date(ws[0].fecha!) : new Date();
+  });
+
+  /** Latest workout date in the current plan (end of active microcycle). */
+  cycleEndDate = computed<Date>(() => {
+    const ws = this.sortedPlanWorkouts();
+    return ws.length > 0 ? new Date(ws[ws.length - 1].fecha!) : new Date();
+  });
+
+  // ── Cycle-scoped metrics (SSoT — same query as the summary modal) ──────────
+
+  /** Sessions completed within the current microcycle date range. */
+  private cycleSessions = computed(() =>
+    this.metricsService.getMicrocycleSessions(this.cycleStartDate(), this.cycleEndDate())
+  );
+
+  cycleWorkoutsCount = computed(() => this.cycleSessions().length);
+
+  cycleTotalVolume = computed(() =>
+    this.cycleSessions().reduce((total, s) => {
+      const exs = s.exercises || s.ejercicios || [];
+      return total + exs.reduce((acc, ex) => {
+        const sets = ex.sets || ex.series || [];
+        return acc + sets.reduce((sv, set) => {
+          const reps   = Number(set.reps   || set.repeticiones || 0);
+          const weight = Number(set.weight || set.peso || set.pesokg || 0);
+          return sv + reps * weight;
+        }, 0);
+      }, 0);
+    }, 0)
+  );
+
+  cycleEstimatedCalories = computed(() =>
+    Math.round(this.cycleSessions().reduce((acc, s) => {
+      // Use stored calories if available, otherwise estimate from duration
+      if (s.calories && s.calories > 0) return acc + s.calories;
+      let durationH = 1;
+      if (s.endTime && s.startTime) {
+        const ms = new Date(s.endTime).getTime() - new Date(s.startTime).getTime();
+        if (ms > 0) durationH = ms / 3_600_000;
+      }
+      return acc + 5.0 * 75 * durationH; // MET 5 × default weight 75 kg
+    }, 0))
+  );
+
+  cycleTotalSets = computed(() =>
+    this.cycleSessions().reduce((total, s) => {
+      const exs = s.exercises || s.ejercicios || [];
+      return total + exs.reduce((acc, ex) => {
+        const sets = ex.sets || ex.series || [];
+        return acc + sets.filter(set => set.completed !== false).length;
+      }, 0);
+    }, 0)
+  );
+
+  // Computed: Saludo Dinámico (objeto con dos partes para estilizado premium)
+  dynamicGreeting = computed<{ prefix: string; highlight: string }>(() => {
+    const hours = new Date().getHours();
+    if (hours >= 5 && hours < 12) return { prefix: '¡Buenos días,', highlight: 'máquina!' };
+    if (hours >= 12 && hours < 18) return { prefix: '¡Buenas tardes,', highlight: 'fiera!' };
+    return { prefix: '¡A mutar,', highlight: 'iniciemos la rutina!' };
+  });
 
   // Computed: Obtener la última rutina (o la próxima sugerida)
   nextWorkout = computed(() => {
@@ -100,7 +176,13 @@ export class DashboardComponent {
     const map: Record<string, string> = {
       'pecho': 'Pecho', 'pectorales': 'Pecho',
       'espalda': 'Espalda', 'dorsales': 'Espalda',
-      'hombros': 'Hombros', 'deltoides': 'Hombros',
+      // Generic shoulder → Hombro Lateral (default head)
+      'hombros': 'Hombro Lateral', 'deltoides': 'Hombro Lateral',
+      // Specific deltoid heads
+      'hombro anterior': 'Hombro Anterior', 'deltoides anterior': 'Hombro Anterior',
+      'hombro lateral': 'Hombro Lateral',   'deltoides lateral': 'Hombro Lateral',
+      'hombro posterior': 'Hombro Posterior', 'deltoides posterior': 'Hombro Posterior',
+      // Arms / legs
       'bíceps': 'Bíceps', 'tríceps': 'Tríceps',
       'cuádriceps': 'Cuádriceps', 'isquios': 'Isquios',
       'glúteos': 'Glúteos', 'gemelos': 'Gemelos', 'core': 'Core'

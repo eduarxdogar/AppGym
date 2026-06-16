@@ -9,13 +9,22 @@
     <!-- Header -->
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-2xl font-bold text-white tracking-wide">HELLO, <span class="text-[#CCFF00] glow-text">ATHLETE</span></h1>
-        <p class="text-xs text-slate-500 uppercase tracking-widest mt-1">Ready to dominate?</p>
+        <h1 class="text-2xl font-bold tracking-wide leading-tight">
+          <span class="text-white">{{ dynamicGreeting().prefix }}</span>
+          <span class="text-[#CCFF00] drop-shadow-[0_0_8px_rgba(204,255,0,0.5)] font-black"> {{ dynamicGreeting().highlight }}</span>
+        </h1>
+        <p class="text-xs text-slate-500 uppercase tracking-widest mt-1">¿LISTO PARA DOMINAR?</p>
       </div>
-      <div class="h-10 w-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
-        <mat-icon class="text-zinc-400">person</mat-icon>
+      <div routerLink="/profile" class="h-10 w-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden cursor-pointer hover:border-[#CCFF00] transition">
+        <img *ngIf="currentUser()?.photoURL; else defaultUser" [src]="currentUser()?.photoURL" class="w-full h-full object-cover">
+        <ng-template #defaultUser>
+          <mat-icon class="text-zinc-400">person</mat-icon>
+        </ng-template>
       </div>
     </div>
+
+    <!-- Gamification Tier Widget -->
+    <app-strength-tier-widget></app-strength-tier-widget>
 
     <!-- SECTION A: HERO CARD (Next Workout) -->
     <div class="w-full bg-[#151921] border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl group hover:border-zinc-700 transition-colors duration-300">
@@ -23,7 +32,7 @@
       <!-- Card Header -->
       <div class="bg-[#CCFF00] px-4 py-2 flex justify-between items-center">
         <span class="text-black font-extrabold text-xs tracking-[0.2em] uppercase flex items-center gap-2">
-           <mat-icon class="text-sm h-4 w-4">bolt</mat-icon> Next Mission
+           <mat-icon class="text-sm h-4 w-4">bolt</mat-icon> PRÓXIMA MISIÓN
         </span>
         <span class="text-black/80 font-bold text-xs" *ngIf="nextWorkout()">{{ nextWorkout()?.fecha | date:'MMM d' }}</span>
       </div>
@@ -33,7 +42,7 @@
         <div *ngIf="nextWorkout(); else noWorkoutHero">
           <h2 class="text-2xl font-bold text-white mb-1">{{ nextWorkout()?.nombre }}</h2>
           <div class="flex items-center gap-4 text-xs text-slate-400 mb-6">
-            <span class="flex items-center gap-1"><mat-icon class="text-sm h-4 w-4">fitness_center</mat-icon> {{ nextWorkout()?.ejercicios?.length }} Exercises</span>
+            <span class="flex items-center gap-1"><mat-icon class="text-sm h-4 w-4">fitness_center</mat-icon> {{ nextWorkout()?.ejercicios?.length }} Ejercicios</span>
             <span class="flex items-center gap-1"><mat-icon class="text-sm h-4 w-4">schedule</mat-icon> ~60 Min</span>
             <span class="flex items-center gap-1 text-[#CCFF00]"><mat-icon class="text-sm h-4 w-4">bar_chart</mat-icon> {{ nextWorkout()?.nivelDificultad | titlecase }}</span>
           </div>
@@ -67,21 +76,21 @@
               <mat-icon>play_arrow</mat-icon>
             </button>
             <button class="h-10 w-10 rounded-full bg-zinc-800 text-slate-300 flex items-center justify-center border border-zinc-700 hover:bg-zinc-700 transition"
-                    title="Regenerate">
+                    title="Regenerar">
               <mat-icon class="scale-75">refresh</mat-icon>
             </button>
             <div class="flex-grow"></div>
             <button routerLink="/weekly-plan" class="text-xs text-slate-500 hover:text-white transition flex items-center gap-1">
-               DETAILS <mat-icon class="text-sm">arrow_forward</mat-icon>
+               DETALLES <mat-icon class="text-sm">arrow_forward</mat-icon>
             </button>
           </div>
         </div>
 
         <ng-template #noWorkoutHero>
           <div class="text-center py-8">
-             <p class="text-slate-400 mb-4">No active missions detected.</p>
+             <p class="text-slate-400 mb-4">No hay misiones activas detectadas.</p>
              <app-ui-button (clicked)="generateRoutine()" variant="primary" customClass="bg-[#CCFF00] text-black hover:bg-[#bbe600]">
-               Initialize Protocol
+               Iniciar Protocolo
              </app-ui-button>
           </div>
         </ng-template>
@@ -126,7 +135,7 @@
                <div class="flex items-baseline gap-1">
                  <span class="text-3xl font-bold" [ngClass]="recoveryColorClass()">{{ recoveryScore() }}%</span>
                </div>
-               <p class="text-xs text-slate-500 font-medium mt-1">System Recovery</p>
+               <p class="text-xs text-slate-500 font-medium mt-1">Recuperación del Sistema</p>
             </div>
             
             <!-- Mini Ring -->
@@ -147,13 +156,13 @@
 
     <!-- SECTION C: QUICK ACTIONS -->
     <div>
-       <h3 class="text-xs font-bold text-slate-500 mb-4 tracking-widest uppercase">Quick Access</h3>
+       <h3 class="text-xs font-bold text-slate-500 mb-4 tracking-widest uppercase">ACCESO RÁPIDO</h3>
        <div class="grid grid-cols-3 gap-3">
           
           <!-- Custom (AI) -->
           <button (click)="generateRoutine()" class="flex flex-col items-center justify-center gap-2 bg-[#151921] border border-zinc-800 rounded-xl p-4 hover:border-[#CCFF00] hover:bg-[#CCFF00]/5 transition group">
              <mat-icon class="text-[#CCFF00] group-hover:scale-110 transition">auto_awesome</mat-icon>
-             <span class="text-[10px] font-bold text-slate-300">AI GENERATOR</span>
+             <span class="text-[10px] font-bold text-slate-300">GENERADOR IA</span>
           </button>
 
           <!-- Cardio -->
@@ -165,7 +174,7 @@
           <!-- Nutrition -->
           <button [routerLink]="['/nutrition']" class="flex flex-col items-center justify-center gap-2 bg-[#151921] border border-zinc-800 rounded-xl p-4 hover:border-pink-500 hover:bg-pink-500/5 transition group">
              <mat-icon class="text-pink-500 group-hover:scale-110 transition">restaurant</mat-icon>
-             <span class="text-[10px] font-bold text-slate-300">NUTRITION</span>
+             <span class="text-[10px] font-bold text-slate-300">NUTRICIÓN</span>
           </button>
 
        </div>
@@ -188,7 +197,7 @@
     <!-- SECTION: TRENDS -->
     <div>
        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xs font-bold text-slate-500 tracking-widest uppercase">Tendencias · Últimos 7 días</h3>
+          <h3 class="text-xs font-bold text-slate-500 tracking-widest uppercase">Tendencias · Microciclo Actual</h3>
        </div>
        
        <div class="grid grid-cols-2 gap-3">
@@ -198,7 +207,7 @@
                 <mat-icon class="text-zinc-500 group-hover:text-white transition">event_note</mat-icon>
                 <div>
                   <span class="block text-slate-300 text-sm font-bold">Sesiones</span>
-                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">{{ metrics().workoutsCount }}</span>
+                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">{{ cycleWorkoutsCount() }}</span>
                 </div>
              </div>
              <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
@@ -211,9 +220,9 @@
                 <div>
                   <span class="block text-slate-300 text-sm font-bold">Tonelaje</span>
                   <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">
-                    {{ metrics().totalVolume >= 1000
-                         ? (metrics().totalVolume / 1000 | number:'1.1-1') + 't'
-                         : (metrics().totalVolume | number:'1.0-0') + ' kg' }}
+                    {{ cycleTotalVolume() >= 1000
+                         ? (cycleTotalVolume() / 1000 | number:'1.1-1') + 't'
+                         : (cycleTotalVolume() | number:'1.0-0') + ' kg' }}
                   </span>
                 </div>
              </div>
@@ -226,7 +235,7 @@
                 <mat-icon class="text-zinc-500 group-hover:text-white transition">local_fire_department</mat-icon>
                 <div>
                   <span class="block text-slate-300 text-sm font-bold">Calorías</span>
-                  <span class="block text-orange-400 text-lg font-extrabold leading-none mt-0.5">~{{ metrics().estimatedCalories | number:'1.0-0' }}</span>
+                  <span class="block text-orange-400 text-lg font-extrabold leading-none mt-0.5">~{{ cycleEstimatedCalories() | number:'1.0-0' }}</span>
                 </div>
              </div>
              <mat-icon class="text-zinc-600 group-hover:text-[#ff6600]">chevron_right</mat-icon>
@@ -238,7 +247,7 @@
                 <mat-icon class="text-zinc-500 group-hover:text-white transition">repeat</mat-icon>
                 <div>
                   <span class="block text-slate-300 text-sm font-bold">Series</span>
-                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">{{ metrics().totalSets }}</span>
+                  <span class="block text-[#CCFF00] text-lg font-extrabold leading-none mt-0.5">{{ cycleTotalSets() }}</span>
                 </div>
              </div>
              <mat-icon class="text-zinc-600 group-hover:text-[#CCFF00]">chevron_right</mat-icon>
@@ -252,24 +261,24 @@
   <div class="fixed bottom-0 left-0 right-0 bg-[#0B0E14]/90 backdrop-blur-md border-t border-zinc-800 flex justify-around items-center h-16 z-50 px-2 safe-area-bottom">
      <button class="flex flex-col items-center gap-1 p-2 text-[#CCFF00]">
         <mat-icon>home</mat-icon>
-        <span class="text-[9px] font-bold">HOME</span>
+        <span class="text-[9px] font-bold">INICIO</span>
      </button>
-     <button class="flex flex-col items-center gap-1 p-2 text-zinc-500 hover:text-white transition">
+     <button [routerLink]="['/generator']" class="flex flex-col items-center gap-1 p-2 text-zinc-500 hover:text-white transition">
         <mat-icon>search</mat-icon>
-        <span class="text-[9px] font-bold">EXPLORE</span>
+        <span class="text-[9px] font-bold">EXPLORAR</span>
      </button>
-     <button class="flex flex-col items-center gap-1 p-2 text-zinc-500 hover:text-white transition">
+     <button [routerLink]="['/stats']" class="flex flex-col items-center gap-1 p-2 text-zinc-500 hover:text-white transition">
         <mat-icon>bar_chart</mat-icon>
-        <span class="text-[9px] font-bold">STATS</span>
+        <span class="text-[9px] font-bold">ESTADÍSTICAS</span>
      </button>
       <button [routerLink]="['/profile']" class="flex flex-col items-center gap-1 p-2 text-zinc-500 hover:text-white transition">
          <div *ngIf="currentUser()?.photoURL; else defaultIcon" class="h-6 w-6 rounded-full overflow-hidden border border-[#CCFF00] mb-0.5">
-            <img [src]="currentUser()?.photoURL" alt="Profile" class="h-full w-full object-cover">
+            <img [src]="currentUser()?.photoURL" alt="Perfil" class="h-full w-full object-cover">
          </div>
          <ng-template #defaultIcon>
             <mat-icon>person</mat-icon>
          </ng-template>
-         <span class="text-[9px] font-bold">PROFILE</span>
+         <span class="text-[9px] font-bold">PERFIL</span>
       </button>
   </div>
 

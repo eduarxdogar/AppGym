@@ -6,6 +6,7 @@ import localeEsCo from '@angular/common/locales/es-CO';
 registerLocaleData(localeEsCo);
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { routes } from './app.routes';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 // Providers de Angular Material necesarios:
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -15,6 +16,7 @@ import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore';
 import { provideAuth, getAuth } from '@angular/fire/auth';
 import { provideFunctions, getFunctions } from '@angular/fire/functions';
+import { provideStorage, getStorage } from '@angular/fire/storage';
 import { environment } from '../environments/environment';
 import { provideNgtRenderer } from 'angular-three/dom';
 
@@ -31,7 +33,9 @@ export const appConfig: ApplicationConfig = {
     provideFirestore(() => getFirestore()),
     provideAuth(() => getAuth()),
     provideFunctions(() => getFunctions()),
+    provideStorage(() => getStorage()),
     provideNgtRenderer(),
+    provideCharts(withDefaultRegisterables()),
     { provide: LOCALE_ID, useValue: 'es-CO' }
   ]
 };

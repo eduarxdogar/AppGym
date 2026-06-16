@@ -3,6 +3,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { WorkoutService } from '../../core/services/workout.service';
 import { TrainerAiService } from '../../core/services/ai/trainer-ai.service';
 import { WeeklyPlanRequest } from '../../models/ai-requests.model';
@@ -10,11 +11,15 @@ import { UserProfile } from '../../models/user-profile.model';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { RecoveryService } from '../../core/services/recovery.service';
 import { ToastService } from '../../core/services/toast.service';
+import { WeeklySummaryModalComponent } from '../../shared/components/weekly-summary-modal/weekly-summary-modal.component';
+import { ProgressionEngineService, ProgressionOptions } from '../../core/services/progression-engine.service';
+import { TrainingHistoryService } from '../../core/services/training-history.service';
+import { WorkoutSession } from '../../core/models/workout-history.model';
 
 @Component({
   selector: 'app-weekly-plan',
   standalone: true,
-  imports: [CommonModule, MatIconModule, FormsModule, DatePipe],
+  imports: [CommonModule, MatIconModule, FormsModule, DatePipe, WeeklySummaryModalComponent],
   template: `
     <div class="min-h-screen bg-[#0B0E14] text-white p-4 pb-24 font-sans animate-fadeIn">
       
@@ -30,7 +35,10 @@ import { ToastService } from '../../core/services/toast.service';
             </div>
         </div>
         
-        <div *ngIf="weekWorkouts().length > 0">
+        <div *ngIf="weekWorkouts().length > 0" class="flex items-center gap-3">
+           <button *ngIf="!isWeekCompleted()" (click)="forceCloseWeek()" class="px-3 py-1.5 rounded-lg border border-[#CCFF00] text-[#CCFF00] hover:bg-[#CCFF00]/10 text-[10px] font-bold uppercase tracking-widest transition shadow-[0_0_10px_rgba(204,255,0,0.15)]" title="Forzar cierre de semana para auto-regulación">
+              Cerrar Semana
+           </button>
            <button (click)="resetPlan()" class="text-red-500 text-xs uppercase font-bold tracking-widest hover:text-red-400 transition" title="Borrar Plan">
               Reset
            </button>
@@ -238,8 +246,19 @@ import { ToastService } from '../../core/services/toast.service';
                   CONFIRMAR
                </button>
             </div>
-         </div>
-      </div>
+          </div>
+       </div>
+
+       <!-- Weekly Summary Modal --
+            cycleStartDate and cycleEndDate narrow the metrics query to this
+            exact microcycle so "Días Entrenados" always matches the Trends view -->
+       <app-weekly-summary-modal
+         *ngIf="showSummaryModal()"
+         [cycleStartDate]="cycleStartDate()"
+         [cycleEndDate]="cycleEndDate()"
+         (onClose)="showSummaryModal.set(false)"
+         (onRollover)="doRollover($event)">
+       </app-weekly-summary-modal>
     </div>
   `,
   styles: [`
@@ -256,6 +275,8 @@ export class WeeklyPlanComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly toastService = inject(ToastService);
+  private readonly progressionEngine = inject(ProgressionEngineService);
+  private readonly historyService = inject(TrainingHistoryService);
 
   // Constants
   levels: Array<'Principiante' | 'Intermedio' | 'Avanzado'> = ['Principiante', 'Intermedio', 'Avanzado'];
@@ -310,6 +331,14 @@ export class WeeklyPlanComponent {
         this.router.navigate([], { replaceUrl: true, queryParams: {} });
       }
     });
+
+    effect(() => {
+      const completed = this.isWeekCompleted();
+      // If completed and there are workouts, trigger the summary modal
+      if (completed && this.weekWorkouts().length > 0) {
+        this.showSummaryModal.set(true);
+      }
+    }, { allowSignalWrites: true });
   }
 
   // Workouts Signal (Filtered for "Weekly" Plan - in this MVP essentially just all future workouts, or current data)
@@ -317,13 +346,34 @@ export class WeeklyPlanComponent {
   // Let's filter to show only workouts from TODAY onwards + recently added.
   weekWorkouts = computed(() => {
      // Sort by date ascending (Plan logic)
-     return [...this.workoutService.workouts()].sort((a,b) => 
+     return [...this.workoutService.workouts()].sort((a,b) =>
         new Date(a.fecha!).getTime() - new Date(b.fecha!).getTime()
      );
   });
 
+  /** Earliest fecha in the current plan — used to scope the summary modal metrics. */
+  cycleStartDate = computed<Date>(() => {
+    const workouts = this.weekWorkouts();
+    if (workouts.length === 0) return new Date();
+    return new Date(workouts[0].fecha!);
+  });
+
+  /** Latest fecha in the current plan — used to scope the summary modal metrics. */
+  cycleEndDate = computed<Date>(() => {
+    const workouts = this.weekWorkouts();
+    if (workouts.length === 0) return new Date();
+    return new Date(workouts[workouts.length - 1].fecha!);
+  });
+
+  isWeekCompleted = computed(() => {
+    const workouts = this.weekWorkouts();
+    if (workouts.length === 0) return false;
+    return workouts.every(w => w.isCompleted === true || w.status === 'completed');
+  });
+
   // Modal State
   showConfirmModal = signal<boolean>(false);
+  showSummaryModal = signal<boolean>(false);
   pendingAction = signal<'delete' | 'reset' | null>(null);
   pendingWorkoutId = signal<string | null>(null);
 
@@ -407,6 +457,10 @@ export class WeeklyPlanComponent {
      this.showConfirmModal.set(true);
   }
 
+  forceCloseWeek() {
+     this.showSummaryModal.set(true);
+  }
+
   cancelAction() {
      this.showConfirmModal.set(false);
      this.pendingAction.set(null);
@@ -429,6 +483,58 @@ export class WeeklyPlanComponent {
      }
 
      this.cancelAction();
+  }
+
+  async doRollover(options: ProgressionOptions) {
+    // Artificial delay to simulate AI processing
+    await new Promise(resolve => setTimeout(resolve, 1800));
+
+    this.showSummaryModal.set(false);
+
+    const previousWeekWorkouts = this.weekWorkouts();
+
+    // ── Build history map: workoutName → sessions[], sorted newest first ────
+    // This is the source of truth for the progression engine.
+    // One async call here; the engine itself stays pure.
+    let historyMap: Map<string, WorkoutSession[]> = new Map();
+    try {
+      const allSessions = await firstValueFrom(this.historyService.getHistory());
+      allSessions.forEach(session => {
+        if (!session.nombre) return;
+        const key = session.nombre.trim();
+        const existing = historyMap.get(key) ?? [];
+        existing.push(session);
+        historyMap.set(key, existing);
+      });
+      // Sort each group newest first (by endTime or startTime)
+      historyMap.forEach((sessions, key) => {
+        historyMap.set(key, sessions.sort((a, b) => {
+          const ta = new Date(a.endTime ?? a.startTime ?? a.fecha ?? 0).getTime();
+          const tb = new Date(b.endTime ?? b.startTime ?? b.fecha ?? 0).getTime();
+          return tb - ta; // descending
+        }));
+      });
+    } catch (err) {
+      console.warn('[WeeklyPlan] Could not load history for progression. Using plan template.', err);
+    }
+
+    const newMicrocycle = this.progressionEngine.generateNextMicrocycle(
+      previousWeekWorkouts,
+      options,
+      historyMap
+    );
+
+    // Delete old week
+    for (const w of previousWeekWorkouts) {
+      if (w.id) await this.workoutService.deleteWorkout(w.id);
+    }
+
+    // Save new week
+    for (const newW of newMicrocycle) {
+      await this.workoutService.addWorkout(newW);
+    }
+
+    this.toastService.showSuccess('¡Nueva semana planificada con IA Coach! Cargas ajustadas.');
   }
 
   async addDayWithAI() {

@@ -15,6 +15,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
            [ngClass]="{
              'bg-[#151921]/90 border-[#CCFF00]/30 text-white': toast.type === 'success',
              'bg-red-950/90 border-red-500/30 text-red-50': toast.type === 'error',
+             'bg-yellow-950/90 border-yellow-500/30 text-yellow-50': toast.type === 'warning',
              'bg-zinc-800/90 border-zinc-600/30 text-zinc-200': toast.type === 'info'
            }">
            
@@ -23,6 +24,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
              [ngClass]="{
                'bg-[#CCFF00]': toast.type === 'success',
                'bg-red-500': toast.type === 'error',
+               'bg-yellow-500': toast.type === 'warning',
                'bg-zinc-500': toast.type === 'info'
              }"></div>
         
@@ -30,6 +32,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
         <mat-icon [ngClass]="{
             'text-[#CCFF00]': toast.type === 'success',
             'text-red-400': toast.type === 'error',
+            'text-yellow-400': toast.type === 'warning',
             'text-zinc-400': toast.type === 'info'
           }">
           {{ getIcon(toast.type) }}
@@ -65,6 +68,7 @@ export class ToastComponent {
     switch (type) {
       case 'success': return 'check_circle';
       case 'error': return 'error_outline';
+      case 'warning': return 'warning_amber';
       case 'info': return 'info';
       default: return 'info';
     }
