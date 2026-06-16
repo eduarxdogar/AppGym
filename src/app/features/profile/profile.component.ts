@@ -31,6 +31,7 @@ export class ProfileComponent {
   readonly isDev = isDevMode();
 
   currentUser = this.authService.currentUser;
+  isAdmin$ = this.authService.isAdmin$;
   userProfile = this.userProfileState.profile;
   gamificationState = this.gamificationService.gamificationState;
 

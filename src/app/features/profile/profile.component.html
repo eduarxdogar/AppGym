@@ -147,7 +147,7 @@
          Visible ONLY when running with `ng serve` (isDevMode() === true).
          This section is tree-shaken out of production builds.
          ════════════════════════════════════════════════════════════════════ -->
-    <div *ngIf="isDev" class="bg-[#0f1117] border border-amber-500/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+    <div *ngIf="isAdmin$ | async" class="bg-[#0f1117] border border-amber-500/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
       <!-- Corner badge -->
       <div class="absolute top-3 right-3 px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded-full">
         <span class="text-[9px] font-black text-amber-400 uppercase tracking-widest">DEV ONLY</span>

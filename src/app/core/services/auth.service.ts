@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Auth, GoogleAuthProvider, User, signInWithPopup, signOut, onAuthStateChanged, authState } from '@angular/fire/auth';
 import { Router } from '@angular/router';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -17,6 +18,11 @@ export class AuthService {
 
   // Observable for robust RxJS combinations (avoids sync null on toObservable)
   readonly authState$ = authState(this.auth);
+
+  // Verifies if the authenticated user is the main administrator
+  readonly isAdmin$ = this.authState$.pipe(
+    map(user => user?.email === 'cristiangarzon1231@gmail.com')
+  );
 
   constructor() {
     // Sync signal with Firebase Auth state
