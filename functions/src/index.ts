@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { MercadoPagoConfig, Preference } from "mercadopago";
 
 interface GeminiPayload {
   prompt: string;
@@ -107,5 +108,51 @@ El resto de las comidas NO deben tener esos campos.`;
     }
     
     throw new HttpsError("internal", "Error interno procesando el documento.");
+  }
+});
+
+export const createCheckoutSession = onCall({
+  cors: true,
+  region: 'us-central1'
+}, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError(
+      "unauthenticated",
+      "El usuario debe estar autenticado para crear una sesión de pago."
+    );
+  }
+
+  const mpAccessToken = process.env.MP_ACCESS_TOKEN;
+  if (!mpAccessToken) {
+    logger.error("No se encontró MP_ACCESS_TOKEN en el entorno.");
+    throw new HttpsError(
+      "internal",
+      "Configuración de servidor incompleta."
+    );
+  }
+
+  try {
+    const client = new MercadoPagoConfig({ accessToken: mpAccessToken });
+    const preference = new Preference(client);
+
+    const result = await preference.create({
+      body: {
+        items: [
+          {
+            id: "suscripcion_mensual",
+            title: "Suscripción Mensual AppGym",
+            unit_price: 30000,
+            quantity: 1,
+            currency_id: "COP"
+          }
+        ],
+        external_reference: request.auth.uid
+      }
+    });
+
+    return { init_point: result.init_point };
+  } catch (error: any) {
+    logger.error("Error creando sesión de MercadoPago:", error);
+    throw new HttpsError("internal", "Error generando la sesión de pago.");
   }
 });

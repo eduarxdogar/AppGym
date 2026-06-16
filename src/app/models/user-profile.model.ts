@@ -38,4 +38,7 @@ export interface UserProfile {
   useSeelegSupplements?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  subscriptionStatus?: 'trialing' | 'active' | 'past_due' | 'canceled';
+  trialEndsAt?: string;
+  mpCustomerId?: string;
 }

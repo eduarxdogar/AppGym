@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.callGemini = void 0;
+exports.createCheckoutSession = exports.callGemini = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const generative_ai_1 = require("@google/generative-ai");
+const mercadopago_1 = require("mercadopago");
 exports.callGemini = (0, https_1.onCall)({
     cors: true,
     region: 'us-central1',
@@ -83,6 +84,42 @@ El resto de las comidas NO deben tener esos campos.`;
             throw new https_1.HttpsError('resource-exhausted', 'Límite de cuota excedido temporalmente.');
         }
         throw new https_1.HttpsError("internal", "Error interno procesando el documento.");
+    }
+});
+exports.createCheckoutSession = (0, https_1.onCall)({
+    cors: true,
+    region: 'us-central1'
+}, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "El usuario debe estar autenticado para crear una sesión de pago.");
+    }
+    const mpAccessToken = process.env.MP_ACCESS_TOKEN;
+    if (!mpAccessToken) {
+        logger.error("No se encontró MP_ACCESS_TOKEN en el entorno.");
+        throw new https_1.HttpsError("internal", "Configuración de servidor incompleta.");
+    }
+    try {
+        const client = new mercadopago_1.MercadoPagoConfig({ accessToken: mpAccessToken });
+        const preference = new mercadopago_1.Preference(client);
+        const result = await preference.create({
+            body: {
+                items: [
+                    {
+                        id: "suscripcion_mensual",
+                        title: "Suscripción Mensual AppGym",
+                        unit_price: 30000,
+                        quantity: 1,
+                        currency_id: "COP"
+                    }
+                ],
+                external_reference: request.auth.uid
+            }
+        });
+        return { init_point: result.init_point };
+    }
+    catch (error) {
+        logger.error("Error creando sesión de MercadoPago:", error);
+        throw new https_1.HttpsError("internal", "Error generando la sesión de pago.");
     }
 });
 //# sourceMappingURL=index.js.map
