@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
 import { Auth, updateProfile } from '@angular/fire/auth';
 import { Storage, ref, uploadBytes, getDownloadURL } from '@angular/fire/storage';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 
 import { AuthService } from '../../core/services/auth.service';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
@@ -26,6 +27,7 @@ export class ProfileComponent {
   private userProfileService = inject(UserProfileService);
   private gamificationService = inject(GamificationService);
   private migrationService = inject(DatabaseMigrationService);
+  private readonly functions = inject(Functions);
 
   /** True when running under `ng serve` (development mode). Controls dev-only UI. */
   readonly isDev = isDevMode();
@@ -49,6 +51,7 @@ export class ProfileComponent {
   selectedEquipment = signal<string[]>([]);
   isSaving = signal<boolean>(false);
   isUploading = signal<boolean>(false);
+  isBillingLoading = signal<boolean>(false);
 
   // ── Migration state (dev-only) ────────────────────────────────────────────
   isMigrating = signal<boolean>(false);
@@ -119,6 +122,24 @@ export class ProfileComponent {
 
   goBack() {
     this.router.navigate(['/dashboard']);
+  }
+
+  async renewSubscription() {
+    this.isBillingLoading.set(true);
+    try {
+      const checkout = httpsCallable<{ }, { init_point: string }>(this.functions, 'createCheckoutSession');
+      const result = await checkout();
+      
+      if (result.data?.init_point) {
+        globalThis.location.href = result.data.init_point;
+      } else {
+        throw new Error('No se recibió init_point desde el servidor');
+      }
+    } catch (error) {
+      console.error('Error al generar la sesión de pago:', error);
+    } finally {
+      this.isBillingLoading.set(false);
+    }
   }
 
   /**

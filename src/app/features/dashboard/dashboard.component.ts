@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { WorkoutService } from '../../core/services/workout.service';
 import { RecoveryService } from '../../core/services/recovery.service';
 import { AuthService } from '../../core/services/auth.service';
+import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { MetricsService } from '../../core/services/metrics.service';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 import { StrengthTierWidgetComponent } from '../../shared/components/strength-tier-widget/strength-tier-widget.component';
@@ -32,6 +33,7 @@ export class DashboardComponent {
   private recoveryService = inject(RecoveryService);
   private router = inject(Router);
   private authService = inject(AuthService);
+  private userProfileState = inject(UserProfileStateService);
   private metricsService = inject(MetricsService);
 
   // Signals
@@ -41,6 +43,20 @@ export class DashboardComponent {
 
   // Expose User for Template
   currentUser = this.authService.currentUser;
+  userProfile = this.userProfileState.profile;
+
+  // Computed: Días restantes de prueba
+  trialDaysRemaining = computed(() => {
+    const profile = this.userProfile();
+    if (profile?.subscriptionStatus === 'trialing' && profile.trialEndsAt) {
+      const endsAt = new Date(profile.trialEndsAt);
+      const now = new Date();
+      const diffTime = endsAt.getTime() - now.getTime();
+      const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return days > 0 ? days : 0;
+    }
+    return null;
+  });
 
   // ── Microcycle date range (from the active plan workouts) ──────────────────
   // These become the Single Source of Truth for the Trends section,

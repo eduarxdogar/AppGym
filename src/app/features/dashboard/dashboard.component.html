@@ -6,6 +6,22 @@
 
   <div class="relative z-10 p-5 md:p-8 max-w-5xl mx-auto space-y-8 animate-fadeIn">
     
+    <!-- RETENTION BANNER -->
+    <div *ngIf="userProfile()?.subscriptionStatus === 'trialing' && trialDaysRemaining() !== null && trialDaysRemaining()! <= 3" 
+         class="bg-amber-500/20 border border-amber-500 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+      <div class="flex items-start gap-3">
+        <mat-icon class="text-amber-400 mt-0.5">warning</mat-icon>
+        <div>
+          <h3 class="text-amber-300 font-bold text-sm">Tu periodo de prueba termina en {{ trialDaysRemaining() }} {{ trialDaysRemaining() === 1 ? 'día' : 'días' }}</h3>
+          <p class="text-amber-400/80 text-xs mt-1">¡No pierdas tu progreso! Asegura tu acceso continuo hoy mismo.</p>
+        </div>
+      </div>
+      <button routerLink="/billing" 
+              class="w-full md:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)] whitespace-nowrap">
+        Suscribirse Ahora
+      </button>
+    </div>
+
     <!-- Header -->
     <div class="flex justify-between items-center">
       <div>

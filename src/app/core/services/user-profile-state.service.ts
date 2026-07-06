@@ -12,7 +12,13 @@ export class UserProfileStateService {
   private authService = inject(AuthService);
   private destroyRef = inject(DestroyRef);
 
-  private _profile = signal<UserProfile | null>(null);
+  /**
+   * Estado del perfil con tres posibles valores:
+   * - `undefined` : carga inicial en progreso (loading state).
+   * - `null`      : usuario autenticado pero sin perfil en Firestore.
+   * - `UserProfile`: perfil cargado exitosamente.
+   */
+  private _profile = signal<UserProfile | null | undefined>(undefined);
   readonly profile = this._profile.asReadonly();
 
   constructor() {
@@ -22,12 +28,15 @@ export class UserProfileStateService {
       if (user) {
         this.refreshProfile();
       } else {
+        // Usuario deslogueado: reseteamos a null (no undefined)
         this._profile.set(null);
       }
     });
   }
 
   refreshProfile(): void {
+    // Marcamos como loading antes de la petición
+    this._profile.set(undefined);
     this.userProfileService.getProfile().subscribe(profileData => {
       this._profile.set(profileData);
     });

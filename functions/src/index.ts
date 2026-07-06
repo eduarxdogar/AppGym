@@ -1,7 +1,12 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { MercadoPagoConfig, Preference } from "mercadopago";
+import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
+import * as admin from "firebase-admin";
+
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 interface GeminiPayload {
   prompt: string;
@@ -155,4 +160,34 @@ export const createCheckoutSession = onCall({
     logger.error("Error creando sesión de MercadoPago:", error);
     throw new HttpsError("internal", "Error generando la sesión de pago.");
   }
+});
+
+export const mercadopagoWebhook = onRequest({ cors: true }, async (request, response) => {
+  const type = request.query.type || request.body.type;
+  const dataId = request.query['data.id'] || request.body.data?.id;
+
+  if (type === 'payment' && dataId) {
+    const mpAccessToken = process.env.MP_ACCESS_TOKEN;
+    if (mpAccessToken) {
+      try {
+        const client = new MercadoPagoConfig({ accessToken: mpAccessToken });
+        const payment = new Payment(client);
+        const paymentInfo = await payment.get({ id: dataId as string });
+        
+        if (paymentInfo.status === 'approved' && paymentInfo.external_reference) {
+          const uid = paymentInfo.external_reference;
+          // Use merge:true for idempotence and safety
+          await admin.firestore().doc(`users/${uid}/profile/data`).set({
+            subscriptionStatus: 'active',
+            trialEndsAt: null
+          }, { merge: true });
+        }
+      } catch (err) {
+        logger.error('Error procesando webhook MP', err);
+      }
+    }
+  }
+
+  // Always return 200 OK fast so MercadoPago doesn't retry
+  response.status(200).send('OK');
 });

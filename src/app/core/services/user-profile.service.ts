@@ -1,5 +1,5 @@
 import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
-import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
+import { Firestore, doc, setDoc, updateDoc, getDoc } from '@angular/fire/firestore';
 import { Auth, authState, User } from '@angular/fire/auth';
 import { from, Observable, of } from 'rxjs';
 import { switchMap, map } from 'rxjs/operators';
@@ -11,16 +11,40 @@ export class UserProfileService {
   private auth = inject(Auth);
   private injector = inject(Injector);
 
-  /** Guarda (crea o actualiza) el perfil del usuario. */
+  /** Guarda (crea o actualiza) el perfil del usuario SIN sobreescribir datos de suscripción. */
   async saveProfile(profile: UserProfile): Promise<void> {
     const uid = this.auth.currentUser?.uid;
     if (!uid) throw new Error('Usuario no autenticado');
     const ref = doc(this.firestore, `users/${uid}/profile/data`);
-    await setDoc(ref, {
-      ...profile,
-      updatedAt: new Date().toISOString(),
-      createdAt: profile.createdAt || new Date().toISOString()
-    }, { merge: true });
+
+    // Campos que NUNCA deben ser sobreescritos por el onboarding:
+    // subscriptionStatus, trialEndsAt y mpCustomerId son gestionados
+    // exclusivamente por AuthService y las Cloud Functions de billing.
+    const { subscriptionStatus, trialEndsAt, mpCustomerId, ...profileData } = profile as any;
+
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) {
+      // El documento ya existe (fue creado por AuthService al registrarse):
+      // Usamos updateDoc para SOLO actualizar los campos del perfil,
+      // dejando intactos subscriptionStatus, trialEndsAt, etc.
+      await updateDoc(ref, {
+        ...profileData,
+        updatedAt: new Date().toISOString(),
+      });
+    } else {
+      // El documento NO existe (edge case: onboarding sin registro previo):
+      // Inicializamos con el trial de 7 días.
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 7);
+      await setDoc(ref, {
+        ...profileData,
+        subscriptionStatus: 'trialing',
+        trialEndsAt: trialEnd.toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      });
+    }
   }
 
   /** Actualiza específicamente el equipamiento del usuario. */
