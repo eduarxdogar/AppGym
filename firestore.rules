@@ -1,54 +1,23 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ── Helpers ───────────────────────────────────────────────────────────
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isOwner(uid) {
-      return isAuthenticated() && request.auth.uid == uid;
-    }
-
+    
+    // 1. REGLA GLOBAL SUPER ADMIN
     function isSuperAdmin() {
       return request.auth != null && request.auth.token.email == 'cristiangarzon1231@gmail.com';
     }
-
     match /{document=**} {
       allow read, write: if isSuperAdmin();
     }
 
-    // ── Super Admin: acceso de lectura global a todos los perfiles ────────
-    // Permite al admin listar TODOS los documentos de la subcolección 'profile'
-    // mediante una consulta collectionGroup('profile').
-    match /{path=**}/profile/{docId} {
-      allow read: if isSuperAdmin();
-      // Escritura sigue controlada por las reglas de abajo
+    // 2. REGLAS PARA USUARIOS NORMALES
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // ── Super Admin: acceso completo al documento raíz de cada usuario ────
-    match /users/{uid} {
-      allow read, write, delete: if isSuperAdmin();
+    // 3. COLECCIONES PÚBLICAS (Catálogos)
+    match /exercises/{document=**} {
+      allow read: if request.auth != null;
     }
-
-    // ── Usuarios: acceso a su propio perfil ───────────────────────────────
-    match /users/{uid}/profile/{docId} {
-      // Lectura: propio usuario o Super Admin
-      allow read: if isOwner(uid) || isSuperAdmin();
-      // Escritura: solo el propio usuario (el admin usa Cloud Functions)
-      allow write: if isOwner(uid);
-    }
-
-    // ── Usuarios: acceso a sus propios workouts ───────────────────────────
-    match /users/{uid}/workouts/{workoutId} {
-      allow read, write, delete: if isOwner(uid) || isSuperAdmin();
-    }
-
-    // ── Usuarios: resto de subcolecciones propias ─────────────────────────
-    match /users/{uid}/{subcollection}/{docId} {
-      allow read, write, delete: if isOwner(uid) || isSuperAdmin();
-    }
-
   }
 }

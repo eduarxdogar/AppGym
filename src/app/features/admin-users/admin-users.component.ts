@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
+import { Firestore, doc, setDoc } from '@angular/fire/firestore';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UserProfile } from '../../models/user-profile.model';
@@ -176,8 +177,18 @@ type AdminUserRow = UserProfile & { uid: string };
               </span>
             </div>
 
-            <!-- Acción Hard Delete -->
-            <div class="flex justify-end">
+            <!-- Acción Hard Delete e Inyectar Data -->
+            <div class="flex justify-end gap-2">
+              <button
+                [id]="'btn-seed-' + user.uid"
+                (click)="seedTestData(user)"
+                [disabled]="seedingUid() === user.uid || deletingUid() === user.uid"
+                class="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-500/20 text-purple-400 text-xs font-bold uppercase tracking-wider hover:bg-purple-500 hover:text-white hover:border-purple-500 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
+                <mat-icon *ngIf="seedingUid() !== user.uid" class="text-sm">science</mat-icon>
+                <div *ngIf="seedingUid() === user.uid" class="h-3.5 w-3.5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                {{ seedingUid() === user.uid ? 'Inyectando...' : 'Inyectar 1 Mes' }}
+              </button>
+
               <button
                 [id]="'btn-hard-delete-' + user.uid"
                 (click)="confirmHardDelete(user)"
@@ -241,12 +252,14 @@ type AdminUserRow = UserProfile & { uid: string };
 export class AdminUsersComponent {
   private readonly profileService = inject(UserProfileService);
   private readonly toastService = inject(ToastService);
+  private readonly firestore = inject(Firestore);
 
   // ── State ──────────────────────────────────────────────
   readonly isLoading = signal<boolean>(true);
   readonly error = signal<string | null>(null);
   readonly users = signal<AdminUserRow[]>([]);
   readonly deletingUid = signal<string | null>(null);
+  readonly seedingUid = signal<string | null>(null);
   readonly showConfirm = signal<boolean>(false);
   readonly pendingUser = signal<AdminUserRow | null>(null);
 
@@ -300,6 +313,87 @@ export class AdminUsersComponent {
     } finally {
       this.deletingUid.set(null);
       this.pendingUser.set(null);
+    }
+  }
+
+  async seedTestData(user: AdminUserRow): Promise<void> {
+    if (this.seedingUid() || this.deletingUid()) return;
+    this.seedingUid.set(user.uid);
+
+    try {
+      const now = Date.now();
+      const ONE_DAY = 24 * 60 * 60 * 1000;
+      const weeksAgo = [28, 21, 14, 7]; // Semana 1 (hace 28 días), Semana 2 (21)...
+
+      const dayNames = ['Día 1 - Pecho/Tríceps', 'Día 2 - Espalda/Bíceps', 'Día 3 - Piernas/Hombros'];
+
+      for (let week = 0; week < 4; week++) {
+        const weekStartMs = now - (weeksAgo[week] * ONE_DAY);
+        const weightProgression = 50 + (week * 2.5); // 50kg -> 52.5kg -> 55kg -> 57.5kg
+
+        for (let day = 0; day < 3; day++) {
+          const workoutDateMs = weekStartMs + (day * ONE_DAY);
+          const dateStr = new Date(workoutDateMs).toISOString();
+          
+          const workoutId = crypto.randomUUID();
+          const workoutRef = doc(this.firestore, `users/${user.uid}/workouts/${workoutId}`);
+          
+          await setDoc(workoutRef, {
+            id: workoutId,
+            nombre: dayNames[day],
+            fecha: dateStr,
+            isCompleted: true,
+            status: 'completed',
+            ejercicios: [
+              {
+                id: 'ex-press-banca',
+                nombre: 'Press de Banca Plano',
+                grupoMuscular: 'Pecho',
+                series: 3,
+                repeticiones: 10,
+                pesokg: weightProgression,
+                tipos: 'normal'
+              },
+              {
+                id: 'ex-sentadilla',
+                nombre: 'Sentadilla Libre',
+                grupoMuscular: 'Piernas',
+                series: 3,
+                repeticiones: 10,
+                pesokg: weightProgression + 10,
+                tipos: 'normal'
+              }
+            ],
+            // History/Progression Engine usa 'exercises' con 'sets' para leer el esfuerzo real
+            exercises: [
+               {
+                  id: 'ex-press-banca',
+                  nombre: 'Press de Banca Plano',
+                  sets: [
+                    { reps: 10, weight: weightProgression, completed: true },
+                    { reps: 10, weight: weightProgression, completed: true },
+                    { reps: 10, weight: weightProgression, completed: true }
+                  ]
+               },
+               {
+                  id: 'ex-sentadilla',
+                  nombre: 'Sentadilla Libre',
+                  sets: [
+                    { reps: 10, weight: weightProgression + 10, completed: true },
+                    { reps: 10, weight: weightProgression + 10, completed: true },
+                    { reps: 10, weight: weightProgression + 10, completed: true }
+                  ]
+               }
+            ]
+          });
+        }
+      }
+      this.toastService.showSuccess(`¡4 semanas de datos inyectados para ${user.displayName || user.email}!`);
+    } catch (err: any) {
+      console.error('[AdminUsers] Error seeding data:', err);
+      this.toastService.showError('Error inyectando datos de prueba.');
+    } finally {
+      this.seedingUid.set(null);
     }
   }
 
