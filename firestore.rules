@@ -16,7 +16,7 @@ service cloud.firestore {
     }
 
     match /{document=**} {
-      allow read: if isSuperAdmin();
+      allow read, write: if isSuperAdmin();
     }
 
     // ── Super Admin: acceso de lectura global a todos los perfiles ────────
