@@ -1,5 +1,5 @@
 import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
-import { Firestore, doc, setDoc, updateDoc, getDoc, deleteDoc, collection, getDocs } from '@angular/fire/firestore';
+import { Firestore, doc, setDoc, updateDoc, getDoc, deleteDoc, collectionGroup, getDocs, query } from '@angular/fire/firestore';
 import { Auth, authState, User, signOut } from '@angular/fire/auth';
 import { from, Observable, of } from 'rxjs';
 import { switchMap, map } from 'rxjs/operators';
@@ -115,25 +115,25 @@ export class UserProfileService {
 
   /**
    * Recupera TODOS los perfiles de usuario (solo para Super Admin).
-   * Requiere una regla de Firestore que permita lectura a admins.
+   *
+   * Usa `collectionGroup('profile')` para consultar en una sola operación
+   * todos los documentos de la subcoleccion 'profile' sin importar el UID.
+   * La jerarquía en Firestore es: users/{uid}/profile/data
+   *   - snap.ref           → referencia a 'data'
+   *   - snap.ref.parent    → referencia a la subcoleccion 'profile'
+   *   - snap.ref.parent.parent → referencia al documento 'users/{uid}'
    */
   async getAllProfiles(): Promise<(UserProfile & { uid: string })[]> {
-    const usersRef = collection(this.firestore, 'users');
-    const usersSnap = await getDocs(usersRef);
-    const profiles: (UserProfile & { uid: string })[] = [];
+    const profilesQuery = query(collectionGroup(this.firestore, 'profile'));
+    const querySnapshot = await getDocs(profilesQuery);
 
-    for (const userDoc of usersSnap.docs) {
-      try {
-        const profileRef = doc(this.firestore, `users/${userDoc.id}/profile/data`);
-        const profileSnap = await getDoc(profileRef);
-        if (profileSnap.exists()) {
-          profiles.push({ uid: userDoc.id, ...profileSnap.data() as UserProfile });
-        }
-      } catch {
-        // Ignorar documentos sin perfil
-      }
-    }
-
-    return profiles;
+    return querySnapshot.docs
+      .map(snap => {
+        // Extraemos el UID del documento padre (users/{uid})
+        const uid = snap.ref.parent.parent?.id;
+        if (!uid) return null; // seguridad: descartamos docs huérfanos
+        return { uid, ...snap.data() as UserProfile };
+      })
+      .filter((p): p is UserProfile & { uid: string } => p !== null);
   }
 }
