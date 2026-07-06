@@ -3,6 +3,7 @@ import { LoginComponent } from './features/login/login.component';
 import { authGuard } from './core/guards/auth.guard';
 import { profileGuard } from './core/guards/profile.guard';
 import { subscriptionGuard } from './core/guards/subscription.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./features/login/login.component').then(m => m.LoginComponent) },
@@ -44,6 +45,7 @@ export const routes: Routes = [
         { path: 'cardio', canActivate: [profileGuard, subscriptionGuard], loadComponent: () => import('./features/cardio/cardio-boxing.component').then(m => m.CardioBoxingComponent) },
         { path: 'progress', loadComponent: () => import('./features/progress/progress.component').then(m => m.ProgressComponent) },
         { path: 'admin/exercises', loadComponent: () => import('./features/admin-exercises/admin-exercises.component').then(m => m.AdminExercisesComponent) },
+        { path: 'admin/users', canActivate: [adminGuard], loadComponent: () => import('./features/admin-users/admin-users.component').then(m => m.AdminUsersComponent) },
         { path: 'billing', loadComponent: () => import('./features/billing/billing.component').then(m => m.BillingComponent) }
       ]
   },

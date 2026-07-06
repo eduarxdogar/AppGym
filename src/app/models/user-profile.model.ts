@@ -41,4 +41,10 @@ export interface UserProfile {
   subscriptionStatus?: 'trialing' | 'active' | 'past_due' | 'canceled';
   trialEndsAt?: string;
   mpCustomerId?: string;
+  /** Soft-delete flag — gestionado exclusivamente por el Super Admin o por el propio usuario. */
+  isDeleted?: boolean;
+  /** Timestamp (ms) del momento del soft-delete. */
+  deletedAt?: number;
+  /** Email del usuario — almacenado en el perfil para que el Admin pueda listarlo en la tabla. */
+  email?: string;
 }

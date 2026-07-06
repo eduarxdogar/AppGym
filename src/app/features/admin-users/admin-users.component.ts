@@ -1,0 +1,323 @@
+import {
+  Component,
+  inject,
+  signal,
+  computed,
+  ChangeDetectionStrategy,
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
+import { UserProfileService } from '../../core/services/user-profile.service';
+import { ToastService } from '../../core/services/toast.service';
+import { UserProfile } from '../../models/user-profile.model';
+
+type AdminUserRow = UserProfile & { uid: string };
+
+@Component({
+  selector: 'app-admin-users',
+  standalone: true,
+  imports: [CommonModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="min-h-screen bg-[#0B0E14] text-white font-sans">
+
+      <!-- ── Header ── -->
+      <div class="border-b border-zinc-800 bg-[#0f1219]/80 backdrop-blur-sm sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+              <mat-icon class="text-red-400 text-lg">admin_panel_settings</mat-icon>
+            </div>
+            <div>
+              <h1 class="text-lg font-bold tracking-wide">Super Admin — Gestión de Usuarios</h1>
+              <p class="text-[11px] text-zinc-500 tracking-widest uppercase">Panel Interno · Solo Super Admin</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-zinc-500">{{ totalUsers() }} usuarios</span>
+            <button
+              id="btn-reload-users"
+              (click)="load()"
+              [disabled]="isLoading()"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 text-xs font-medium transition disabled:opacity-40 disabled:cursor-not-allowed">
+              <mat-icon class="text-sm" [class.animate-spin]="isLoading()">refresh</mat-icon>
+              Recargar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Stats Bar ── -->
+      <div class="max-w-6xl mx-auto px-6 pt-6 pb-2 grid grid-cols-3 gap-4">
+        <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center gap-3">
+          <div class="h-9 w-9 rounded-lg bg-[#CCFF00]/10 border border-[#CCFF00]/20 flex items-center justify-center shrink-0">
+            <mat-icon class="text-[#CCFF00] text-lg">group</mat-icon>
+          </div>
+          <div>
+            <p class="text-xl font-bold text-white">{{ totalUsers() }}</p>
+            <p class="text-[10px] text-zinc-500 uppercase tracking-widest">Total Usuarios</p>
+          </div>
+        </div>
+        <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center gap-3">
+          <div class="h-9 w-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+            <mat-icon class="text-emerald-400 text-lg">verified_user</mat-icon>
+          </div>
+          <div>
+            <p class="text-xl font-bold text-white">{{ activeUsers() }}</p>
+            <p class="text-[10px] text-zinc-500 uppercase tracking-widest">Activos</p>
+          </div>
+        </div>
+        <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center gap-3">
+          <div class="h-9 w-9 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+            <mat-icon class="text-red-400 text-lg">block</mat-icon>
+          </div>
+          <div>
+            <p class="text-xl font-bold text-white">{{ deletedUsers() }}</p>
+            <p class="text-[10px] text-zinc-500 uppercase tracking-widest">Eliminados (Soft)</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Main Content ── -->
+      <div class="max-w-6xl mx-auto px-6 py-4">
+
+        <!-- Loading Skeleton -->
+        <div *ngIf="isLoading()" class="space-y-3 pt-4">
+          <div *ngFor="let i of [1,2,3,4,5]"
+               class="h-16 bg-[#151921] border border-zinc-800/50 rounded-xl animate-pulse">
+          </div>
+        </div>
+
+        <!-- Error State -->
+        <div *ngIf="!isLoading() && error()"
+             class="mt-6 flex flex-col items-center justify-center py-16 text-center">
+          <div class="h-12 w-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
+            <mat-icon class="text-red-400">error_outline</mat-icon>
+          </div>
+          <p class="text-red-400 font-semibold mb-1">Error al cargar usuarios</p>
+          <p class="text-zinc-500 text-sm mb-4">{{ error() }}</p>
+          <button (click)="load()"
+                  class="px-4 py-2 rounded-lg border border-zinc-700 text-zinc-300 text-sm hover:bg-zinc-800 transition">
+            Reintentar
+          </button>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!isLoading() && !error() && users().length === 0"
+             class="flex flex-col items-center justify-center py-20 text-center">
+          <mat-icon class="text-zinc-700 text-5xl mb-4">person_off</mat-icon>
+          <p class="text-zinc-500">No se encontraron usuarios registrados.</p>
+        </div>
+
+        <!-- ── Data Table ── -->
+        <div *ngIf="!isLoading() && !error() && users().length > 0"
+             class="mt-4 bg-[#151921] border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+
+          <!-- Table Header -->
+          <div class="grid grid-cols-[2fr_2fr_1fr_1fr_auto] gap-4 px-5 py-3 bg-[#0f1219] border-b border-zinc-800">
+            <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Nombre</span>
+            <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Email / UID</span>
+            <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Suscripción</span>
+            <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Estado</span>
+            <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Acción</span>
+          </div>
+
+          <!-- Rows -->
+          <div *ngFor="let user of users(); let last = last"
+               class="grid grid-cols-[2fr_2fr_1fr_1fr_auto] gap-4 items-center px-5 py-4 transition-colors hover:bg-white/[0.02]"
+               [class.border-b]="!last"
+               [class.border-zinc-800]="!last"
+               [class.opacity-50]="user.isDeleted">
+
+            <!-- Nombre -->
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="h-8 w-8 rounded-full shrink-0 flex items-center justify-center text-xs font-bold uppercase"
+                   [ngClass]="user.isDeleted
+                     ? 'bg-zinc-700 text-zinc-400'
+                     : 'bg-lime-400/10 text-lime-400'">
+                {{ (user.displayName || 'U').charAt(0) }}
+              </div>
+              <span class="truncate text-sm font-medium text-white">
+                {{ user.displayName || '—' }}
+              </span>
+            </div>
+
+            <!-- Email / UID -->
+            <div class="min-w-0">
+              <p class="truncate text-sm text-zinc-300">{{ user.email || '—' }}</p>
+              <p class="truncate text-[10px] text-zinc-600 font-mono mt-0.5">{{ user.uid }}</p>
+            </div>
+
+            <!-- Suscripción -->
+            <div>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest"
+                    [ngClass]="{
+                      'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': user.subscriptionStatus === 'active',
+                      'bg-[#CCFF00]/10 text-[#CCFF00] border border-[#CCFF00]/20': user.subscriptionStatus === 'trialing',
+                      'bg-zinc-700/40 text-zinc-500 border border-zinc-700': !user.subscriptionStatus || user.subscriptionStatus === 'canceled',
+                      'bg-red-500/10 text-red-400 border border-red-500/20': user.subscriptionStatus === 'past_due'
+                    }">
+                {{ subscriptionLabel(user.subscriptionStatus) }}
+              </span>
+            </div>
+
+            <!-- Estado Soft-Delete -->
+            <div>
+              <span *ngIf="!user.isDeleted"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block"></span>
+                Activo
+              </span>
+              <span *ngIf="user.isDeleted"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20"
+                    [title]="'Eliminado: ' + formatDeletedAt(user.deletedAt)">
+                <span class="h-1.5 w-1.5 rounded-full bg-red-400 inline-block"></span>
+                Eliminado
+              </span>
+            </div>
+
+            <!-- Acción Hard Delete -->
+            <div class="flex justify-end">
+              <button
+                [id]="'btn-hard-delete-' + user.uid"
+                (click)="confirmHardDelete(user)"
+                [disabled]="deletingUid() === user.uid"
+                class="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-wider hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_8px_rgba(239,68,68,0.1)] hover:shadow-[0_0_16px_rgba(239,68,68,0.3)]">
+                <mat-icon *ngIf="deletingUid() !== user.uid" class="text-sm">delete_forever</mat-icon>
+                <div *ngIf="deletingUid() === user.uid" class="h-3.5 w-3.5 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
+                {{ deletingUid() === user.uid ? 'Eliminando...' : 'Hard Delete' }}
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Confirm Dialog ── -->
+      <div *ngIf="showConfirm()"
+           class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div class="bg-[#151921] border border-red-500/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl shadow-red-500/10 animate-in zoom-in-95 duration-200">
+
+          <div class="flex items-center gap-3 mb-4">
+            <div class="h-11 w-11 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+              <mat-icon class="text-red-400">warning</mat-icon>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-white">Eliminar Usuario Permanentemente</h3>
+              <p class="text-xs text-zinc-500">Esta acción NO se puede deshacer</p>
+            </div>
+          </div>
+
+          <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-3 mb-5">
+            <p class="text-sm text-white font-medium truncate">{{ pendingUser()?.displayName || 'Sin nombre' }}</p>
+            <p class="text-xs text-zinc-400 truncate">{{ pendingUser()?.email || pendingUser()?.uid }}</p>
+          </div>
+
+          <p class="text-sm text-zinc-400 mb-6">
+            Se eliminará el documento principal del usuario en Firestore.
+            Las subcolecciones se limpiarán automáticamente vía Cloud Function.
+          </p>
+
+          <div class="flex gap-3">
+            <button id="btn-cancel-hard-delete"
+                    (click)="cancelHardDelete()"
+                    class="flex-1 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 text-sm font-bold hover:bg-zinc-800 transition">
+              Cancelar
+            </button>
+            <button id="btn-confirm-hard-delete"
+                    (click)="executeHardDelete()"
+                    class="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition shadow-[0_0_20px_rgba(239,68,68,0.3)]">
+              Sí, Eliminar
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  `,
+})
+export class AdminUsersComponent {
+  private readonly profileService = inject(UserProfileService);
+  private readonly toastService = inject(ToastService);
+
+  // ── State ──────────────────────────────────────────────
+  readonly isLoading = signal<boolean>(true);
+  readonly error = signal<string | null>(null);
+  readonly users = signal<AdminUserRow[]>([]);
+  readonly deletingUid = signal<string | null>(null);
+  readonly showConfirm = signal<boolean>(false);
+  readonly pendingUser = signal<AdminUserRow | null>(null);
+
+  // ── Computed stats ─────────────────────────────────────
+  readonly totalUsers = computed(() => this.users().length);
+  readonly activeUsers = computed(() => this.users().filter(u => !u.isDeleted).length);
+  readonly deletedUsers = computed(() => this.users().filter(u => u.isDeleted).length);
+
+  constructor() {
+    this.load();
+  }
+
+  async load(): Promise<void> {
+    this.isLoading.set(true);
+    this.error.set(null);
+    try {
+      const profiles = await this.profileService.getAllProfiles();
+      this.users.set(profiles);
+    } catch (err: any) {
+      console.error('[AdminUsers] Error cargando perfiles:', err);
+      this.error.set(err?.message ?? 'Error desconocido al consultar Firestore.');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  confirmHardDelete(user: AdminUserRow): void {
+    this.pendingUser.set(user);
+    this.showConfirm.set(true);
+  }
+
+  cancelHardDelete(): void {
+    this.showConfirm.set(false);
+    this.pendingUser.set(null);
+  }
+
+  async executeHardDelete(): Promise<void> {
+    const user = this.pendingUser();
+    if (!user) return;
+
+    this.showConfirm.set(false);
+    this.deletingUid.set(user.uid);
+
+    try {
+      await this.profileService.hardDeleteAccount(user.uid);
+      this.users.update(list => list.filter(u => u.uid !== user.uid));
+      this.toastService.showSuccess(`Usuario "${user.displayName || user.uid}" eliminado permanentemente.`);
+    } catch (err: any) {
+      console.error('[AdminUsers] Error en hard delete:', err);
+      this.toastService.showError(err?.message ?? 'No se pudo eliminar el usuario.');
+    } finally {
+      this.deletingUid.set(null);
+      this.pendingUser.set(null);
+    }
+  }
+
+  subscriptionLabel(status?: string): string {
+    const labels: Record<string, string> = {
+      active: 'Activo',
+      trialing: 'Trial',
+      past_due: 'Vencido',
+      canceled: 'Cancelado',
+    };
+    return labels[status ?? ''] ?? 'Sin Plan';
+  }
+
+  formatDeletedAt(ts?: number): string {
+    if (!ts) return '—';
+    return new Date(ts).toLocaleString('es-CO', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+  }
+}

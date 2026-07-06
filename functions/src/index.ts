@@ -1,4 +1,5 @@
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
+import { onDocumentDeleted } from "firebase-functions/v2/firestore";
 import * as logger from "firebase-functions/logger";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
@@ -191,3 +192,69 @@ export const mercadopagoWebhook = onRequest({ cors: true }, async (request, resp
   // Always return 200 OK fast so MercadoPago doesn't retry
   response.status(200).send('OK');
 });
+
+/**
+ * TRIGGER: Borrado en Cascada (Hard Delete)
+ *
+ * Se dispara automáticamente cuando el Super Admin elimina el documento
+ * raíz de un usuario (`users/{userId}`) desde el panel de administración.
+ *
+ * Pasos:
+ *  1. Elimina RECURSIVAMENTE el documento y todas sus subcolecciones
+ *     (workouts, profile/data, etc.) mediante `recursiveDelete`.
+ *  2. Elimina permanentemente al usuario de Firebase Authentication.
+ */
+export const cleanupUserSubcollections = onDocumentDeleted(
+  {
+    document: "users/{userId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const uid = event.params.userId;
+    const snapshot = event.data;
+
+    logger.info(`[cleanupUserSubcollections] Iniciando borrado en cascada para UID: ${uid}`);
+
+    // ── 1. Borrar el documento raíz + TODAS sus subcolecciones ──────────────
+    if (snapshot) {
+      try {
+        await admin.firestore().recursiveDelete(snapshot.ref);
+        logger.info(`[cleanupUserSubcollections] ✅ Subcolecciones eliminadas para UID: ${uid}`);
+      } catch (firestoreError) {
+        logger.error(
+          `[cleanupUserSubcollections] ❌ Error fatal en recursiveDelete para UID: ${uid}`,
+          firestoreError
+        );
+        // Re-lanzamos para que Cloud Functions marque la invocación como fallida
+        throw firestoreError;
+      }
+    } else {
+      logger.warn(
+        `[cleanupUserSubcollections] Snapshot nulo para UID: ${uid}. ` +
+        "El documento ya había sido eliminado antes del trigger."
+      );
+    }
+
+    // ── 2. Borrar al usuario de Firebase Authentication ────────────────────
+    try {
+      await admin.auth().deleteUser(uid);
+      logger.info(`[cleanupUserSubcollections] ✅ Usuario eliminado de Auth para UID: ${uid}`);
+    } catch (authError: any) {
+      if (authError?.code === "auth/user-not-found") {
+        // El usuario ya fue borrado previamente de Auth — no es un error fatal.
+        logger.warn(
+          `[cleanupUserSubcollections] Usuario UID: ${uid} ya no existía en Auth. Se ignora.`
+        );
+      } else {
+        // Cualquier otro error de Auth sí es relevante y debe quedar en los logs.
+        logger.error(
+          `[cleanupUserSubcollections] ❌ Error inesperado eliminando usuario de Auth UID: ${uid}`,
+          authError
+        );
+      }
+    }
+
+    logger.info(`[cleanupUserSubcollections] 🏁 Proceso completado para UID: ${uid}`);
+  }
+);
+

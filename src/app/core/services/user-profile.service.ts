@@ -1,6 +1,6 @@
 import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
-import { Firestore, doc, setDoc, updateDoc, getDoc } from '@angular/fire/firestore';
-import { Auth, authState, User } from '@angular/fire/auth';
+import { Firestore, doc, setDoc, updateDoc, getDoc, deleteDoc, collection, getDocs } from '@angular/fire/firestore';
+import { Auth, authState, User, signOut } from '@angular/fire/auth';
 import { from, Observable, of } from 'rxjs';
 import { switchMap, map } from 'rxjs/operators';
 import { UserProfile } from '../../models/user-profile.model';
@@ -80,5 +80,60 @@ export class UserProfileService {
     const ref = doc(this.firestore, `users/${uid}/profile/data`);
     const snap = await getDoc(ref);
     return snap.exists();
+  }
+
+  /**
+   * SOFT DELETE (Cliente): Marca el perfil como eliminado en Firestore
+   * sin borrar el documento. Luego cierra la sesión del usuario.
+   * @param uid UID del usuario a eliminar lógicamente.
+   */
+  async softDeleteAccount(uid: string): Promise<void> {
+    const ref = doc(this.firestore, `users/${uid}/profile/data`);
+    await updateDoc(ref, {
+      isDeleted: true,
+      deletedAt: Date.now(),
+      updatedAt: new Date().toISOString(),
+    });
+    // Expulsar al usuario de la sesión inmediatamente
+    await signOut(this.auth);
+  }
+
+  /**
+   * HARD DELETE (Super Admin): Elimina físicamente el documento raíz
+   * del usuario en Firestore. Las subcolecciones deben limpiarse
+   * mediante una Cloud Function (pendiente de integrar).
+   * @param uid UID del usuario a eliminar permanentemente.
+   */
+  async hardDeleteAccount(uid: string): Promise<void> {
+    // Eliminar documento de perfil
+    const profileRef = doc(this.firestore, `users/${uid}/profile/data`);
+    await deleteDoc(profileRef);
+    // Eliminar documento raíz del usuario
+    const userRef = doc(this.firestore, `users/${uid}`);
+    await deleteDoc(userRef);
+  }
+
+  /**
+   * Recupera TODOS los perfiles de usuario (solo para Super Admin).
+   * Requiere una regla de Firestore que permita lectura a admins.
+   */
+  async getAllProfiles(): Promise<(UserProfile & { uid: string })[]> {
+    const usersRef = collection(this.firestore, 'users');
+    const usersSnap = await getDocs(usersRef);
+    const profiles: (UserProfile & { uid: string })[] = [];
+
+    for (const userDoc of usersSnap.docs) {
+      try {
+        const profileRef = doc(this.firestore, `users/${userDoc.id}/profile/data`);
+        const profileSnap = await getDoc(profileRef);
+        if (profileSnap.exists()) {
+          profiles.push({ uid: userDoc.id, ...profileSnap.data() as UserProfile });
+        }
+      } catch {
+        // Ignorar documentos sin perfil
+      }
+    }
+
+    return profiles;
   }
 }
