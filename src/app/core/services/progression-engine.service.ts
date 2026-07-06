@@ -54,10 +54,10 @@ export class ProgressionEngineService {
 
         // Determine if this exercise was performed during the session
         const performedSets = lastSession
-          ? this.getPerformedSets(lastSession, index, newEjercicio.nombre)
+          ? this.getPerformedSets(lastSession, newEjercicio)
           : (oldWorkout.activeSetsState?.[index] ?? []);
 
-        const targetsMet = this.didMeetTargets(performedSets, newEjercicio.repeticiones);
+        const targetsMet = this.didMeetTargets(performedSets, newEjercicio.repeticiones, newEjercicio.series);
 
         if (targetsMet) {
           this.applyOverload(newEjercicio, options);
@@ -144,11 +144,7 @@ export class ProgressionEngineService {
   /**
    * Converts a WorkoutSession's exercises back to the Ejercicio[] format,
    * preserving advanced set types (drop-set, super-serie) and user-added exercises.
-   * Falls back to the plan template for any field not present in the session.
-   *
-   * LEGACY GUARD: Very old sessions may have zero exercises stored (pre-logging
-   * feature). In that case we always fall back to the plan template so the next
-   * microcycle is not accidentally empty.
+   * MATCHING POR REFERENCIA: Cruza por ID o nombre (normalizado), NO por índice.
    */
   private sessionToEjercicios(session: WorkoutSession, planWorkout: Workout): Ejercicio[] {
     const rawExercises: WorkoutExercise[] = session.exercises || session.ejercicios || [];
@@ -158,32 +154,41 @@ export class ProgressionEngineService {
       return planWorkout.ejercicios;
     }
 
-    return rawExercises.map((ex, idx): Ejercicio => {
-      // Try to find the matching template exercise by index or name
-      const templateEx = planWorkout.ejercicios[idx]
-        ?? planWorkout.ejercicios.find(e =>
-            e.nombre?.toLowerCase() === (ex.nombre ?? ex.name ?? '').toLowerCase()
-          )
-        ?? planWorkout.ejercicios[0];
+    return rawExercises.map((ex): Ejercicio => {
+      // Find matching template by ID first, then by normalized name
+      const normalizedSessionExName = (ex.nombre ?? ex.name ?? '').trim().toLowerCase();
+      let templateEx = planWorkout.ejercicios.find(e => e.id && e.id === (ex as any).id);
+      
+      if (!templateEx && normalizedSessionExName) {
+        templateEx = planWorkout.ejercicios.find(e => 
+          (e.nombre ?? '').trim().toLowerCase() === normalizedSessionExName
+        );
+      }
 
-      // Reconstruct from the session data, falling back to the template for
-      // fields that aren't stored in WorkoutSession (e.g. imageUrl, videoUrl).
+      // Reconstruct from the session data, falling back to the template
       const reconstructed: Ejercicio = {
-        ...templateEx,
-        id: templateEx?.id ?? idx,
-        nombre: ex.nombre ?? ex.name ?? templateEx?.nombre ?? 'Ejercicio',
-        grupoMuscular: ex.grupoMuscular ?? ex.groupMuscular ?? ex.muscleGroup ?? templateEx?.grupoMuscular ?? '',
-      };
+        ...(templateEx || {}),
+        id: (ex as any).id ?? templateEx?.id ?? crypto.randomUUID(), // Ensure ID exists
+        nombre: ex.nombre ?? ex.name ?? templateEx?.nombre ?? 'Ejercicio Extra',
+        grupoMuscular: ex.grupoMuscular ?? ex.groupMuscular ?? ex.muscleGroup ?? templateEx?.grupoMuscular ?? 'Otro',
+        repeticiones: templateEx?.repeticiones ?? 10,
+        series: templateEx?.series ?? 3,
+        tipos: templateEx?.tipos ?? 'normal'
+      } as Ejercicio;
 
-      // Restore completed set weight & reps from the last set that was logged
+      // Restore completed set weight using MAX EFFORT (Peso Base)
       const lastSets = ex.sets ?? ex.series ?? [];
-      if (lastSets.length > 0) {
-        const completedSets = lastSets.filter(s => s.completed !== false);
-        if (completedSets.length > 0) {
-          const lastCompleted = completedSets[completedSets.length - 1];
-          reconstructed.pesokg = Number(lastCompleted.weight ?? lastCompleted.peso ?? lastCompleted.pesokg ?? reconstructed.pesokg ?? 0);
-          reconstructed.series = completedSets.length;
-        }
+      const completedSets = lastSets.filter(s => s.completed !== false);
+      
+      if (completedSets.length > 0) {
+        let maxWeight = 0;
+        completedSets.forEach(s => {
+           const w = Number(s.weight ?? s.peso ?? s.pesokg ?? 0);
+           if (w > maxWeight) maxWeight = w;
+        });
+
+        reconstructed.pesokg = maxWeight > 0 ? maxWeight : (reconstructed.pesokg ?? 0);
+        reconstructed.series = completedSets.length;
       }
 
       return reconstructed;
@@ -192,16 +197,21 @@ export class ProgressionEngineService {
 
   /**
    * Gets the performed sets for an exercise from a WorkoutSession.
-   * Tries index-based lookup first (from activeSetsState), then falls back
-   * to the session's exercises array.
+   * MATCHING POR REFERENCIA: Busca por ID o nombre.
    */
   private getPerformedSets(
     session: WorkoutSession,
-    exerciseIndex: number,
-    exerciseName: string
+    ejercicio: Ejercicio
   ): Array<{ reps: number; weight: number; completed: boolean }> {
-    // If the session was saved with activeSetsState (new format)
-    const rawEx = (session.exercises ?? session.ejercicios ?? [])[exerciseIndex];
+    const rawExercises = session.exercises ?? session.ejercicios ?? [];
+    
+    const normalizedName = (ejercicio.nombre ?? '').trim().toLowerCase();
+    let rawEx = rawExercises.find(e => (e as any).id && (e as any).id === ejercicio.id);
+    
+    if (!rawEx && normalizedName) {
+      rawEx = rawExercises.find(e => (e.nombre ?? e.name ?? '').trim().toLowerCase() === normalizedName);
+    }
+
     if (!rawEx) return [];
 
     const sets = rawEx.sets ?? rawEx.series ?? [];
@@ -212,13 +222,23 @@ export class ProgressionEngineService {
     }));
   }
 
-  /** Returns true if all completed sets hit or exceeded the target reps. */
+  /** 
+   * Returns true if total achieved reps >= 80% of total target reps (Tolerance threshold). 
+   */
   private didMeetTargets(
     performedSets: Array<{ reps: number; completed: boolean }>,
-    targetReps: number
+    targetRepsPerSet: number,
+    targetSets: number
   ): boolean {
     if (!performedSets || performedSets.length === 0) return false;
-    return performedSets.every(s => s.completed && s.reps >= targetReps);
+    
+    const completedSets = performedSets.filter(s => s.completed);
+    if (completedSets.length === 0) return false;
+
+    const totalRepsAchieved = completedSets.reduce((sum, s) => sum + s.reps, 0);
+    const totalRepsTarget = targetRepsPerSet * targetSets;
+
+    return totalRepsAchieved >= (totalRepsTarget * 0.8);
   }
 
   /** Applies progressive overload (weight or volume) to a single ejercicio. */
