@@ -447,6 +447,45 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
                activeStartTime: deleteField() as any
            };
            await this.workoutService.updateWorkout(updatedWorkout);
+
+           // --- DYNAMIC DATE SHIFT LOGIC ---
+           if (workout.fecha) {
+               const scheduledDate = new Date(workout.fecha);
+               scheduledDate.setHours(0, 0, 0, 0);
+               const today = new Date();
+               today.setHours(0, 0, 0, 0);
+
+               const diffTime = today.getTime() - scheduledDate.getTime();
+               const daysOffset = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+               if (daysOffset > 0) {
+                   const allWorkouts = this.workoutService.workouts();
+                   
+                   const futureWorkouts = allWorkouts.filter(w => {
+                       if (w.id === workout.id || w.isCompleted || w.status === 'completed') return false;
+                       if (!w.fecha) return false;
+                       
+                       const wDate = new Date(w.fecha);
+                       wDate.setHours(0, 0, 0, 0);
+                       return wDate.getTime() > scheduledDate.getTime();
+                   });
+
+                   for (const w of futureWorkouts) {
+                       const newDate = new Date(w.fecha!);
+                       newDate.setDate(newDate.getDate() + daysOffset);
+                       
+                       await this.workoutService.updateWorkout({
+                           ...w,
+                           fecha: newDate.toISOString()
+                       });
+                   }
+                   if (futureWorkouts.length > 0) {
+                       this.toastService.showInfo(`Calendario ajustado: Se empujaron ${futureWorkouts.length} día(s) por el retraso.`);
+                   }
+               }
+           }
+           // ---------------------------------
+
            this.trainingSessionService.saveSession(null);
       }
       
