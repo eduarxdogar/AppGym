@@ -4,6 +4,7 @@ import {
   signal,
   computed,
   ChangeDetectionStrategy,
+  OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,7 +22,7 @@ type AdminUserRow = UserProfile & { uid: string };
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-users.component.html',
 })
-export class AdminUsersComponent {
+export class AdminUsersComponent implements OnInit {
   private readonly profileService = inject(UserProfileService);
   private readonly toastService = inject(ToastService);
   private readonly firestore = inject(Firestore);
@@ -40,7 +41,7 @@ export class AdminUsersComponent {
   readonly activeUsers = computed(() => this.users().filter(u => !u.isDeleted).length);
   readonly deletedUsers = computed(() => this.users().filter(u => u.isDeleted).length);
 
-  constructor() {
+  ngOnInit(): void {
     this.load();
   }
 

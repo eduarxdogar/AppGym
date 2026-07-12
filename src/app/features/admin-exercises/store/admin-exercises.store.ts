@@ -1,20 +1,20 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { AdminExercisesApi } from './admin-exercises.api';
-import { ToastService } from '../../core/services/toast.service';
+import { AdminExercisesApi, AdminExercise } from '../services/admin-exercises.api';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Injectable()
 export class AdminExercisesStore {
-  private api = inject(AdminExercisesApi);
-  private toastService = inject(ToastService);
+  private readonly api = inject(AdminExercisesApi);
+  private readonly toastService = inject(ToastService);
 
   // States
   isSaving = signal<boolean>(false);
   isLoading = signal<boolean>(false);
   isSideSheetOpen = signal<boolean>(false);
   editingExerciseId = signal<string | null>(null);
-  
-  exercisesList = signal<any[]>([]);
-  
+
+  exercisesList = signal<AdminExercise[]>([]);
+
   // Filters
   searchQuery = signal<string>('');
   filterMuscle = signal<string>('');
@@ -26,7 +26,7 @@ export class AdminExercisesStore {
     const muscle = this.filterMuscle();
     const discipline = this.filterDiscipline();
 
-    return this.exercisesList().filter(ex => {
+    return this.exercisesList().filter((ex) => {
       const matchName = !query || ex.name?.toLowerCase().includes(query);
       const matchMuscle = !muscle || ex.muscleGroup === muscle;
       const matchDiscipline = !discipline || ex.discipline === discipline;
@@ -34,11 +34,13 @@ export class AdminExercisesStore {
     });
   });
 
-  async loadExercises() {
+  async loadExercises(): Promise<void> {
     try {
       this.isLoading.set(true);
       const list = await this.api.getExercises();
-      list.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+      list.sort((a: AdminExercise, b: AdminExercise) => 
+        (a.name || '').localeCompare(b.name || '')
+      );
       this.exercisesList.set(list);
     } catch (e) {
       console.error('Error loading exercises:', e);
@@ -48,14 +50,14 @@ export class AdminExercisesStore {
     }
   }
 
-  async saveExercise(dataToSave: any, equipmentRequired: string[]) {
+  async saveExercise(dataToSave: Partial<AdminExercise>, equipmentRequired: string[]): Promise<void> {
     this.isSaving.set(true);
     try {
       const currentId = this.editingExerciseId();
-      
-      const payload = {
-          ...dataToSave,
-          equipmentRequired
+
+      const payload: Partial<AdminExercise> = {
+        ...dataToSave,
+        equipmentRequired,
       };
 
       if (currentId) {
@@ -79,22 +81,23 @@ export class AdminExercisesStore {
   private generateDocId(name: string): string {
     return name
       .toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, "") // remove accents
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // remove accents
       .replace(/[^a-z0-9\s-]/g, '') // remove special chars
       .trim()
       .replace(/\s+/g, '-');
   }
 
-  openSideSheet(mode: 'create' | 'edit', ex?: any) {
+  openSideSheet(mode: 'create' | 'edit', ex?: AdminExercise): void {
     if (mode === 'edit' && ex) {
-      this.editingExerciseId.set(ex.id);
+      this.editingExerciseId.set(ex.id || null);
     } else {
       this.editingExerciseId.set(null);
     }
     this.isSideSheetOpen.set(true);
   }
 
-  closeSideSheet() {
+  closeSideSheet(): void {
     this.isSideSheetOpen.set(false);
   }
 }

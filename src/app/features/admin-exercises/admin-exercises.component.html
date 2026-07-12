@@ -16,19 +16,22 @@
       <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
         <!-- Search -->
         <div class="relative w-full sm:w-64">
-            <input type="search" placeholder="Buscar por nombre..."
+            <label for="searchQuery" class="sr-only">Buscar por nombre</label>
+            <input id="searchQuery" type="search" placeholder="Buscar por nombre..."
                    [ngModel]="store.searchQuery()" (ngModelChange)="store.searchQuery.set($event)"
                    class="w-full bg-background border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-text-main focus:outline-none focus:border-primary transition-colors shadow-inner">
         </div>
         
         <!-- Filters -->
-        <select [ngModel]="store.filterMuscle()" (ngModelChange)="store.filterMuscle.set($event)"
+        <label for="filterMuscle" class="sr-only">Músculo</label>
+        <select id="filterMuscle" [ngModel]="store.filterMuscle()" (ngModelChange)="store.filterMuscle.set($event)"
                 class="w-full sm:w-auto bg-background border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-text-main focus:outline-none focus:border-primary appearance-none cursor-pointer">
           <option value="">Músculo (Todos)</option>
           <option *ngFor="let m of muscleGroups" [value]="m">{{ m | titlecase }}</option>
         </select>
         
-        <select [ngModel]="store.filterDiscipline()" (ngModelChange)="store.filterDiscipline.set($event)"
+        <label for="filterDiscipline" class="sr-only">Disciplina</label>
+        <select id="filterDiscipline" [ngModel]="store.filterDiscipline()" (ngModelChange)="store.filterDiscipline.set($event)"
                 class="w-full sm:w-auto bg-background border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-text-main focus:outline-none focus:border-primary appearance-none cursor-pointer">
           <option value="">Disciplina (Todas)</option>
           <option value="gym">Gym</option>
@@ -83,8 +86,8 @@
   <!-- SIDE SHEET (Detail Overlay) -->
   @if (store.isSideSheetOpen()) {
     <!-- Backdrop -->
-    <div class="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
-         (click)="closeSideSheet()"></div>
+    <button type="button" class="fixed inset-0 z-[100] w-full h-full bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 cursor-default"
+         (click)="closeSideSheet()" aria-label="Cerrar modal"></button>
     
     <!-- Sheet Container -->
     <div class="fixed inset-y-0 right-0 z-[110] w-full sm:w-[450px] bg-background border-l border-zinc-800 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
@@ -106,8 +109,8 @@
             
             <!-- Name -->
             <div>
-              <label class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Nombre del Ejercicio *</label>
-              <input type="text" formControlName="name" 
+              <label for="name" class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Nombre del Ejercicio *</label>
+              <input id="name" type="text" formControlName="name" 
                      class="w-full bg-surface border border-zinc-800 rounded-xl px-4 py-3 text-text-main focus:outline-none focus:border-primary transition-colors shadow-inner text-sm">
               <p *ngIf="exerciseForm.get('name')?.invalid && exerciseForm.get('name')?.touched" class="text-red-500 text-xs mt-1.5 font-medium">El nombre es requerido.</p>
             </div>
@@ -115,15 +118,15 @@
             <!-- Media URLs -->
             <div class="p-4 bg-surface rounded-xl border border-zinc-800 space-y-4">
               <div>
-                <label class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Image URL</label>
-                <input type="text" formControlName="imageUrl" 
+                <label for="imageUrl" class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Image URL</label>
+                <input id="imageUrl" type="text" formControlName="imageUrl" 
                        class="w-full bg-background border border-zinc-800 rounded-lg px-4 py-2.5 text-text-muted focus:outline-none focus:border-primary transition-colors shadow-inner text-sm">
               </div>
               <div>
-                <label class="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">
+                <label for="videoUrl" class="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">
                    Video URL <span class="text-red-500 text-[9px] border border-red-500/30 bg-red-500/10 px-1 rounded">YouTube</span>
                 </label>
-                <input type="text" formControlName="videoUrl" 
+                <input id="videoUrl" type="text" formControlName="videoUrl" 
                        placeholder="https://youtu.be/..."
                        class="w-full bg-background border border-zinc-800 rounded-lg px-4 py-2.5 text-text-muted focus:outline-none focus:border-red-500 transition-colors shadow-inner text-sm">
               </div>
@@ -132,29 +135,29 @@
             <!-- Selects -->
             <div class="grid grid-cols-2 gap-4">
               <div class="col-span-2 sm:col-span-1">
-                <label class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Disciplina *</label>
-                <select formControlName="discipline" class="w-full bg-surface border border-zinc-800 rounded-xl px-4 py-3 text-text-main focus:outline-none focus:border-primary transition-colors appearance-none text-sm cursor-pointer shadow-inner">
+                <label for="discipline" class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Disciplina *</label>
+                <select id="discipline" formControlName="discipline" class="w-full bg-surface border border-zinc-800 rounded-xl px-4 py-3 text-text-main focus:outline-none focus:border-primary transition-colors appearance-none text-sm cursor-pointer shadow-inner">
                   <option value="gym">Gym</option>
                   <option value="calisthenics">Calisthenics</option>
                   <option value="boxing">Boxing</option>
                 </select>
               </div>
               <div class="col-span-2 sm:col-span-1">
-                <label class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Músculo *</label>
-                <select formControlName="muscleGroup" class="w-full bg-surface border border-zinc-800 rounded-xl px-4 py-3 text-text-main focus:outline-none focus:border-primary transition-colors appearance-none text-sm cursor-pointer shadow-inner">
+                <label for="muscleGroup" class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Músculo *</label>
+                <select id="muscleGroup" formControlName="muscleGroup" class="w-full bg-surface border border-zinc-800 rounded-xl px-4 py-3 text-text-main focus:outline-none focus:border-primary transition-colors appearance-none text-sm cursor-pointer shadow-inner">
                   <option *ngFor="let m of muscleGroups" [value]="m">{{ m | titlecase }}</option>
                 </select>
               </div>
               <div class="col-span-2 sm:col-span-1">
-                <label class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Tipo *</label>
-                <select formControlName="type" class="w-full bg-surface border border-zinc-800 rounded-xl px-4 py-3 text-text-main focus:outline-none focus:border-primary transition-colors appearance-none text-sm cursor-pointer shadow-inner">
+                <label for="type" class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Tipo *</label>
+                <select id="type" formControlName="type" class="w-full bg-surface border border-zinc-800 rounded-xl px-4 py-3 text-text-main focus:outline-none focus:border-primary transition-colors appearance-none text-sm cursor-pointer shadow-inner">
                   <option value="compound">Compuesto</option>
                   <option value="isolated">Aislado</option>
                 </select>
               </div>
               <div class="col-span-2 sm:col-span-1">
-                <label class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Dificultad *</label>
-                <select formControlName="difficulty" class="w-full bg-surface border border-zinc-800 rounded-xl px-4 py-3 text-text-main focus:outline-none focus:border-primary transition-colors appearance-none text-sm cursor-pointer shadow-inner">
+                <label for="difficulty" class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Dificultad *</label>
+                <select id="difficulty" formControlName="difficulty" class="w-full bg-surface border border-zinc-800 rounded-xl px-4 py-3 text-text-main focus:outline-none focus:border-primary transition-colors appearance-none text-sm cursor-pointer shadow-inner">
                   <option value="beginner">Principiante</option>
                   <option value="intermediate">Intermedio</option>
                   <option value="advanced">Avanzado</option>
@@ -164,7 +167,7 @@
 
             <!-- Equipment Chips -->
             <div>
-              <label class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-2">Equipamiento (Opcional)</label>
+              <span class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-2">Equipamiento (Opcional)</span>
               <div class="flex flex-wrap gap-2 p-4 bg-surface rounded-xl border border-zinc-800">
                 <button type="button" *ngFor="let item of equipmentOptions" 
                         (click)="toggleEquipment(item)"
@@ -177,9 +180,9 @@
 
             <!-- Instructions -->
             <div>
-              <label class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Instrucciones</label>
+              <label for="instructions" class="block text-[11px] font-bold uppercase tracking-widest text-text-muted mb-1.5">Instrucciones</label>
               <p class="text-[10px] text-text-muted mb-2">Separa cada paso usando un punto y coma (;)</p>
-              <textarea formControlName="instructions" rows="4"
+              <textarea id="instructions" formControlName="instructions" rows="4"
                         placeholder="Ajusta el asiento; Tira de la barra; Contrae al máximo"
                         class="w-full bg-surface border border-zinc-800 rounded-xl px-4 py-3 text-text-muted focus:outline-none focus:border-primary transition-colors shadow-inner text-sm resize-none"></textarea>
             </div>
