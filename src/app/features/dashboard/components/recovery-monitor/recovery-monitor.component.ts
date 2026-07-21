@@ -57,6 +57,28 @@ export class RecoveryMonitorComponent {
   toggleSheet() { this.showSheet.update(v => !v); }
   closeSheet() { this.showSheet.set(false); }
 
+  /** Tooltip State */
+  tooltipPosition = signal<{x: number, y: number} | null>(null);
+
+  onTooltipData(event: {muscle: string, x: number, y: number} | null) {
+    if (!event) {
+       this.closeTooltip();
+       return;
+    }
+    this.tooltipPosition.set({ x: event.x, y: event.y });
+    // The selection is already handled by the 3D component via the service,
+    // but we can ensure it stays in sync.
+  }
+
+  closeTooltip() {
+    this.recoveryService.setSelectedMuscle(null);
+    this.tooltipPosition.set(null);
+  }
+
+  onCanvasMissed() {
+    this.closeTooltip();
+  }
+
   /** Controls the InBody re-scan modal */
   showRescanModal = signal(false);
   rescanState = signal<'idle' | 'scanning' | 'success' | 'error'>('idle');
@@ -125,10 +147,6 @@ export class RecoveryMonitorComponent {
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
-  }
-
-  closeHUD() {
-    this.recoveryService.setSelectedMuscle(null);
   }
 
   getEtaHours(percentage: number): number {
