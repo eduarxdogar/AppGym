@@ -1,0 +1,136 @@
+<div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
+  <div class="bg-[#151921] border border-zinc-700 rounded-3xl p-8 w-full max-w-md shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-500 min-h-[400px] flex flex-col justify-center">
+
+    <!-- Ambient Glow -->
+    <div class="absolute top-[-20%] left-[-20%] w-[200px] h-[200px] bg-[#CCFF00]/20 blur-[80px] pointer-events-none"></div>
+
+    <!-- ── CLOSE BUTTON (always visible, never hidden during generation) ── -->
+    @if (!isGenerating()) {
+      <button
+        (click)="close()"
+        class="absolute top-4 right-4 z-20 h-8 w-8 rounded-full bg-zinc-800/80 border border-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 hover:border-zinc-500 transition-all duration-200"
+        title="Cerrar resumen">
+        <mat-icon class="text-base" style="font-size:18px;width:18px;height:18px;line-height:18px;">close</mat-icon>
+      </button>
+    }
+
+    <!-- LOADING STATE -->
+    @if (isGenerating()) {
+      <div class="flex flex-col items-center justify-center space-y-6 relative z-10 py-10">
+        <div class="relative h-20 w-20">
+          <div class="absolute inset-0 border-4 border-zinc-800 rounded-full"></div>
+          <div class="absolute inset-0 border-4 border-[#CCFF00] rounded-full border-t-transparent animate-spin"></div>
+          <mat-icon class="absolute inset-0 m-auto text-[#CCFF00] h-6 w-6 text-2xl flex items-center justify-center animate-pulse">auto_awesome</mat-icon>
+        </div>
+        <p class="text-[#CCFF00] font-bold tracking-widest animate-pulse uppercase text-center text-lg">Planificando plan con IA...</p>
+        <p class="text-zinc-500 text-xs text-center uppercase tracking-widest">Calculando sobrecarga progresiva<br>y ajustando cargas.</p>
+      </div>
+    }
+
+    <!-- STEP 1: SUMMARY -->
+    @if (step() === 1 && !isGenerating()) {
+      <div class="animate-in fade-in duration-300">
+        <!-- Header -->
+        <div class="text-center mb-8 relative z-10">
+          <div class="inline-flex h-16 w-16 bg-[#CCFF00]/10 text-[#CCFF00] rounded-2xl items-center justify-center mb-4 border border-[#CCFF00]/30 shadow-[0_0_20px_rgba(204,255,0,0.2)]">
+            <mat-icon class="text-4xl" style="height: 36px; width: 36px; font-size: 36px;">emoji_events</mat-icon>
+          </div>
+          <h2 class="text-2xl font-black text-white uppercase tracking-wider">¡Microciclo Completado!</h2>
+          <p class="text-zinc-400 text-sm mt-2">Has dominado tu plan semanal. Este es tu impacto real:</p>
+        </div>
+        <!-- Metrics Grid — microcycle-scoped, real data -->
+        <div class="grid grid-cols-2 gap-4 mb-8 relative z-10">
+          <!-- Días Entrenados -->
+          <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 text-center">
+            <mat-icon class="text-blue-400 mb-1">event_available</mat-icon>
+            <div class="text-2xl font-black text-white">{{ cycleSessionsCount() }}</div>
+            <div class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Días Entrenados</div>
+          </div>
+          <!-- Volumen Total -->
+          <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 text-center">
+            <mat-icon class="text-[#CCFF00] mb-1">fitness_center</mat-icon>
+            <div class="text-2xl font-black text-[#CCFF00]">{{ cycleVolumeFormatted() }}</div>
+            <div class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Volumen Total</div>
+          </div>
+          <!-- Ejercicios Completados -->
+          <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 text-center">
+            <mat-icon class="text-purple-400 mb-1">task_alt</mat-icon>
+            <div class="text-2xl font-black text-white">{{ cycleExercisesCount() }}</div>
+            <div class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Ejercicios Realizados</div>
+          </div>
+          <!-- Tasa de Adherencia -->
+          <div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 text-center">
+            <mat-icon class="text-orange-400 mb-1">local_fire_department</mat-icon>
+            <div class="text-2xl font-black text-orange-400">100%</div>
+            <div class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Adherencia Bloque</div>
+          </div>
+        </div>
+        <!-- Actions -->
+        <div class="space-y-3 relative z-10">
+          <button (click)="step.set(2)"
+            class="w-full py-4 bg-[#CCFF00] hover:bg-[#bbe600] text-black font-extrabold text-sm uppercase tracking-widest rounded-xl shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-all flex items-center justify-center gap-2">
+            Configurar Siguiente Bloque (IA) <mat-icon>arrow_forward</mat-icon>
+          </button>
+          <button (click)="close()"
+            class="w-full py-3 bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 font-bold text-xs uppercase tracking-widest rounded-xl transition-all">
+            Mantener Plan Actual
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- STEP 2: AUTO-REGULATION CONFIG -->
+    @if (step() === 2 && !isGenerating()) {
+      <div class="animate-in fade-in duration-300">
+        <div class="text-center mb-6 relative z-10">
+          <div class="inline-flex h-12 w-12 bg-purple-500/10 text-purple-400 rounded-xl items-center justify-center mb-3 border border-purple-500/30">
+            <mat-icon>psychology</mat-icon>
+          </div>
+          <h2 class="text-xl font-black text-white uppercase tracking-wider">Ajuste de Sobrecarga Progresiva</h2>
+          <p class="text-zinc-400 text-xs mt-1">Configura las directivas para que la IA escale tu siguiente microciclo.</p>
+        </div>
+        <!-- Intensity Direction -->
+        <div class="mb-5">
+          <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block">Dirección de Carga</p>
+          <div class="grid grid-cols-3 gap-2">
+            <button (click)="direction.set('increment')"
+              [class.bg-[#CCFF00]]="direction() === 'increment'" [class.text-black]="direction() === 'increment'"
+              class="py-3 px-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-400 text-xs font-bold uppercase tracking-wider hover:border-zinc-700 transition text-center">
+              ▲ Sobrecarga (+2.5%)
+            </button>
+            <button (click)="direction.set('maintain')"
+              [class.bg-[#CCFF00]]="direction() === 'maintain'" [class.text-black]="direction() === 'maintain'"
+              class="py-3 px-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-400 text-xs font-bold uppercase tracking-wider hover:border-zinc-700 transition text-center">
+              〓 Consolidad
+            </button>
+            <button (click)="direction.set('deload')"
+              [class.bg-[#CCFF00]]="direction() === 'deload'" [class.text-black]="direction() === 'deload'"
+              class="py-3 px-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-400 text-xs font-bold uppercase tracking-wider hover:border-zinc-700 transition text-center">
+              ▼ Descarga (-10%)
+            </button>
+          </div>
+        </div>
+        <!-- Frequency Options -->
+        <div class="mb-8">
+          <label for="frecuenciaDias" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block">Frecuencia (Días)</label>
+          <select id="frecuenciaDias" [ngModel]="frequencyAdj()" (ngModelChange)="frequencyAdj.set($event)"
+            class="w-full bg-[#0B0E14] border border-zinc-800 rounded-xl p-4 text-sm text-white focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00] outline-none cursor-pointer">
+            <option [ngValue]="0">Mantener frecuencia actual</option>
+            <option [ngValue]="1">Agregar un día más (+1)</option>
+            <option [ngValue]="-1">Quitar un día de entrenamiento (-1)</option>
+          </select>
+        </div>
+        <div class="flex gap-3">
+          <button (click)="step.set(1)" class="px-4 py-4 rounded-xl border border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white transition flex items-center justify-center">
+            <mat-icon>arrow_back</mat-icon>
+          </button>
+          <button (click)="submitRollover()"
+            class="flex-1 py-4 bg-[#CCFF00] hover:bg-[#bbe600] text-black font-extrabold text-sm uppercase tracking-widest rounded-xl shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-all flex items-center justify-center gap-2">
+            <mat-icon>auto_awesome</mat-icon> Planificar con IA Coach
+          </button>
+        </div>
+      </div>
+    }
+
+  </div>
+</div>

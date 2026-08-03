@@ -8,8 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
   selector: 'app-calendar',
   standalone: true,
   imports: [CommonModule, MatIconModule],
-  templateUrl: './calendar.component.html',
-  styleUrls: ['./calendar.component.scss']
+  templateUrl: './calendar.component.html'
 })
 export class CalendarComponent implements OnInit {
   sesiones: TrainingSession[] = [];

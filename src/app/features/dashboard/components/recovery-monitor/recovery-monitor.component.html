@@ -9,14 +9,14 @@
     <div class="flex items-center gap-2">
       <!-- Re-scan InBody -->
       <button (click)="openRescan()"
-              title="Actualizar InBody"
-              class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-800/80 border border-zinc-700 text-zinc-400 text-[10px] font-bold uppercase tracking-wider hover:border-[#00f3ff]/50 hover:text-[#00f3ff] transition-all">
+        title="Actualizar InBody"
+        class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-800/80 border border-zinc-700 text-zinc-400 text-[10px] font-bold uppercase tracking-wider hover:border-[#00f3ff]/50 hover:text-[#00f3ff] transition-all">
         <mat-icon class="text-sm">document_scanner</mat-icon>
         InBody
       </button>
       <!-- Análisis Muscular -->
       <button (click)="toggleSheet()"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00f3ff]/10 border border-[#00f3ff]/30 text-[#00f3ff] text-xs font-bold uppercase tracking-wider hover:bg-[#00f3ff]/20 transition-all">
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00f3ff]/10 border border-[#00f3ff]/30 text-[#00f3ff] text-xs font-bold uppercase tracking-wider hover:bg-[#00f3ff]/20 transition-all">
         <mat-icon class="text-sm">biotech</mat-icon>
         Análisis
       </button>
@@ -24,345 +24,357 @@
   </div>
 
   <!-- Hidden InBody file input -->
-  <input #inbodyFileInput type="file" accept="image/*,.pdf" class="hidden"
-         (change)="onInbodyFileSelected($event)">
+  <input id="inbody-file-input" #inbodyFileInput type="file" accept="image/*,.pdf" class="hidden"
+    (change)="onInbodyFileSelected($event)" aria-label="Seleccionar archivo InBody">
 
-  <!-- Sugerencia Rápida (80%+) -->
-  <div *ngIf="suggestedMuscles().length > 0" class="mb-4 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
-    <h4 class="text-xs text-zinc-400 font-medium mb-2 uppercase tracking-wider flex items-center gap-1.5">
-      <mat-icon class="text-xs scale-75 text-[#CCFF00]">recommend</mat-icon> Listos para entrenar
-    </h4>
-    <div class="flex flex-wrap gap-2">
-      <span *ngFor="let m of suggestedMuscles()"
-            class="px-3 py-1 rounded-full text-xs font-semibold bg-[#CCFF00]/10 text-[#CCFF00] border border-[#CCFF00]/20">
-        {{ m.name }}
-      </span>
-    </div>
-  </div>
+    <!-- Sugerencia Rápida (80%+) -->
+    @if (suggestedMuscles().length > 0) {
+      <div class="mb-4 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+        <h4 class="text-xs text-zinc-400 font-medium mb-2 uppercase tracking-wider flex items-center gap-1.5">
+          <mat-icon class="text-xs scale-75 text-[#CCFF00]">recommend</mat-icon> Listos para entrenar
+        </h4>
+        <div class="flex flex-wrap gap-2">
+          @for (m of suggestedMuscles(); track m) {
+            <span
+              class="px-3 py-1 rounded-full text-xs font-semibold bg-[#CCFF00]/10 text-[#CCFF00] border border-[#CCFF00]/20">
+              {{ m.name }}
+            </span>
+          }
+        </div>
+      </div>
+    }
 
-  <!-- Body Map Visualization (3D Hologram) -->
-  <div class="relative w-full h-[480px] sm:h-[580px] bg-black/40 rounded-xl border border-[#00D2FF]/20 overflow-hidden shadow-[inset_0_0_50px_rgba(0,210,255,0.05)] mb-0">
-    <!-- Background grid overlay -->
-    <div class="absolute inset-0 pointer-events-none"
-         style="background-image: linear-gradient(rgba(0,210,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,210,255,0.03) 1px, transparent 1px); background-size: 40px 40px;"></div>
-    <!-- Radial glow -->
-    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,243,255,0.06)_0%,_transparent_70%)] pointer-events-none"></div>
-    <!-- Corner brackets (cian) -->
-    <div class="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-[#00f3ff]/60 pointer-events-none"></div>
-    <div class="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-[#00f3ff]/60 pointer-events-none"></div>
-    <div class="absolute bottom-16 left-3 w-5 h-5 border-b-2 border-l-2 border-[#00f3ff]/60 pointer-events-none"></div>
-    <div class="absolute bottom-16 right-3 w-5 h-5 border-b-2 border-r-2 border-[#00f3ff]/60 pointer-events-none"></div>
-    <!-- Status label -->
-    <div class="absolute top-3 left-1/2 -translate-x-1/2 text-[9px] font-mono text-[#00f3ff]/50 tracking-[0.4em] uppercase pointer-events-none z-10">BIOMETRIC SCAN ACTIVE</div>
+    <!-- Body Map Visualization (3D Hologram) -->
+    <div class="relative w-full h-[480px] sm:h-[580px] bg-black/40 rounded-xl border border-[#00D2FF]/20 overflow-hidden shadow-[inset_0_0_50px_rgba(0,210,255,0.05)] mb-0">
+      <!-- Background grid overlay -->
+      <div class="absolute inset-0 pointer-events-none"
+      style="background-image: linear-gradient(rgba(0,210,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,210,255,0.03) 1px, transparent 1px); background-size: 40px 40px;"></div>
+      <!-- Radial glow -->
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,243,255,0.06)_0%,_transparent_70%)] pointer-events-none"></div>
+      <!-- Corner brackets (cian) -->
+      <div class="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-[#00f3ff]/60 pointer-events-none"></div>
+      <div class="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-[#00f3ff]/60 pointer-events-none"></div>
+      <div class="absolute bottom-16 left-3 w-5 h-5 border-b-2 border-l-2 border-[#00f3ff]/60 pointer-events-none"></div>
+      <div class="absolute bottom-16 right-3 w-5 h-5 border-b-2 border-r-2 border-[#00f3ff]/60 pointer-events-none"></div>
+      <!-- Status label -->
+      <div class="absolute top-3 left-1/2 -translate-x-1/2 text-[9px] font-mono text-[#00f3ff]/50 tracking-[0.4em] uppercase pointer-events-none z-10">BIOMETRIC SCAN ACTIVE</div>
 
-    <!-- 3D Canvas -->
-    <ngt-canvas [camera]="{ position: [0, 0, 40], fov: 45 }" (pointermissed)="onCanvasMissed()">
-      <ng-template canvasContent>
-        <app-biometric-model (tooltipData)="onTooltipData($event)" />
-      </ng-template>
-    </ngt-canvas>
+      <!-- 3D Canvas -->
+      <ngt-canvas [camera]="{ position: [0, 0, 40], fov: 45 }" (pointermissed)="onCanvasMissed()">
+        <ng-template canvasContent>
+          <app-biometric-model (tooltipData)="onTooltipData($event)" />
+        </ng-template>
+      </ngt-canvas>
 
-    <!-- HUD BOTTOM BAR (InBody) — Mobile-First -->
-    <div *ngIf="profile()?.inbodyData"
+      <!-- HUD BOTTOM BAR (InBody) — Mobile-First -->
+      @if (profile()?.inbodyData) {
+        <div
          class="absolute bottom-0 left-0 right-0 z-10 pointer-events-none
                 flex flex-row gap-2 p-2 sm:p-3
                 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-
-      <!-- Agua Corporal -->
-      <div class="flex-1 flex items-center gap-2 bg-black/50 backdrop-blur-sm border border-[#00f3ff]/20 rounded-lg px-3 py-2">
-        <mat-icon class="text-[#00f3ff] text-base shrink-0">water_drop</mat-icon>
-        <div class="min-w-0 flex-1">
-          <div class="flex items-baseline gap-1">
-            <span class="text-lg font-black text-[#00f3ff] font-mono tabular-nums leading-none">{{ profile()?.inbodyData?.waterPercentage || '--' }}</span>
-            <span class="text-[10px] text-[#00f3ff]/60 font-mono">%</span>
+          <!-- Agua Corporal -->
+          <div class="flex-1 flex items-center gap-2 bg-black/50 backdrop-blur-sm border border-[#00f3ff]/20 rounded-lg px-3 py-2">
+            <mat-icon class="text-[#00f3ff] text-base shrink-0">water_drop</mat-icon>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-baseline gap-1">
+                <span class="text-lg font-black text-[#00f3ff] font-mono tabular-nums leading-none">{{ profile()?.inbodyData?.waterPercentage || '--' }}</span>
+                <span class="text-[10px] text-[#00f3ff]/60 font-mono">%</span>
+              </div>
+              <div class="text-[9px] text-zinc-500 uppercase font-mono tracking-tighter">Hidratación</div>
+              <div class="w-full h-[2px] bg-zinc-800 rounded-full mt-1 overflow-hidden">
+                <div class="h-full bg-[#00f3ff] shadow-[0_0_6px_#00f3ff]"
+                [style.width.%]="profile()?.inbodyData?.waterPercentage"></div>
+              </div>
+            </div>
           </div>
-          <div class="text-[9px] text-zinc-500 uppercase font-mono tracking-tighter">Hidratación</div>
-          <div class="w-full h-[2px] bg-zinc-800 rounded-full mt-1 overflow-hidden">
-            <div class="h-full bg-[#00f3ff] shadow-[0_0_6px_#00f3ff]"
-                 [style.width.%]="profile()?.inbodyData?.waterPercentage"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Grasa Visceral -->
-      <div class="flex-1 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2"
+          <!-- Grasa Visceral -->
+          <div class="flex-1 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2"
            [ngClass]="profile()?.inbodyData?.visceralFat == null 
                         ? 'border border-zinc-700' 
-                        : (profile()?.inbodyData?.visceralFat! > 14 ? 'border border-[#FF0033]/30' : (profile()?.inbodyData?.visceralFat! > 9 ? 'border border-[#FFB300]/30' : 'border border-[#CCFF00]/20'))">
+                        : (profile()?.inbodyData!.visceralFat! > 14 ? 'border border-[#FF0033]/30' : (profile()?.inbodyData!.visceralFat! > 9 ? 'border border-[#FFB300]/30' : 'border border-[#CCFF00]/20'))">
         <mat-icon class="text-base shrink-0"
                   [ngClass]="profile()?.inbodyData?.visceralFat == null 
                                ? 'text-zinc-500' 
-                               : (profile()?.inbodyData?.visceralFat! > 14 ? 'text-[#FF0033]' : (profile()?.inbodyData?.visceralFat! > 9 ? 'text-[#FFB300]' : 'text-[#CCFF00]'))">
-          {{ profile()?.inbodyData?.visceralFat == null ? 'help_outline' : (profile()?.inbodyData?.visceralFat! > 9 ? 'warning' : 'shield') }}
+                               : (profile()?.inbodyData!.visceralFat! > 14 ? 'text-[#FF0033]' : (profile()?.inbodyData!.visceralFat! > 9 ? 'text-[#FFB300]' : 'text-[#CCFF00]'))">
+          {{ profile()?.inbodyData?.visceralFat == null ? 'help_outline' : (profile()?.inbodyData!.visceralFat! > 9 ? 'warning' : 'shield') }}
         </mat-icon>
         <div class="min-w-0 flex-1">
-          <ng-container *ngIf="profile()?.inbodyData?.visceralFat != null; else visceralNull">
+          @if (profile()?.inbodyData?.visceralFat != null) {
+
             <div class="flex items-baseline justify-between">
               <div class="flex items-baseline gap-0.5">
                 <span class="text-lg font-black text-white font-mono tabular-nums leading-none">{{ profile()?.inbodyData?.visceralFat }}</span>
                 <span class="text-[10px] text-zinc-500 font-mono">/ 20</span>
               </div>
               <span class="text-[9px] uppercase font-mono tracking-tighter font-bold"
-                   [ngClass]="profile()?.inbodyData?.visceralFat! > 14 ? 'text-[#FF0033]' : (profile()?.inbodyData?.visceralFat! > 9 ? 'text-[#FFB300]' : 'text-[#CCFF00]')">
-                {{ profile()?.inbodyData?.visceralFat! > 14 ? 'ALTO' : (profile()?.inbodyData?.visceralFat! > 9 ? 'MODERADO' : 'ÓPTIMO') }}
-              </span>
+                   [ngClass]="profile()?.inbodyData!.visceralFat! > 14 ? 'text-[#FF0033]' : (profile()?.inbodyData!.visceralFat! > 9 ? 'text-[#FFB300]' : 'text-[#CCFF00]')">
+                    {{ profile()?.inbodyData!.visceralFat! > 14 ? 'ALTO' : (profile()?.inbodyData!.visceralFat! > 9 ? 'MODERADO' : 'ÓPTIMO') }}
+                  </span>
+                </div>
+                <div class="w-full h-[2px] bg-zinc-800 rounded-full mt-1 overflow-hidden">
+                  <div class="h-full rounded-full transition-all"
+                    [style.width.%]="(profile()?.inbodyData!.visceralFat! / 20) * 100"
+                    [ngClass]="profile()?.inbodyData!.visceralFat! > 14 ? 'bg-[#FF0033]' : (profile()?.inbodyData!.visceralFat! > 9 ? 'bg-[#FFB300]' : 'bg-[#CCFF00]')">
+                  </div>
+                </div>
+              } @else {
+                <div class="flex items-baseline justify-between h-full w-full">
+                  <div class="flex items-baseline gap-0.5 mx-auto">
+                    <span class="text-lg font-black text-zinc-500 font-mono tabular-nums leading-none">N/A</span>
+                  </div>
+                </div>
+              }
             </div>
-            <div class="w-full h-[2px] bg-zinc-800 rounded-full mt-1 overflow-hidden">
-              <div class="h-full rounded-full transition-all"
-                   [style.width.%]="(profile()?.inbodyData?.visceralFat! / 20) * 100"
-                   [ngClass]="profile()?.inbodyData?.visceralFat! > 14 ? 'bg-[#FF0033]' : (profile()?.inbodyData?.visceralFat! > 9 ? 'bg-[#FFB300]' : 'bg-[#CCFF00]')">
-              </div>
-            </div>
-          </ng-container>
-          <ng-template #visceralNull>
-            <div class="flex items-baseline justify-between h-full w-full">
-              <div class="flex items-baseline gap-0.5 mx-auto">
-                <span class="text-lg font-black text-zinc-500 font-mono tabular-nums leading-none">N/A</span>
-              </div>
-            </div>
-          </ng-template>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Floating Tooltip (Nubecita) -->
-  <div *ngIf="selectedMuscle() && tooltipPosition()"
-       class="fixed z-50 p-4 rounded-xl backdrop-blur-md bg-[#0B0E14]/90 border border-[#00f3ff]/50 shadow-[0_0_30px_rgba(0,243,255,0.2)] min-w-[240px] max-w-xs transition-all duration-200 pointer-events-auto"
-       [style.left.px]="tooltipPosition()?.x"
-       [style.top.px]="tooltipPosition()?.y"
-       style="transform: translate(-50%, -120%);">
-
-    <button (click)="closeTooltip()" class="absolute top-2 right-2 text-zinc-500 hover:text-[#00f3ff] transition p-1">
-      <mat-icon class="text-[16px] w-[16px] h-[16px] leading-[16px]">close</mat-icon>
-    </button>
-
-    <div class="mb-3 pr-4">
-      <div class="text-[9px] text-[#00f3ff] tracking-[0.3em] uppercase mb-0.5 font-mono">Target Acquired</div>
-      <h2 class="text-lg font-black text-white uppercase tracking-wider leading-tight">{{ selectedMuscle()?.name }}</h2>
-    </div>
-
-    <div class="space-y-3">
-      <div class="border-l-2 pl-3 transition-colors"
-           [ngStyle]="{ 'border-color': selectedMuscle()?.percentage! <= 30 ? '#FF0033' : (selectedMuscle()?.percentage! <= 75 ? '#FFB300' : '#00f3ff') }">
-        <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-mono mb-0.5">[ FATIGUE LEVEL ]</div>
-        <div class="flex items-center gap-2">
-          <div class="text-2xl font-black text-white font-mono tracking-tighter" style="text-shadow: 0 0 10px rgba(255,255,255,0.2);">
-            {{ selectedMuscle()?.percentage }}<span class="text-sm text-zinc-500">%</span>
-          </div>
-          <div class="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-            <div class="h-full rounded-full transition-all duration-1000"
-                 [style.width.%]="selectedMuscle()?.percentage"
-                 [ngStyle]="{ 'background-color': selectedMuscle()?.percentage! <= 30 ? '#FF0033' : (selectedMuscle()?.percentage! <= 75 ? '#FFB300' : '#00f3ff') }"></div>
           </div>
         </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800/60">
-         <div>
-           <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-mono mb-0.5">ETA</div>
-           <div class="text-sm font-bold text-white font-mono">{{ getEtaHours(selectedMuscle()!.percentage) }} HRS</div>
-         </div>
-         <div>
-           <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-mono mb-0.5">VOLUME</div>
-           <div class="text-sm font-bold text-[#00f3ff] font-mono">{{ selectedMuscle()?.totalVolume | number:'1.0-0' }} KG</div>
-         </div>
-      </div>
+      }
     </div>
-  </div>
-</div>
 
-<!-- ═══════════════════════════════════════════════
-  BOTTOM SHEET — Análisis Muscular Completo
-══════════════════════════════════════════════════ -->
-
-<!-- Backdrop -->
-<div *ngIf="showSheet()"
-     (click)="closeSheet()"
-     class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-</div>
-
-<!-- Sheet Panel -->
-<div class="fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-out"
-     [ngClass]="showSheet() ? 'translate-y-0 animate-in slide-in-from-bottom duration-300' : 'translate-y-full pointer-events-none'">
-  <div class="bg-[#0d1117] border-t border-[#00f3ff]/20 rounded-t-2xl max-h-[75vh] overflow-y-auto shadow-[0_-10px_60px_rgba(0,0,0,0.8)]">
-
-    <!-- Sheet Handle + Header -->
-    <div class="sticky top-0 bg-[#0d1117] pt-3 pb-4 px-4 border-b border-zinc-800/60 z-10">
-      <div class="w-10 h-1 rounded-full bg-zinc-700 mx-auto mb-4"></div>
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <mat-icon class="text-[#00f3ff] text-base">analytics</mat-icon>
-          <span class="text-base font-bold text-white uppercase tracking-widest font-mono">Análisis Muscular</span>
-        </div>
-        <button (click)="closeSheet()" class="text-zinc-500 hover:text-white transition p-1">
-          <mat-icon>close</mat-icon>
+    <!-- Floating Tooltip (Nubecita) -->
+    @if (selectedMuscle() && tooltipPosition()) {
+      <div
+        class="fixed z-50 p-4 rounded-xl backdrop-blur-md bg-[#0B0E14]/90 border border-[#00f3ff]/50 shadow-[0_0_30px_rgba(0,243,255,0.2)] min-w-[240px] max-w-xs transition-all duration-200 pointer-events-auto"
+        [style.left.px]="tooltipPosition()?.x"
+        [style.top.px]="tooltipPosition()?.y"
+        style="transform: translate(-50%, -120%);">
+        <button (click)="closeTooltip()" class="absolute top-2 right-2 text-zinc-500 hover:text-[#00f3ff] transition p-1">
+          <mat-icon class="text-[16px] w-[16px] h-[16px] leading-[16px]">close</mat-icon>
         </button>
-      </div>
-    </div>
-
-    <!-- Muscle List -->
-    <div class="p-4 space-y-3 overflow-y-auto scrollbar-thin scrollbar-thumb-[#CCFF00]/40 scrollbar-track-zinc-900" style="max-height: 55vh;">
-      <div *ngFor="let m of allMuscles()"
-           class="bg-[#151921] border rounded-xl p-4 transition-colors"
-           [ngClass]="m.percentage <= 30 ? 'border-[#FF0033]/30' : m.percentage <= 75 ? 'border-[#FFB300]/30' : 'border-[#CCFF00]/20'">
-
-        <div class="flex items-center gap-3">
-          <!-- Status indicator dot -->
-          <div class="w-2 h-2 rounded-full shrink-0"
-               [ngClass]="m.percentage <= 30 ? 'bg-[#FF0033] shadow-[0_0_6px_#FF0033]' : m.percentage <= 75 ? 'bg-[#FFB300] shadow-[0_0_6px_#FFB300]' : 'bg-[#CCFF00] shadow-[0_0_6px_#CCFF00]'">
-          </div>
-
-          <!-- Info -->
-          <div class="flex-1 min-w-0">
-            <div class="flex items-baseline justify-between mb-1.5">
-              <span class="text-sm font-bold text-white">{{ m.name }}</span>
-              <span class="text-xs font-mono font-bold"
-                    [ngClass]="m.percentage <= 30 ? 'text-[#FF0033]' : m.percentage <= 75 ? 'text-[#FFB300]' : 'text-[#CCFF00]'">
-                {{ m.percentage }}%
-              </span>
-            </div>
-            <!-- Progress tube -->
-            <div class="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-              <div class="h-full rounded-full transition-all duration-700"
-                   [style.width.%]="m.percentage"
-                   [ngClass]="m.percentage <= 30 ? 'bg-[#FF0033]' : m.percentage <= 75 ? 'bg-[#FFB300]' : 'bg-[#CCFF00]'">
+        <div class="mb-3 pr-4">
+          <div class="text-[9px] text-[#00f3ff] tracking-[0.3em] uppercase mb-0.5 font-mono">Target Acquired</div>
+          <h2 class="text-lg font-black text-white uppercase tracking-wider leading-tight">{{ selectedMuscle()?.name }}</h2>
+        </div>
+        <div class="space-y-3">
+          <div class="border-l-2 pl-3 transition-colors"
+            [ngStyle]="{ 'border-color': selectedMuscle()?.percentage! <= 30 ? '#FF0033' : (selectedMuscle()?.percentage! <= 75 ? '#FFB300' : '#00f3ff') }">
+            <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-mono mb-0.5">[ FATIGUE LEVEL ]</div>
+            <div class="flex items-center gap-2">
+              <div class="text-2xl font-black text-white font-mono tracking-tighter" style="text-shadow: 0 0 10px rgba(255,255,255,0.2);">
+                {{ selectedMuscle()?.percentage }}<span class="text-sm text-zinc-500">%</span>
+              </div>
+              <div class="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-1000"
+                  [style.width.%]="selectedMuscle()?.percentage"
+                [ngStyle]="{ 'background-color': selectedMuscle()?.percentage! <= 30 ? '#FF0033' : (selectedMuscle()?.percentage! <= 75 ? '#FFB300' : '#00f3ff') }"></div>
               </div>
             </div>
-            <!-- Last session + status -->
-            <div class="flex justify-between items-center mt-1">
-              <span class="text-[9px] text-zinc-600 font-mono">
-                <ng-container *ngIf="m.lastWorkoutDate; else noSession">
-                   Última: {{ m.lastWorkoutDate | date:'shortDate' }}
-                </ng-container>
-                <ng-template #noSession>Sin sesión</ng-template>
-              </span>
-              <span class="text-[9px] font-bold uppercase font-mono"
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800/60">
+            <div>
+              <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-mono mb-0.5">ETA</div>
+              <div class="text-sm font-bold text-white font-mono">{{ getEtaHours(selectedMuscle()!.percentage) }} HRS</div>
+            </div>
+            <div>
+              <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-mono mb-0.5">VOLUME</div>
+              <div class="text-sm font-bold text-[#00f3ff] font-mono">{{ selectedMuscle()?.totalVolume | number:'1.0-0' }} KG</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+  BOTTOM SHEET — Análisis Muscular Completo
+  ══════════════════════════════════════════════════ -->
+
+  <!-- Backdrop -->
+  @if (showSheet()) {
+    <button
+      type="button"
+      (click)="closeSheet()"
+      aria-label="Cerrar análisis muscular"
+      class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 w-full h-full border-none cursor-pointer">
+    </button>
+  }
+
+  <!-- Sheet Panel -->
+  <div class="fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-out"
+    [ngClass]="showSheet() ? 'translate-y-0 animate-in slide-in-from-bottom duration-300' : 'translate-y-full pointer-events-none'">
+    <div class="bg-[#0d1117] border-t border-[#00f3ff]/20 rounded-t-2xl max-h-[75vh] overflow-y-auto shadow-[0_-10px_60px_rgba(0,0,0,0.8)]">
+
+      <!-- Sheet Handle + Header -->
+      <div class="sticky top-0 bg-[#0d1117] pt-3 pb-4 px-4 border-b border-zinc-800/60 z-10">
+        <div class="w-10 h-1 rounded-full bg-zinc-700 mx-auto mb-4"></div>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <mat-icon class="text-[#00f3ff] text-base">analytics</mat-icon>
+            <span class="text-base font-bold text-white uppercase tracking-widest font-mono">Análisis Muscular</span>
+          </div>
+          <button (click)="closeSheet()" class="text-zinc-500 hover:text-white transition p-1">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Muscle List -->
+      <div class="p-4 space-y-3 overflow-y-auto scrollbar-thin scrollbar-thumb-[#CCFF00]/40 scrollbar-track-zinc-900" style="max-height: 55vh;">
+        @for (m of allMuscles(); track m) {
+          <div
+            class="bg-[#151921] border rounded-xl p-4 transition-colors"
+            [ngClass]="m.percentage <= 30 ? 'border-[#FF0033]/30' : m.percentage <= 75 ? 'border-[#FFB300]/30' : 'border-[#CCFF00]/20'">
+            <div class="flex items-center gap-3">
+              <!-- Status indicator dot -->
+              <div class="w-2 h-2 rounded-full shrink-0"
+                [ngClass]="m.percentage <= 30 ? 'bg-[#FF0033] shadow-[0_0_6px_#FF0033]' : m.percentage <= 75 ? 'bg-[#FFB300] shadow-[0_0_6px_#FFB300]' : 'bg-[#CCFF00] shadow-[0_0_6px_#CCFF00]'">
+              </div>
+              <!-- Info -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-baseline justify-between mb-1.5">
+                  <span class="text-sm font-bold text-white">{{ m.name }}</span>
+                  <span class="text-xs font-mono font-bold"
                     [ngClass]="m.percentage <= 30 ? 'text-[#FF0033]' : m.percentage <= 75 ? 'text-[#FFB300]' : 'text-[#CCFF00]'">
-                {{ m.percentage <= 30 ? 'Fatigado' : m.percentage <= 75 ? 'Recuperando' : 'Listo' }}
-              </span>
-            </div>
-            <!-- Segmental InBody data row -->
-            <div class="flex justify-between mt-2 pt-2 border-t border-zinc-800/60 text-[10px] text-zinc-400 font-mono">
-              <span>Masa: <span class="text-white">{{ getSegmentalInfo(m.name)?.muscle || 'N/A' }}</span></span>
-              <span>Grasa: <span class="text-white">{{ getSegmentalInfo(m.name)?.fat || 'N/A' }}</span></span>
+                    {{ m.percentage }}%
+                  </span>
+                </div>
+                <!-- Progress tube -->
+                <div class="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-700"
+                    [style.width.%]="m.percentage"
+                    [ngClass]="m.percentage <= 30 ? 'bg-[#FF0033]' : m.percentage <= 75 ? 'bg-[#FFB300]' : 'bg-[#CCFF00]'">
+                  </div>
+                </div>
+                <!-- Last session + status -->
+                <div class="flex justify-between items-center mt-1">
+                  <span class="text-[9px] text-zinc-600 font-mono">
+                    @if (m.lastWorkoutDate) {
+                      Última: {{ m.lastWorkoutDate | date:'shortDate' }}
+                    } @else {
+                      Sin sesión
+                    }
+                  </span>
+                  <span class="text-[9px] font-bold uppercase font-mono"
+                    [ngClass]="m.percentage <= 30 ? 'text-[#FF0033]' : m.percentage <= 75 ? 'text-[#FFB300]' : 'text-[#CCFF00]'">
+                    {{ m.percentage <= 30 ? 'Fatigado' : m.percentage <= 75 ? 'Recuperando' : 'Listo' }}
+                  </span>
+                </div>
+                <!-- Segmental InBody data row -->
+                <div class="flex justify-between mt-2 pt-2 border-t border-zinc-800/60 text-[10px] text-zinc-400 font-mono">
+                  <span>Masa: <span class="text-white">{{ getSegmentalInfo(m.name)?.muscle || 'N/A' }}</span></span>
+                  <span>Grasa: <span class="text-white">{{ getSegmentalInfo(m.name)?.fat || 'N/A' }}</span></span>
+                </div>
+              </div>
+              <!-- ETA badge -->
+              <div class="shrink-0 text-center pl-3">
+                <span class="text-[10px] font-mono text-zinc-600 block">ETA</span>
+                <span class="text-sm font-black text-white font-mono">{{ getEtaHours(m.percentage) }}h</span>
+              </div>
             </div>
           </div>
+        }
 
-          <!-- ETA badge -->
-          <div class="shrink-0 text-center pl-3">
-            <span class="text-[10px] font-mono text-zinc-600 block">ETA</span>
-            <span class="text-sm font-black text-white font-mono">{{ getEtaHours(m.percentage) }}h</span>
+        <!-- Empty state -->
+        @if (allMuscles().length === 0) {
+          <div class="text-center py-12 text-zinc-600">
+            <mat-icon class="text-4xl mb-2">monitor_heart</mat-icon>
+            <p class="text-sm font-mono">Sin datos de entrenamiento</p>
+            <p class="text-xs mt-1">Completa una sesión para ver tu análisis muscular</p>
           </div>
-        </div>
-
+        }
       </div>
 
-      <!-- Empty state -->
-      <div *ngIf="allMuscles().length === 0" class="text-center py-12 text-zinc-600">
-        <mat-icon class="text-4xl mb-2">monitor_heart</mat-icon>
-        <p class="text-sm font-mono">Sin datos de entrenamiento</p>
-        <p class="text-xs mt-1">Completa una sesión para ver tu análisis muscular</p>
-      </div>
+      <!-- Bottom safe area padding -->
+      <div class="h-6"></div>
     </div>
-
-    <!-- Bottom safe area padding -->
-    <div class="h-6"></div>
   </div>
-</div>
 
-<!-- ═══════════════════════════════════════════════════════════
+  <!-- ═══════════════════════════════════════════════════════════
   RE-SCAN INBODY MODAL
-═══════════════════════════════════════════════════════════ -->
+  ═══════════════════════════════════════════════════════════ -->
 
-<!-- Backdrop -->
-<div *ngIf="showRescanModal()"
-     (click)="closeRescan()"
-     class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-</div>
+  <!-- Backdrop -->
+  @if (showRescanModal()) {
+    <button
+      type="button"
+      (click)="closeRescan()"
+      aria-label="Cerrar escáner InBody"
+      class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 w-full h-full border-none cursor-pointer">
+    </button>
+  }
 
-<!-- Modal Card -->
-<div *ngIf="showRescanModal()"
-     class="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-sm mx-auto animate-in zoom-in-95 duration-200">
-  <div class="bg-[#0d1117] border border-[#00f3ff]/30 rounded-2xl p-6 shadow-[0_0_60px_rgba(0,243,255,0.15)]">
-
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-[#00f3ff]/10 border border-[#00f3ff]/30 flex items-center justify-center">
-          <mat-icon class="text-[#00f3ff]">document_scanner</mat-icon>
+  <!-- Modal Card -->
+  @if (showRescanModal()) {
+    <div
+      class="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-sm mx-auto animate-in zoom-in-95 duration-200">
+      <div class="bg-[#0d1117] border border-[#00f3ff]/30 rounded-2xl p-6 shadow-[0_0_60px_rgba(0,243,255,0.15)]">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-[#00f3ff]/10 border border-[#00f3ff]/30 flex items-center justify-center">
+              <mat-icon class="text-[#00f3ff]">document_scanner</mat-icon>
+            </div>
+            <div>
+              <h3 class="text-white font-bold text-base tracking-wide">Actualizar InBody</h3>
+              <p class="text-zinc-500 text-xs">Sube tu nuevo reporte para sincronizar el holograma</p>
+            </div>
+          </div>
+          <button (click)="closeRescan()" class="text-zinc-600 hover:text-white transition p-1">
+            <mat-icon>close</mat-icon>
+          </button>
         </div>
-        <div>
-          <h3 class="text-white font-bold text-base tracking-wide">Actualizar InBody</h3>
-          <p class="text-zinc-500 text-xs">Sube tu nuevo reporte para sincronizar el holograma</p>
-        </div>
-      </div>
-      <button (click)="closeRescan()" class="text-zinc-600 hover:text-white transition p-1">
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
-
-    <!-- Scanning state -->
-    <div *ngIf="rescanState() === 'scanning'" class="text-center py-6">
-      <div class="w-12 h-12 border-2 border-[#00f3ff]/30 border-t-[#00f3ff] rounded-full animate-spin mx-auto mb-4"></div>
-      <p class="text-[#00f3ff] text-sm font-mono">{{ rescanMessage() }}</p>
-    </div>
-
-    <!-- Success state -->
-    <div *ngIf="rescanState() === 'success'" class="text-center py-6">
-      <div class="w-12 h-12 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/30 flex items-center justify-center mx-auto mb-4">
-        <mat-icon class="text-[#CCFF00]">check_circle</mat-icon>
-      </div>
-      <p class="text-[#CCFF00] text-sm font-mono">{{ rescanMessage() }}</p>
-    </div>
-
-    <!-- Error state -->
-    <div *ngIf="rescanState() === 'error'" class="py-4">
-      <div class="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg mb-4">
-        <mat-icon class="text-red-400 text-sm">error</mat-icon>
-        <p class="text-red-400 text-xs font-mono">{{ rescanMessage() }}</p>
-      </div>
-      <button (click)="triggerFileInput()"
+        <!-- Scanning state -->
+        @if (rescanState() === 'scanning') {
+          <div class="text-center py-6">
+            <div class="w-12 h-12 border-2 border-[#00f3ff]/30 border-t-[#00f3ff] rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-[#00f3ff] text-sm font-mono">{{ rescanMessage() }}</p>
+          </div>
+        }
+        <!-- Success state -->
+        @if (rescanState() === 'success') {
+          <div class="text-center py-6">
+            <div class="w-12 h-12 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/30 flex items-center justify-center mx-auto mb-4">
+              <mat-icon class="text-[#CCFF00]">check_circle</mat-icon>
+            </div>
+            <p class="text-[#CCFF00] text-sm font-mono">{{ rescanMessage() }}</p>
+          </div>
+        }
+        <!-- Error state -->
+        @if (rescanState() === 'error') {
+          <div class="py-4">
+            <div class="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg mb-4">
+              <mat-icon class="text-red-400 text-sm">error</mat-icon>
+              <p class="text-red-400 text-xs font-mono">{{ rescanMessage() }}</p>
+            </div>
+            <button (click)="triggerFileInput()"
               class="w-full py-3 rounded-xl bg-[#00f3ff]/10 border border-[#00f3ff]/30 text-[#00f3ff] text-sm font-bold hover:bg-[#00f3ff]/20 transition">
-        Reintentar
-      </button>
-    </div>
-
-    <!-- Idle: upload prompt -->
-    <div *ngIf="rescanState() === 'idle'">
-      <!-- Drop zone -->
-      <button (click)="triggerFileInput()"
+              Reintentar
+            </button>
+          </div>
+        }
+        <!-- Idle: upload prompt -->
+        @if (rescanState() === 'idle') {
+          <div>
+            <!-- Drop zone -->
+            <button (click)="triggerFileInput()"
               class="w-full flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-dashed border-zinc-700 hover:border-[#00f3ff]/50 hover:bg-[#00f3ff]/5 transition-all group mb-4">
-        <div class="w-12 h-12 rounded-full bg-zinc-800 group-hover:bg-[#00f3ff]/10 flex items-center justify-center transition">
-          <mat-icon class="text-zinc-500 group-hover:text-[#00f3ff] transition">cloud_upload</mat-icon>
-        </div>
-        <div class="text-center">
-          <p class="text-sm font-bold text-zinc-300 group-hover:text-white transition">Seleccionar archivo del reporte</p>
-          <p class="text-xs text-zinc-600 mt-1">JPG, PNG o PDF • InBody 370, 770, S10...</p>
-        </div>
-      </button>
-
-      <!-- Info list -->
-      <div class="space-y-2 mb-4">
-        <div class="flex items-center gap-2 text-xs text-zinc-500">
-          <mat-icon class="text-[#CCFF00] text-sm">check</mat-icon>
-          Extrae automáticamente todos los parámetros
-        </div>
-        <div class="flex items-center gap-2 text-xs text-zinc-500">
-          <mat-icon class="text-[#CCFF00] text-sm">check</mat-icon>
-          Incluye masa segmental por extremidad
-        </div>
-        <div class="flex items-center gap-2 text-xs text-zinc-500">
-          <mat-icon class="text-[#CCFF00] text-sm">check</mat-icon>
-          El holograma se actualiza en tiempo real
-        </div>
+              <div class="w-12 h-12 rounded-full bg-zinc-800 group-hover:bg-[#00f3ff]/10 flex items-center justify-center transition">
+                <mat-icon class="text-zinc-500 group-hover:text-[#00f3ff] transition">cloud_upload</mat-icon>
+              </div>
+              <div class="text-center">
+                <p class="text-sm font-bold text-zinc-300 group-hover:text-white transition">Seleccionar archivo del reporte</p>
+                <p class="text-xs text-zinc-600 mt-1">JPG, PNG o PDF • InBody 370, 770, S10...</p>
+              </div>
+            </button>
+            <!-- Info list -->
+            <div class="space-y-2 mb-4">
+              <div class="flex items-center gap-2 text-xs text-zinc-500">
+                <mat-icon class="text-[#CCFF00] text-sm">check</mat-icon>
+                Extrae automáticamente todos los parámetros
+              </div>
+              <div class="flex items-center gap-2 text-xs text-zinc-500">
+                <mat-icon class="text-[#CCFF00] text-sm">check</mat-icon>
+                Incluye masa segmental por extremidad
+              </div>
+              <div class="flex items-center gap-2 text-xs text-zinc-500">
+                <mat-icon class="text-[#CCFF00] text-sm">check</mat-icon>
+                El holograma se actualiza en tiempo real
+              </div>
+            </div>
+            <button (click)="closeRescan()" class="w-full py-2 text-zinc-600 text-xs hover:text-zinc-400 transition">
+              Cancelar
+            </button>
+          </div>
+        }
       </div>
-
-      <button (click)="closeRescan()" class="w-full py-2 text-zinc-600 text-xs hover:text-zinc-400 transition">
-        Cancelar
-      </button>
     </div>
-
-  </div>
-</div>
+  }

@@ -9,8 +9,8 @@ import {
 } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { CommonModule } from '@angular/common';
-import { extend, beforeRender, injectLoader, NgtRenderState, NgtThreeEvent, NgtArgs, injectStore } from 'angular-three';
+
+import { extend, beforeRender, NgtRenderState, NgtThreeEvent, NgtArgs, injectStore, injectLoader } from 'angular-three';
 import { MatIconModule } from '@angular/material/icon';
 import { RecoveryService } from '../../../core/services/recovery.service';
 import { UserProfileStateService } from '../../../core/services/user-profile-state.service';
@@ -44,7 +44,7 @@ function resolveMuscleFromMeshName(meshName: string): string | null {
 @Component({
   selector: 'app-biometric-model',
   standalone: true,
-  imports: [CommonModule, NgtArgs, MatIconModule],
+  imports: [NgtArgs, MatIconModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <!-- Cinematic lighting rig to enhance natural textures -->
@@ -75,10 +75,7 @@ export class BiometricModelComponent {
   @Output() tooltipData = new EventEmitter<{muscle: string, x: number, y: number} | null>();
   hoveredMesh = signal<string | null>(null);
 
-  private readonly gltf = injectLoader(
-    () => GLTFLoader,
-    () => 'assets/models/human-anatomy.glb'
-  );
+  private readonly gltf = injectLoader(() => GLTFLoader, () => 'assets/models/human-anatomy.glb');
 
   gltfReady = signal(false);
   loadError = signal(false);
@@ -91,8 +88,7 @@ export class BiometricModelComponent {
     effect(() => {
       try {
         const result = this.gltf() as any;
-        if (!result || !result.scene) return;
-        const scene = result.scene as THREE.Group;
+        const scene = result?.scene as THREE.Group;
         if (!scene) return;
 
         // Calcular Bounding Box y centrar el modelo
@@ -175,72 +171,62 @@ export class BiometricModelComponent {
     });
   }
 
+  private computeMuscleEmissive(muscle: string | undefined, statusMap: Map<string, any>) {
+    if (!muscle) return { isFatigued: false, targetColor: 0, intensityMult: 1 };
+    const recoveryInfo = statusMap.get(muscle);
+    if (!recoveryInfo) return { isFatigued: false, targetColor: 0, intensityMult: 1 };
+
+    const p = recoveryInfo.percentage;
+    if (p <= 30) {
+      return { isFatigued: true, targetColor: 0xFF0033, intensityMult: 1.5 };
+    }
+    if (p <= 75) {
+      return { isFatigued: true, targetColor: 0xFFB300, intensityMult: 1.2 };
+    }
+    return { isFatigued: false, targetColor: 0, intensityMult: 1.0 };
+  }
+
+  private applyEmissiveToMaterial(m: THREE.MeshStandardMaterial, childUuid: string, basePulsedIntensity: number, statusMap: Map<string, any>): void {
+    const muscle = this.meshMuscleMap.get(childUuid);
+    const { isFatigued, targetColor, intensityMult } = this.computeMuscleEmissive(muscle, statusMap);
+
+    if (isFatigued) {
+      m.emissive.setHex(targetColor);
+      m.emissiveIntensity = basePulsedIntensity * intensityMult;
+    } else if (m.userData['originalEmissive'] !== undefined) {
+      m.emissive.setHex(m.userData['originalEmissive']);
+      m.emissiveIntensity = m.userData['originalIntensity'];
+    }
+
+    if (this.hoveredMesh() === childUuid) {
+      if (!isFatigued) {
+        m.emissive.setHex(0xCCFC7E);
+      }
+      m.emissiveIntensity = isFatigued ? m.emissiveIntensity + 0.5 : 0.5;
+      m.opacity = Math.min(1.0, m.opacity + 0.4);
+    }
+  }
+
   private updateEmissiveMaterials(): void {
     const scene = this.modelScene();
     if (!scene) return;
 
-    const t = this.elapsed;
-    // Leer los datos actuales de fatiga provenientes del store/servicio
+    const basePulsedIntensity = 0.6 + Math.sin(this.elapsed * 3) * 0.35;
     const statusMap = this.recoveryService.getMuscleRecoveryStatus()();
-
-    // Pulso suave para la fatiga
-    const basePulsedIntensity = 0.6 + Math.sin(t * 3) * 0.35;
 
     scene.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
       
-      const setMaterialProps = (mat: THREE.Material) => {
-        if (!(mat as any).isMeshStandardMaterial) return;
-        const m = mat as THREE.MeshStandardMaterial;
-        
-        const muscle = this.meshMuscleMap.get(child.uuid);
-        let isFatigued = false;
-        let targetColor = 0x000000;
-        let intensityMult = 1.0;
-
-        if (muscle) {
-           const recoveryInfo = statusMap.get(muscle);
-           if (recoveryInfo) {
-               const p = recoveryInfo.percentage;
-               // Escala de colores según fatiga:
-               if (p <= 30) {
-                 targetColor = 0xFF0033; // Rojo
-                 intensityMult = 1.5;
-                 isFatigued = true;
-               } else if (p <= 75) {
-                 targetColor = 0xFFB300; // Naranja/Amarillo
-                 intensityMult = 1.2;
-                 isFatigued = true;
-               }
-           }
-        }
-        
-        if (isFatigued) {
-           // Inyectamos el color para el mapa de calor de fatiga
-           m.emissive.setHex(targetColor);
-           m.emissiveIntensity = basePulsedIntensity * intensityMult;
-        } else {
-           // Si está recuperado o no es músculo, devolvemos a su color original
-           if (m.userData['originalEmissive'] !== undefined) {
-               m.emissive.setHex(m.userData['originalEmissive']);
-               m.emissiveIntensity = m.userData['originalIntensity'];
-           }
-        }
-        
-        // Efecto visual al hacer hover
-        if (this.hoveredMesh() === child.uuid) {
-           if (!isFatigued) {
-               m.emissive.setHex(0xCCFC7E);
-           }
-           m.emissiveIntensity = isFatigued ? m.emissiveIntensity + 0.5 : 0.5;
-           m.opacity = Math.min(1.0, m.opacity + 0.4);
+      const processMat = (mat: THREE.Material) => {
+        if ((mat as any).isMeshStandardMaterial) {
+          this.applyEmissiveToMaterial(mat as THREE.MeshStandardMaterial, child.uuid, basePulsedIntensity, statusMap);
         }
       };
 
       if (Array.isArray(child.material)) {
-         child.material.forEach(setMaterialProps);
+        child.material.forEach(processMat);
       } else if (child.material) {
-         setMaterialProps(child.material);
+        processMat(child.material);
       }
     });
   }

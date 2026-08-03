@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { RecoveryMonitorComponent } from '../dashboard/components/recovery-monitor/recovery-monitor.component';
@@ -7,7 +7,7 @@ import { RecoveryMonitorComponent } from '../dashboard/components/recovery-monit
 @Component({
   selector: 'app-recovery-page',
   standalone: true,
-  imports: [CommonModule, MatIconModule, RecoveryMonitorComponent],
+  imports: [MatIconModule, RecoveryMonitorComponent],
   template: `
     <div class="min-h-screen bg-[#0B0E14] p-4 pb-20">
       <!-- Header -->

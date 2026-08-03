@@ -1,11 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Functions, httpsCallable } from '@angular/fire/functions';
 
 @Component({
   selector: 'app-billing',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './billing.component.html',
 })
 export class BillingComponent {

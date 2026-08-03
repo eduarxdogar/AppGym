@@ -1,7 +1,7 @@
 import { Component, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { Ejercicio } from '../../../../core/models/ejercicio.model'; 
-import { CommonModule } from '@angular/common';
+
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
 import { MatOptionModule } from '@angular/material/core';
@@ -12,7 +12,7 @@ import { UiInputComponent } from '../../../../shared/ui/ui-input/ui-input.compon
 @Component({
   selector: 'app-editar-super-set-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatFormFieldModule, MatOptionModule, MatIconModule, UiButtonComponent, UiInputComponent],
+  imports: [FormsModule, MatDialogModule, MatFormFieldModule, MatOptionModule, MatIconModule, UiButtonComponent, UiInputComponent],
   templateUrl: './editar-super-set-modal.component.html',
 })
 export class EditarSuperSetModalComponent {

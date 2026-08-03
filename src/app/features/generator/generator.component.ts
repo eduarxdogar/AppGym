@@ -1,5 +1,5 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { TrainerAiService } from '../../core/services/ai/trainer-ai.service';
@@ -14,7 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-generator',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, MatIconModule, ProfessionalBodyMapComponent],
+  imports: [FormsModule, RouterModule, MatIconModule, ProfessionalBodyMapComponent],
   templateUrl: './generator.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

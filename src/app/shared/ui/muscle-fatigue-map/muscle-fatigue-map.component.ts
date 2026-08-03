@@ -1,11 +1,11 @@
-import { Component, input, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, input } from '@angular/core';
+
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-muscle-fatigue-map',
   standalone: true,
-  imports: [CommonModule, MatTooltipModule],
+  imports: [MatTooltipModule],
   template: `
     <div class="relative w-full max-w-sm mx-auto aspect-[1/2] bg-zinc-900/50 rounded-xl p-4 border border-zinc-800 flex items-center justify-center overflow-hidden">
       

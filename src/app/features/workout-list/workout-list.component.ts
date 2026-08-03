@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { Workout } from '../../core/models/workout.model';
 import { WorkoutService } from '../../core/services/workout.service';
-import { CommonModule } from '@angular/common';
+
 import { MatIconModule } from '@angular/material/icon';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
@@ -12,9 +12,8 @@ import { RecoveryMonitorComponent } from '../../features/dashboard/components/re
 @Component({
   selector: 'app-workout-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, UiCardComponent, UiButtonComponent, RecoveryMonitorComponent],
+  imports: [RouterModule, MatIconModule, UiCardComponent, UiButtonComponent, RecoveryMonitorComponent],
   templateUrl: './workout-list.component.html',
-  styleUrls: ['./workout-list.component.scss'],
 })
 export class WorkoutListComponent {
 

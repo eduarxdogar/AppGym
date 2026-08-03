@@ -1,15 +1,14 @@
 import { Component, EventEmitter, OnDestroy, Output, OnInit, input } from '@angular/core';
 import { interval, Subscription } from 'rxjs';
-import { CommonModule } from '@angular/common';
+
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-timer',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatTooltipModule],
-  templateUrl: './timer.component.html',
-  styleUrls: ['./timer.component.scss']
+  imports: [MatIconModule, MatTooltipModule],
+  templateUrl: './timer.component.html'
 })
 export class TimerComponent implements OnInit, OnDestroy {
   
@@ -30,7 +29,7 @@ export class TimerComponent implements OnInit, OnDestroy {
   isFinished = false;
   
   private subscription?: Subscription;
-  private audio = new Audio('assets/beep.mp3');
+  private readonly audio = new Audio('assets/beep.mp3');
 
   constructor() {
      this.audio.volume = 0.5; // Reasonable volume

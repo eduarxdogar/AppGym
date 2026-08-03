@@ -1,5 +1,5 @@
 import { Component, computed, effect, input, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,13 +10,12 @@ import { UiButtonComponent } from "../../shared/ui/ui-button/ui-button.component
   selector: 'app-exercise-timer',
   standalone: true,
   imports: [
-    CommonModule, 
     FormsModule,
     MatIconModule,
     MatFormFieldModule,
     MatSelectModule,
     UiButtonComponent
-  ],
+],
   templateUrl: './exercise-timer.component.html',
 })
 export class ExerciseTimerComponent implements OnInit, OnDestroy {

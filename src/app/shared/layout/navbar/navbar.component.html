@@ -1,67 +1,69 @@
 <mat-toolbar class="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-white px-4 py-3 flex justify-between items-center flex-wrap shadow-md">
   <!-- LOGO + NOMBRE -->
   <div class="flex items-center gap-3 min-w-0">
-    <img src="https://images.unsplash.com/photo-1637666062717-1c6bcfa4a4df?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTE5fHxneW18ZW58MHx8MHx8fDA%3D" 
-    alt="Logo de FitMaster" 
-    class="h-10 w-10 object-cover rounded-full shadow-md" />
+    <img src="https://images.unsplash.com/photo-1637666062717-1c6bcfa4a4df?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTE5fHxneW18ZW58MHx8MHx8fDA%3D"
+      alt="Logo de FitMaster"
+      class="h-10 w-10 object-cover rounded-full shadow-md" />
 
 
-    <span class="text-lg sm:text-xl font-bold tracking-wide truncate">FitMaster</span>
-  </div>
+      <span class="text-lg sm:text-xl font-bold tracking-wide truncate">FitMaster</span>
+    </div>
 
-  <!-- Navegación para pantallas grandes -->
-  <nav class="hidden md:flex gap-4 text-sm">
-    <a routerLink="/workouts" mat-button class="hover:text-yellow-400 transition-colors">
-      <mat-icon>fitness_center</mat-icon>
-      Rutinas
-    </a>
-    <a routerLink="/calendar" mat-button class="hover:text-yellow-400 transition-colors">
-      <mat-icon>event</mat-icon>
-      Calendario
-    </a>
-    <a routerLink="/timer" mat-button class="hover:text-yellow-400 transition-colors">
-      <mat-icon>timer</mat-icon>
-      Cronómetro
-    </a>
-    <a routerLink="/progress" mat-button class="hover:text-yellow-400 transition-colors">
-      <mat-icon>bar_chart</mat-icon>
-      Progreso
-    </a>
-  </nav>
-
-  <!-- Auth Section -->
-  <div class="flex items-center gap-2" *ngIf="user()">
-        <img [src]="user()?.photoURL" aria-hidden="true" class="h-8 w-8 rounded-full border border-white/20" 
-             [alt]="user()?.displayName"
-             [title]="user()?.displayName">
-        <button mat-button (click)="logout()" class="text-sm font-semibold hover:text-red-400 transition-colors">
-            <mat-icon>logout</mat-icon>
-            <span class="hidden sm:inline ml-1">Salir</span>
-        </button>
-  </div>
-
-  <!-- Menú hamburguesa para pantallas móviles -->
-  <div class="md:hidden">
-    <button mat-icon-button [matMenuTriggerFor]="mobileMenu">
-      <mat-icon>menu</mat-icon>
-    </button>
-    <mat-menu #mobileMenu="matMenu">
-      <button mat-menu-item [routerLink]="'/workouts'">
+    <!-- Navegación para pantallas grandes -->
+    <nav class="hidden md:flex gap-4 text-sm">
+      <a routerLink="/workouts" mat-button class="hover:text-yellow-400 transition-colors">
         <mat-icon>fitness_center</mat-icon>
         Rutinas
-      </button>
-      <button mat-menu-item [routerLink]="'/calendar'">
+      </a>
+      <a routerLink="/calendar" mat-button class="hover:text-yellow-400 transition-colors">
         <mat-icon>event</mat-icon>
         Calendario
-      </button>
-      <button mat-menu-item [routerLink]="'/timer'">
+      </a>
+      <a routerLink="/timer" mat-button class="hover:text-yellow-400 transition-colors">
         <mat-icon>timer</mat-icon>
         Cronómetro
-      </button>
-      <button mat-menu-item [routerLink]="'/progress'">
+      </a>
+      <a routerLink="/progress" mat-button class="hover:text-yellow-400 transition-colors">
         <mat-icon>bar_chart</mat-icon>
         Progreso
-      </button>
-    </mat-menu>
-  </div>
-</mat-toolbar>
+      </a>
+    </nav>
+
+    <!-- Auth Section -->
+    @if (user()) {
+      <div class="flex items-center gap-2">
+        <img [src]="user()?.photoURL" aria-hidden="true" class="h-8 w-8 rounded-full border border-white/20"
+          [alt]="user()?.displayName"
+          [title]="user()?.displayName">
+          <button mat-button (click)="logout()" class="text-sm font-semibold hover:text-red-400 transition-colors">
+            <mat-icon>logout</mat-icon>
+            <span class="hidden sm:inline ml-1">Salir</span>
+          </button>
+        </div>
+      }
+
+      <!-- Menú hamburguesa para pantallas móviles -->
+      <div class="md:hidden">
+        <button mat-icon-button [matMenuTriggerFor]="mobileMenu">
+          <mat-icon>menu</mat-icon>
+        </button>
+        <mat-menu #mobileMenu="matMenu">
+          <button mat-menu-item [routerLink]="'/workouts'">
+            <mat-icon>fitness_center</mat-icon>
+            Rutinas
+          </button>
+          <button mat-menu-item [routerLink]="'/calendar'">
+            <mat-icon>event</mat-icon>
+            Calendario
+          </button>
+          <button mat-menu-item [routerLink]="'/timer'">
+            <mat-icon>timer</mat-icon>
+            Cronómetro
+          </button>
+          <button mat-menu-item [routerLink]="'/progress'">
+            <mat-icon>bar_chart</mat-icon>
+            Progreso
+          </button>
+        </mat-menu>
+      </div>
+    </mat-toolbar>
