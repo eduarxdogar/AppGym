@@ -1,15 +1,15 @@
 // src/app/core/services/training-session.service.ts
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Workout } from '../../models/workout.model';
-import { TrainingSession } from '../../models/training-session.model';
+import { Workout } from '../../core/models/workout.model';
+import { TrainingSession } from '../../core/models/training-session.model';
 
 
 
 @Injectable({ providedIn: 'root' })
 export class TrainingSessionService {
-  private session: TrainingSession | null = null;
-  private sessionSubject = new BehaviorSubject<TrainingSession | null>(this.loadSession());
+  private readonly session: TrainingSession | null = null;
+  private readonly sessionSubject = new BehaviorSubject<TrainingSession | null>(this.loadSession());
 
   constructor() {}
 
@@ -29,7 +29,7 @@ export class TrainingSessionService {
 
   startSession(workout: Workout): void {
     const session: TrainingSession = {
-      id: new Date().getTime(),
+      id: Date.now(),
       workoutId: workout.id,
       nombre: workout.nombre,
       fechaInicio: new Date(),
@@ -56,3 +56,4 @@ export class TrainingSessionService {
   }
   
 }
+

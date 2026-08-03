@@ -5,7 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
-import { UserProfile } from '../../models/user-profile.model';
+import { UserProfile } from '../../core/models/user-profile.model';
 import { InbodyAiService } from '../../core/services/ai/inbody-ai.service';
 import { ToastService } from '../../core/services/toast.service';
 
@@ -133,7 +133,7 @@ export class OnboardingComponent {
         };
       } catch (err: any) {
         console.error('InBody Scan failed:', err);
-        if (err.code === 'resource-exhausted' || (err.message && err.message.includes('429'))) {
+        if (err.code === 'resource-exhausted' || err?.message?.includes('429')) {
           this.toastService.showWarning('Límite de IA alcanzado. Por favor, intenta de nuevo en unos minutos.');
         } else {
           this.toastService.showError('Falla de conexión con el servidor IA.');
@@ -187,3 +187,4 @@ export class OnboardingComponent {
     }
   }
 }
+

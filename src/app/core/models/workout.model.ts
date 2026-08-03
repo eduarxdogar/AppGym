@@ -7,6 +7,11 @@ export interface ActiveSetState {
   isDropset?: boolean;
 }
 
+export interface ProgressionOptions {
+  focus: 'weight' | 'volume';
+  frequencyAdjustment: number; // 0, 1, or -1
+}
+
 export interface Workout {
   id: string;
   fecha?: string;

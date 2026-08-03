@@ -4,7 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { BoxingAiService } from '../../core/services/ai/boxing-ai.service';
-import { BoxingRoutine } from '../../models/ai-requests.model';
+import { BoxingRoutine } from '../../core/models/ai-requests.model';
 import { CardioSessionService } from '../../core/services/cardio-session.service';
 
 @Component({
@@ -163,9 +163,9 @@ import { CardioSessionService } from '../../core/services/cardio-session.service
   `
 })
 export class CardioBoxingComponent {
-  private aiCoach = inject(BoxingAiService);
-  private cardioService = inject(CardioSessionService);
-  private router = inject(Router);
+  private readonly aiCoach = inject(BoxingAiService);
+  private readonly cardioService = inject(CardioSessionService);
+  private readonly router = inject(Router);
 
   level = 'Intermedio';
   duration = '30';
@@ -182,6 +182,7 @@ export class CardioBoxingComponent {
       const result = await this.aiCoach.generateBoxingRoutine(this.level, +this.duration);
       this.routine.set(result);
     } catch (err: any) {
+      console.error('Error al generar la rutina de boxeo:', err);
       this.error.set('No se pudo generar la rutina. Verifica tu API Key de Gemini.');
     } finally {
       this.isLoading.set(false);
@@ -204,8 +205,10 @@ export class CardioBoxingComponent {
       });
       this.router.navigate(['/dashboard']);
     } catch (e: any) {
+      console.error('Error al guardar la sesión de boxeo:', e);
       this.error.set('No se pudo guardar la sesión en Firebase.');
       this.isSaving.set(false);
     }
   }
 }
+

@@ -1,18 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, doc, setDoc, getDocs } from '@angular/fire/firestore';
-
-export interface ExerciseData {
-  id?: string;
-  name: string;
-  discipline: 'gym' | 'calisthenics' | 'boxing';
-  muscleGroup: 'pecho' | 'espalda' | 'hombros' | 'bíceps' | 'tríceps' | 'cuádriceps' | 'isquios' | 'glúteos' | 'gemelos' | 'core';
-  type: 'compound' | 'isolated';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  instructions: string[];
-  equipmentRequired: string[];
-  imageUrl: string;
-  videoUrl: string;
-}
+import { ExerciseData } from '../models/exercise-catalog';
 
 const GLOBAL_EXERCISES: ExerciseData[] = [
   // --- PECHO ---
@@ -75,7 +63,7 @@ const COMPLETE_CATALOG = [...GLOBAL_EXERCISES];
   providedIn: 'root'
 })
 export class ExerciseSeederService {
-  private firestore = inject(Firestore);
+  private readonly firestore = inject(Firestore);
 
   async runSeeder(): Promise<void> {
     try {

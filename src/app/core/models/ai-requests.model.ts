@@ -1,5 +1,13 @@
 import { UserProfile } from './user-profile.model';
 
+export interface ChatMessage {
+  id: string;
+  workoutId: string;
+  role: 'user' | 'coach';
+  text: string;
+  timestamp: string; // ISO string
+}
+
 export interface WeeklyPlanRequest {
   userPrompt: string;
   profile: UserProfile;

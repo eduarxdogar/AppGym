@@ -6,6 +6,30 @@ export interface SegmentalData {
   leftLeg?: string | null;
 }
 
+export interface RankTier {
+  name: string;
+  minKg: number;
+  maxKg: number;
+  color?: string;
+  icon?: string;
+}
+
+export const GAMIFICATION_RANKS: RankTier[] = [
+  { name: 'Madera', minKg: 0, maxKg: 50000, color: '#8B5A2B', icon: 'forest' },
+  { name: 'Bronce', minKg: 50000, maxKg: 250000, color: '#CD7F32', icon: 'workspace_premium' },
+  { name: 'Plata', minKg: 250000, maxKg: 1000000, color: '#C0C0C0', icon: 'star_half' },
+  { name: 'Oro', minKg: 1000000, maxKg: 3000000, color: '#FFD700', icon: 'star' },
+  { name: 'Platino', minKg: 3000000, maxKg: 10000000, color: '#E5E4E2', icon: 'diamond' },
+  { name: 'Élite', minKg: 10000000, maxKg: Infinity, color: '#CCFF00', icon: 'local_fire_department' },
+];
+
+export interface GamificationState {
+  currentRank: RankTier;
+  currentTonnage: number;
+  nextRankTarget: number | null;
+  progressPercentage: number;
+}
+
 export interface UserProfile {
   displayName?: string;
   age?: number | null;

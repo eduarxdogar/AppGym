@@ -1,9 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { Workout } from '../../models/workout.model';
+import { Component, inject } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
+import { Workout } from '../../core/models/workout.model';
 import { WorkoutService } from '../../core/services/workout.service';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
@@ -17,13 +16,13 @@ import { RecoveryMonitorComponent } from '../../features/dashboard/components/re
   templateUrl: './workout-list.component.html',
   styleUrls: ['./workout-list.component.scss'],
 })
-export class WorkoutListComponent implements OnInit {
+export class WorkoutListComponent {
 
-  private workoutService = inject(WorkoutService);
+  private readonly workoutService = inject(WorkoutService);
   // Exponemos la signal del servicio directamente
   workouts = this.workoutService.workouts;
 
-  public router = inject(Router);
+  public readonly router = inject(Router);
 
   // Datos Mock para el mapa de fatiga (luego vendrían de un servicio de historial)
   currentFatigue: Record<string, number> = {
@@ -38,9 +37,7 @@ export class WorkoutListComponent implements OnInit {
 
   constructor() {}
 
-  ngOnInit(): void {
-    // Ya no es necesario inicializar manualmente
-  }
+
 
   generateAiRoutine() {
     this.router.navigate(['/generator']);
@@ -67,3 +64,4 @@ export class WorkoutListComponent implements OnInit {
     // La signal se actualiza sola
   }
 }
+

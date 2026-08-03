@@ -3,13 +3,13 @@ import { Firestore, doc, setDoc, updateDoc, getDoc, deleteDoc, collectionGroup, 
 import { Auth, authState, User, signOut } from '@angular/fire/auth';
 import { from, Observable, of } from 'rxjs';
 import { switchMap, map } from 'rxjs/operators';
-import { UserProfile } from '../../models/user-profile.model';
+import { UserProfile } from '../../core/models/user-profile.model';
 
 @Injectable({ providedIn: 'root' })
 export class UserProfileService {
-  private firestore = inject(Firestore);
-  private auth = inject(Auth);
-  private injector = inject(Injector);
+  private readonly firestore = inject(Firestore);
+  private readonly auth = inject(Auth);
+  private readonly injector = inject(Injector);
 
   /** Guarda (crea o actualiza) el perfil del usuario SIN sobreescribir datos de suscripción. */
   async saveProfile(profile: UserProfile): Promise<void> {
@@ -137,3 +137,4 @@ export class UserProfileService {
       .filter((p): p is UserProfile & { uid: string } => p !== null);
   }
 }
+

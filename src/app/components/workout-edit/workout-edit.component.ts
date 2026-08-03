@@ -1,9 +1,9 @@
-import { Component, OnInit, ChangeDetectorRef, input, signal, effect, inject } from '@angular/core';
+import { Component, input, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Workout } from '../../models/workout.model';
-import { Ejercicio } from '../../models/ejercicio.model';
+import { Workout } from '../../core/models/workout.model';
+import { Ejercicio } from '../../core/models/ejercicio.model';
 import { WorkoutService } from '../../core/services/workout.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -11,7 +11,6 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { EditarSuperSetModalComponent } from '../modals/editar-super-set-modal/editar-super-set-modal.component';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
-import { UiInputComponent } from '../../shared/ui/ui-input/ui-input.component';
 
 @Component({
   selector: 'app-workout-edit',
@@ -27,9 +26,9 @@ export class WorkoutEditComponent {
   workoutForm = signal<Workout | null>(null);
   
   // Dependencies
-  private workoutService = inject(WorkoutService);
-  private router = inject(Router);
-  private dialog = inject(MatDialog);
+  private readonly workoutService = inject(WorkoutService);
+  private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
 
   // Constants
   grupoMuscularOpciones = ['otros', 'pecho', 'espalda', 'piernas', 'hombros', 'bíceps', 'tríceps', 'core'];
@@ -165,13 +164,8 @@ export class WorkoutEditComponent {
     dialogRef.afterClosed().subscribe((result: Ejercicio | undefined) => {
       if (result) {
         const updatedWorkout = { ...workout };
-        if (!updatedWorkout.ejercicios[index].superSetEjercicio) {
-            // Assign the new super set exercise
-            updatedWorkout.ejercicios[index].superSetEjercicio = result;
-        } else {
-            // If exists, simple update (though logic might vary if you want list)
-            updatedWorkout.ejercicios[index].superSetEjercicio = result; 
-        }
+        // Assign or update the super set exercise
+        updatedWorkout.ejercicios[index].superSetEjercicio = result;
         // Mark as super-serie type to ensure consistency
         updatedWorkout.ejercicios[index].superSetEjercicio!.tipos = 'super-serie';
         
@@ -214,3 +208,4 @@ export class WorkoutEditComponent {
     });
   }
 }
+

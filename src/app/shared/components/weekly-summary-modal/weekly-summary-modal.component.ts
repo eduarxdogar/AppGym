@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { MetricsService } from '../../../core/services/metrics.service';
-import { ProgressionOptions } from '../../../core/services/progression-engine.service';
-import { WorkoutSession } from '../../../core/models/workout-history.model';
+import { ProgressionOptions } from '../../../core/models/workout.model';
 
 @Component({
   selector: 'app-weekly-summary-modal',
@@ -151,11 +150,11 @@ import { WorkoutSession } from '../../../core/models/workout-history.model';
   `
 })
 export class WeeklySummaryModalComponent {
-  private metricsService = inject(MetricsService);
+  private readonly metricsService = inject(MetricsService);
 
-  @Output() onRollover = new EventEmitter<ProgressionOptions>();
+  @Output() rollover = new EventEmitter<ProgressionOptions>();
   /** Emitted when the user clicks the X or "Cerrar" without configuring the next cycle. */
-  @Output() onClose = new EventEmitter<void>();
+  @Output() closeModal = new EventEmitter<void>();
 
   /** Start date of the current microcycle (earliest workout fecha in the plan). */
   @Input() cycleStartDate: Date = new Date();
@@ -180,9 +179,9 @@ export class WeeklySummaryModalComponent {
     const sessions = this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
     return sessions.reduce((total, session) => {
       const exercises = session.exercises || session.ejercicios || [];
-      return total + exercises.reduce((acc, ex) => {
+      return total + exercises.reduce((acc: number, ex: any) => {
         const sets = ex.sets || ex.series || [];
-        return acc + sets.reduce((s, set) => {
+        return acc + sets.reduce((s: number, set: any) => {
           const reps = Number(set.reps || set.repeticiones || 0);
           const weight = Number(set.weight || set.peso || set.pesokg || 0);
           return s + (reps * weight);
@@ -214,9 +213,9 @@ export class WeeklySummaryModalComponent {
     const sessions = this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
     return sessions.reduce((total, session) => {
       const exercises = session.exercises || session.ejercicios || [];
-      return total + exercises.reduce((acc, ex) => {
+      return total + exercises.reduce((acc: number, ex: any) => {
         const sets = ex.sets || ex.series || [];
-        return acc + sets.filter(s => s.completed !== false).length;
+        return acc + sets.filter((s: any) => s.completed !== false).length;
       }, 0);
     }, 0);
   });
@@ -225,12 +224,12 @@ export class WeeklySummaryModalComponent {
 
   /** Dismiss the modal without triggering progression/rollover. */
   close() {
-    this.onClose.emit();
+    this.closeModal.emit();
   }
 
   submitRollover() {
     this.isGenerating.set(true);
-    this.onRollover.emit({
+    this.rollover.emit({
       focus: this.selectedFocus(),
       frequencyAdjustment: this.frequencyAdj()
     });

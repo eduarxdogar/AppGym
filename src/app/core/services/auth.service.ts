@@ -3,17 +3,18 @@ import { Auth, GoogleAuthProvider, User, signInWithPopup, signOut, onAuthStateCh
 import { Firestore, doc, setDoc } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { map } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private auth = inject(Auth);
-  private router = inject(Router);
-  private firestore = inject(Firestore);
+  private readonly auth = inject(Auth);
+  private readonly router = inject(Router);
+  private readonly firestore = inject(Firestore);
 
   // Private writable signal initialized as undefined to represent 'loading' state
-  private _currentUser = signal<User | null | undefined>(undefined);
+  private readonly _currentUser = signal<User | null | undefined>(undefined);
   
   // Public readonly signal
   readonly currentUser = this._currentUser.asReadonly();
@@ -23,7 +24,7 @@ export class AuthService {
 
   // Verifies if the authenticated user is the main administrator
   readonly isAdmin$ = this.authState$.pipe(
-    map(user => user?.email === 'cristiangarzon1231@gmail.com')
+    map(user => user?.email === environment.adminEmail)
   );
 
   constructor() {

@@ -1,12 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Workout } from '../../models/workout.model';
-import { Ejercicio } from '../../models/ejercicio.model';
+import { Workout, ProgressionOptions } from '../../core/models/workout.model';
+import { Ejercicio } from '../../core/models/ejercicio.model';
 import { WorkoutSession, WorkoutExercise } from '../models/workout-history.model';
 
-export interface ProgressionOptions {
-  focus: 'weight' | 'volume';
-  frequencyAdjustment: number; // 0, 1, or -1
-}
+const DEFAULT_PROGRESSION_OPTIONS: ProgressionOptions = { focus: 'weight', frequencyAdjustment: 0 };
 
 @Injectable({ providedIn: 'root' })
 export class ProgressionEngineService {
@@ -29,7 +26,7 @@ export class ProgressionEngineService {
    */
   generateNextMicrocycle(
     previousWeekWorkouts: Workout[],
-    options: ProgressionOptions = { focus: 'weight', frequencyAdjustment: 0 },
+    options: ProgressionOptions = DEFAULT_PROGRESSION_OPTIONS,
     historyMap: Map<string, WorkoutSession[]> = new Map()
   ): Workout[] {
     const nextMicrocycle: Workout[] = [];
@@ -97,7 +94,7 @@ export class ProgressionEngineService {
 
     // ── Handle Frequency Adjustment ─────────────────────────────────────────
     if (options.frequencyAdjustment > 0 && nextMicrocycle.length > 0) {
-      const lastWorkout = nextMicrocycle[nextMicrocycle.length - 1];
+      const lastWorkout = nextMicrocycle.at(-1)!;
       const newDate = new Date(new Date(lastWorkout.fecha!).getTime() + 24 * 60 * 60 * 1000);
       nextMicrocycle.push({
         ...lastWorkout,
@@ -167,7 +164,7 @@ export class ProgressionEngineService {
 
       // Reconstruct from the session data, falling back to the template
       const reconstructed: Ejercicio = {
-        ...(templateEx || {}),
+        ...templateEx,
         id: (ex as any).id ?? templateEx?.id ?? crypto.randomUUID(), // Ensure ID exists
         nombre: ex.nombre ?? ex.name ?? templateEx?.nombre ?? 'Ejercicio Extra',
         grupoMuscular: ex.grupoMuscular ?? ex.groupMuscular ?? ex.muscleGroup ?? templateEx?.grupoMuscular ?? 'Otro',
@@ -178,11 +175,11 @@ export class ProgressionEngineService {
 
       // Restore completed set weight using MAX EFFORT (Peso Base)
       const lastSets = ex.sets ?? ex.series ?? [];
-      const completedSets = lastSets.filter(s => s.completed !== false);
+      const completedSets = lastSets.filter((s: any) => s.completed !== false);
       
       if (completedSets.length > 0) {
         let maxWeight = 0;
-        completedSets.forEach(s => {
+        completedSets.forEach((s: any) => {
            const w = Number(s.weight ?? s.peso ?? s.pesokg ?? 0);
            if (w > maxWeight) maxWeight = w;
         });
@@ -206,16 +203,16 @@ export class ProgressionEngineService {
     const rawExercises = session.exercises ?? session.ejercicios ?? [];
     
     const normalizedName = (ejercicio.nombre ?? '').trim().toLowerCase();
-    let rawEx = rawExercises.find(e => (e as any).id && (e as any).id === ejercicio.id);
+    let rawEx = rawExercises.find((e: any) => (e as any).id && (e as any).id === ejercicio.id);
     
     if (!rawEx && normalizedName) {
-      rawEx = rawExercises.find(e => (e.nombre ?? e.name ?? '').trim().toLowerCase() === normalizedName);
+      rawEx = rawExercises.find((e: any) => (e.nombre ?? e.name ?? '').trim().toLowerCase() === normalizedName);
     }
 
     if (!rawEx) return [];
 
     const sets = rawEx.sets ?? rawEx.series ?? [];
-    return sets.map(s => ({
+    return sets.map((s: any) => ({
       reps: Number(s.reps ?? s.repeticiones ?? 0),
       weight: Number(s.weight ?? s.peso ?? s.pesokg ?? 0),
       completed: s.completed !== false
@@ -283,3 +280,6 @@ export class ProgressionEngineService {
     };
   }
 }
+
+
+

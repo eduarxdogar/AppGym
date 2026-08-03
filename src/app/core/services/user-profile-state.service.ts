@@ -2,15 +2,15 @@ import { Injectable, inject, signal, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { UserProfileService } from './user-profile.service';
 import { AuthService } from './auth.service';
-import { UserProfile } from '../../models/user-profile.model';
+import { UserProfile } from '../../core/models/user-profile.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserProfileStateService {
-  private userProfileService = inject(UserProfileService);
-  private authService = inject(AuthService);
-  private destroyRef = inject(DestroyRef);
+  private readonly userProfileService = inject(UserProfileService);
+  private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
 
   /**
    * Estado del perfil con tres posibles valores:
@@ -18,7 +18,7 @@ export class UserProfileStateService {
    * - `null`      : usuario autenticado pero sin perfil en Firestore.
    * - `UserProfile`: perfil cargado exitosamente.
    */
-  private _profile = signal<UserProfile | null | undefined>(undefined);
+  private readonly _profile = signal<UserProfile | null | undefined>(undefined);
   readonly profile = this._profile.asReadonly();
 
   constructor() {
@@ -42,3 +42,4 @@ export class UserProfileStateService {
     });
   }
 }
+

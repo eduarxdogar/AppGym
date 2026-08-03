@@ -3,16 +3,9 @@ import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, w
 import { Observable, of } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { Workout } from '../../models/workout.model';
+import { Workout } from '../../core/models/workout.model';
 import { WorkoutSession } from '../models/workout-history.model';
-
-export interface ChatMessage {
-  id: string;
-  workoutId: string;
-  role: 'user' | 'coach';
-  text: string;
-  timestamp: string; // ISO string
-}
+import { ChatMessage } from '../models/ai-requests.model';
 
 @Injectable({
   providedIn: 'root'
@@ -56,7 +49,7 @@ export class StorageService {
     }
     const cleanObj: any = {};
     for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      if (Object.hasOwn(obj, key)) {
         cleanObj[key] = this.sanitizeData(obj[key]);
       }
     }
@@ -128,10 +121,16 @@ export class StorageService {
   }
 
   // --- LEGACY METHODS ---
-  getItem<T>(key: string): T | null { return null; }
-  setItem<T>(key: string, value: T): void {}
-  removeItem(key: string): void {}
-  clear(): void {}
+  getItem<T>(_key: string): T | null { return null; }
+  setItem<T>(_key: string, _value: T): void {
+    // Legacy stub: no-op in Firestore storage
+  }
+  removeItem(_key: string): void {
+    // Legacy stub: no-op in Firestore storage
+  }
+  clear(): void {
+    // Legacy stub: no-op in Firestore storage
+  }
 
   // --- CHAT HISTORY (sub-collection per workout) ---
 
@@ -157,3 +156,6 @@ export class StorageService {
     );
   }
 }
+
+
+

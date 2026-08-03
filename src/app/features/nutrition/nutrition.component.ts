@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NutritionAiService } from '../../core/services/ai/nutrition-ai.service';
-import { WeeklyDietPlan, DayDietPlan, MealPlan } from '../../models/ai-requests.model';
+import { WeeklyDietPlan, DayDietPlan, MealPlan } from '../../core/models/ai-requests.model';
 import { NutritionService, DailyNutritionLog } from '../../core/services/nutrition.service';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
@@ -18,11 +18,11 @@ import { GamificationService } from '../../core/services/gamification.service';
   templateUrl: './nutrition.component.html'
 })
 export class NutritionComponent implements OnInit {
-  private aiCoach = inject(NutritionAiService);
-  private nutritionService = inject(NutritionService);
-  private profileState = inject(UserProfileStateService);
-  private profileService = inject(UserProfileService);
-  private gamification = inject(GamificationService);
+  private readonly aiCoach = inject(NutritionAiService);
+  private readonly nutritionService = inject(NutritionService);
+  private readonly profileState = inject(UserProfileStateService);
+  private readonly profileService = inject(UserProfileService);
+  private readonly gamification = inject(GamificationService);
 
   /** Opt-in flag — read from Firestore profile, never assumed true. */
   useSeelegSupplements = computed(() =>
@@ -76,13 +76,13 @@ export class NutritionComponent implements OnInit {
     const target = this.targetDailyCalories();
     if (target === 0) return 0;
     const p = (this.currentCalories() / target) * 100;
-    return p > 100 ? 100 : p;
+    return Math.min(p, 100);
   });
 
   macroProgress(current: number, target: number): number {
     if (target === 0) return 0;
     const p = (current / target) * 100;
-    return p > 100 ? 100 : p;
+    return Math.min(p, 100);
   }
 
   isMealConsumed(index: number): boolean {
@@ -215,9 +215,10 @@ export class NutritionComponent implements OnInit {
       const next = !this.useSeelegSupplements();
       await this.profileService.saveProfile({ ...current, useSeelegSupplements: next });
       // Refresh in-memory state so the computed re-evaluates
-      await this.profileState.refreshProfile();
+      this.profileState.refreshProfile();
     } finally {
       this.isSavingSeeleg.set(false);
     }
   }
 }
+

@@ -2,14 +2,12 @@ import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@a
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
-import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
 import { TrainerAiService } from '../../core/services/ai/trainer-ai.service';
-import { UserProfile } from '../../models/user-profile.model';
+import { UserProfile } from '../../core/models/user-profile.model';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
-import { Workout } from '../../models/workout.model';
+import { Workout } from '../../core/models/workout.model';
 import { WorkoutService } from '../../core/services/workout.service';
-import { RecoveryService, MuscleStatus } from '../../core/services/recovery.service';
+import { RecoveryService } from '../../core/services/recovery.service';
 import { ProfessionalBodyMapComponent } from '../../shared/components/professional-body-map/professional-body-map.component';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -23,11 +21,11 @@ import { MatIconModule } from '@angular/material/icon';
 export class GeneratorComponent {
   
   // Dependencies
-  public aiService = inject(TrainerAiService);
-  private workoutService = inject(WorkoutService);
-  private recoveryService = inject(RecoveryService);
-  private profileState = inject(UserProfileStateService);
-  private router = inject(Router);
+  public readonly aiService = inject(TrainerAiService);
+  private readonly workoutService = inject(WorkoutService);
+  private readonly recoveryService = inject(RecoveryService);
+  private readonly profileState = inject(UserProfileStateService);
+  private readonly router = inject(Router);
 
   // State
   userPrompt = signal<string>('');
@@ -103,3 +101,4 @@ export class GeneratorComponent {
     }
   }
 }
+

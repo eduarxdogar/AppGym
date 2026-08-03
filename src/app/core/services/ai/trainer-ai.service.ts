@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { BaseAiService } from './base-ai.service';
-import { Workout } from '../../../models/workout.model';
-import { UserProfile } from '../../../models/user-profile.model';
-import { WeeklyPlanRequest } from '../../../models/ai-requests.model';
+import { Workout } from '../../models/workout.model';
+import { UserProfile } from '../../models/user-profile.model';
+import { WeeklyPlanRequest } from '../../models/ai-requests.model';
 
 const SYSTEM_PROMPT = `
 Eres COACH TRÍADA, un Entrenador Élite de Culturismo y Powerbuilding (IFBB Pro Persona). 
@@ -48,7 +48,7 @@ REGLAS DE ORO INTRANSABLES:
   providedIn: 'root'
 })
 export class TrainerAiService {
-  private baseAi = inject(BaseAiService);
+  private readonly baseAi = inject(BaseAiService);
   public activeModel = this.baseAi.activeModel;
 
   async generateWorkout(userPrompt: string, userProfile: UserProfile): Promise<Workout> {
@@ -92,7 +92,7 @@ export class TrainerAiService {
       const workoutsData: any[] = JSON.parse(cleanText); 
 
       if (!Array.isArray(workoutsData)) {
-         throw new Error('AI did not return an array of workouts');
+         throw new TypeError('AI did not return an array of workouts');
       }
 
       const today = new Date();

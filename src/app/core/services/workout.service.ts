@@ -1,8 +1,8 @@
-import { Injectable, signal, computed, inject, Signal } from '@angular/core';
+import { Injectable, computed, inject, Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
-import { Workout } from '../../models/workout.model';
-import { Ejercicio } from '../../models/ejercicio.model'; 
+import { Workout } from '../../core/models/workout.model';
+import { Ejercicio } from '../../core/models/ejercicio.model'; 
 import { StorageService } from './storage.service';
 
 @Injectable({
@@ -15,7 +15,7 @@ export class WorkoutService {
   readonly workouts: Signal<Workout[]> = toSignal(
     this.storageService.getWorkouts() as Observable<Workout[]>,
     { initialValue: [] as Workout[] }
-  );
+  ) as Signal<Workout[]>;
 
   private readonly workoutsSignal = computed(() => this.workouts() || []);
 
@@ -69,7 +69,7 @@ export class WorkoutService {
   // Editar un ejercicio existente en una rutina
   async editExerciseInWorkout(workoutId: string, ejercicioIndex: number, updatedEjercicio: Ejercicio): Promise<void> {
     const workout = this.getWorkoutById(workoutId)();
-    if (!workout || !workout.ejercicios[ejercicioIndex]) return;
+    if (!workout?.ejercicios[ejercicioIndex]) return;
 
     const updatedEjercicios = [...workout.ejercicios];
     updatedEjercicios[ejercicioIndex] = updatedEjercicio;
@@ -81,7 +81,7 @@ export class WorkoutService {
   // Eliminar un ejercicio de una rutina
   async deleteExerciseFromWorkout(workoutId: string, ejercicioIndex: number): Promise<void> {
     const workout = this.getWorkoutById(workoutId)();
-    if (!workout || !workout.ejercicios[ejercicioIndex]) return;
+    if (!workout?.ejercicios[ejercicioIndex]) return;
 
     const updatedEjercicios = [...workout.ejercicios];
     updatedEjercicios.splice(ejercicioIndex, 1);
@@ -93,7 +93,7 @@ export class WorkoutService {
   // Configurar un ejercicio avanzado (Top Set y Back Set)
   async configureAdvancedExercise(workoutId: string, ejercicioIndex: number): Promise<void> {
     const workout = this.getWorkoutById(workoutId)();
-    if (!workout || !workout.ejercicios[ejercicioIndex]) return;
+    if (!workout?.ejercicios[ejercicioIndex]) return;
 
     const updatedEjercicios = [...workout.ejercicios];
     const ejercicio = { ...updatedEjercicios[ejercicioIndex] };
@@ -144,7 +144,7 @@ export class WorkoutService {
 
   async addDropSetToExercise(workoutId: string, ejercicioIndex: number): Promise<void> {
     const workout = this.getWorkoutById(workoutId)();
-    if (!workout || !workout.ejercicios[ejercicioIndex]) return;
+    if (!workout?.ejercicios[ejercicioIndex]) return;
     
     const ejercicio = { ...workout.ejercicios[ejercicioIndex] };
     if (!ejercicio.pesokg) return;
@@ -166,7 +166,7 @@ export class WorkoutService {
 
   async addSuperSetToExercise(workoutId: string, ejercicioIndex: number, ejercicioVinculado: Ejercicio): Promise<void> {
     const workout = this.getWorkoutById(workoutId)();
-    if (!workout || !workout.ejercicios[ejercicioIndex]) return;
+    if (!workout?.ejercicios[ejercicioIndex]) return;
 
     const ejercicio = { ...workout.ejercicios[ejercicioIndex] };
     ejercicio.tipos = 'super-serie';
@@ -183,3 +183,4 @@ export class WorkoutService {
     return workout.nivelDificultad === 'avanzado';
   }
 }
+

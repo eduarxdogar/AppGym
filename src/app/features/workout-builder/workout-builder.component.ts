@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ExerciseService } from '../../core/services/exercise.service';
 import { WorkoutService } from '../../core/services/workout.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Workout, Ejercicio } from '../../models/workout.model';
+import { Workout, Ejercicio } from '../../core/models/workout.model';
 
 export interface CanvasExercise {
   catalogId: number | string;
@@ -27,10 +27,10 @@ export interface CanvasExercise {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WorkoutBuilderComponent {
-  private exerciseService = inject(ExerciseService);
-  private workoutService = inject(WorkoutService);
-  private authService = inject(AuthService);
-  private router = inject(Router);
+  private readonly exerciseService = inject(ExerciseService);
+  private readonly workoutService = inject(WorkoutService);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   // State
   searchQuery = signal<string>('');
@@ -45,7 +45,7 @@ export class WorkoutBuilderComponent {
   // Computed
   availableMuscles = computed(() => {
     const all = this.catalogExercises().map(ex => ex.grupoMuscular);
-    return Array.from(new Set(all)).sort();
+    return Array.from(new Set(all)).sort((a, b) => a.localeCompare(b));
   });
 
   filteredCatalog = computed(() => {
@@ -110,8 +110,6 @@ export class WorkoutBuilderComponent {
 
     this.isSaving.set(true);
     try {
-      const currentUserId = this.authService.currentUser()?.uid;
-      
       const uniqueMuscles = Array.from(new Set(this.canvasExercises().map(e => e.grupoMuscular)));
 
       const workout: Workout = {
@@ -142,3 +140,4 @@ export class WorkoutBuilderComponent {
     }
   }
 }
+

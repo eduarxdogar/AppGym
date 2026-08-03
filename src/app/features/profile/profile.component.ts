@@ -10,7 +10,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { GamificationService } from '../../core/services/gamification.service';
-import { DatabaseMigrationService, MigrationReport } from '../../core/services/database-migration.service';
+import { DatabaseMigrationService } from '../../core/services/database-migration.service';
+import { MigrationReport } from '../../core/models/admin.model';
 
 @Component({
   selector: 'app-profile',
@@ -19,14 +20,14 @@ import { DatabaseMigrationService, MigrationReport } from '../../core/services/d
   templateUrl: './profile.component.html'
 })
 export class ProfileComponent {
-  private authService = inject(AuthService);
-  private auth = inject(Auth);
-  private storage = inject(Storage);
-  private router = inject(Router);
-  private userProfileState = inject(UserProfileStateService);
-  private userProfileService = inject(UserProfileService);
-  private gamificationService = inject(GamificationService);
-  private migrationService = inject(DatabaseMigrationService);
+  private readonly authService = inject(AuthService);
+  private readonly auth = inject(Auth);
+  private readonly storage = inject(Storage);
+  private readonly router = inject(Router);
+  private readonly userProfileState = inject(UserProfileStateService);
+  private readonly userProfileService = inject(UserProfileService);
+  private readonly gamificationService = inject(GamificationService);
+  private readonly migrationService = inject(DatabaseMigrationService);
   private readonly functions = inject(Functions);
 
   /** True when running under `ng serve` (development mode). Controls dev-only UI. */
@@ -60,7 +61,7 @@ export class ProfileComponent {
   constructor() {
     effect(() => {
       const profile = this.userProfileState.profile();
-      if (profile && profile.equipment) {
+      if (profile?.equipment) {
         this.selectedEquipment.set([...profile.equipment]);
       }
     }, { allowSignalWrites: true });
@@ -79,7 +80,7 @@ export class ProfileComponent {
      this.isSaving.set(true);
      try {
         await this.userProfileService.updateEquipment(this.selectedEquipment());
-        await this.userProfileState.refreshProfile();
+        this.userProfileState.refreshProfile();
      } catch (error) {
         console.error('Error saving equipment:', error);
      } finally {

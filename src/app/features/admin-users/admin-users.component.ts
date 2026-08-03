@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { Firestore, doc, setDoc } from '@angular/fire/firestore';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { ToastService } from '../../core/services/toast.service';
-import { UserProfile } from '../../models/user-profile.model';
+import { UserProfile } from '../../core/models/user-profile.model';
 
 type AdminUserRow = UserProfile & { uid: string };
 
@@ -188,3 +188,4 @@ export class AdminUsersComponent implements OnInit {
     });
   }
 }
+

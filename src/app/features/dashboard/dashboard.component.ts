@@ -9,7 +9,7 @@ import { UserProfileStateService } from '../../core/services/user-profile-state.
 import { MetricsService } from '../../core/services/metrics.service';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 import { StrengthTierWidgetComponent } from '../../shared/components/strength-tier-widget/strength-tier-widget.component';
-import { Workout, Ejercicio } from '../../models/workout.model';
+import { Workout } from '../../core/models/workout.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -29,12 +29,12 @@ import { Workout, Ejercicio } from '../../models/workout.model';
   `]
 })
 export class DashboardComponent {
-  private workoutService = inject(WorkoutService);
-  private recoveryService = inject(RecoveryService);
-  private router = inject(Router);
-  private authService = inject(AuthService);
-  private userProfileState = inject(UserProfileStateService);
-  private metricsService = inject(MetricsService);
+  private readonly workoutService = inject(WorkoutService);
+  private readonly recoveryService = inject(RecoveryService);
+  private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly userProfileState = inject(UserProfileStateService);
+  private readonly metricsService = inject(MetricsService);
 
   // Signals
   workouts: Signal<Workout[]> = this.workoutService.workouts;
@@ -53,7 +53,7 @@ export class DashboardComponent {
       const now = new Date();
       const diffTime = endsAt.getTime() - now.getTime();
       const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return days > 0 ? days : 0;
+      return Math.max(days, 0);
     }
     return null;
   });
@@ -61,7 +61,7 @@ export class DashboardComponent {
   // ── Microcycle date range (from the active plan workouts) ──────────────────
   // These become the Single Source of Truth for the Trends section,
   // replacing the fixed 7-day rolling window.
-  private sortedPlanWorkouts = computed<Workout[]>(() =>
+  private readonly sortedPlanWorkouts = computed<Workout[]>(() =>
     [...this.workouts()].sort(
       (a, b) => new Date(a.fecha ?? 0).getTime() - new Date(b.fecha ?? 0).getTime()
     )
@@ -76,13 +76,13 @@ export class DashboardComponent {
   /** Latest workout date in the current plan (end of active microcycle). */
   cycleEndDate = computed<Date>(() => {
     const ws = this.sortedPlanWorkouts();
-    return ws.length > 0 ? new Date(ws[ws.length - 1].fecha!) : new Date();
+    return ws.length > 0 ? new Date(ws.at(-1)!.fecha!) : new Date();
   });
 
   // ── Cycle-scoped metrics (SSoT — same query as the summary modal) ──────────
 
   /** Sessions completed within the current microcycle date range. */
-  private cycleSessions = computed(() =>
+  private readonly cycleSessions = computed(() =>
     this.metricsService.getMicrocycleSessions(this.cycleStartDate(), this.cycleEndDate())
   );
 
@@ -91,9 +91,9 @@ export class DashboardComponent {
   cycleTotalVolume = computed(() =>
     this.cycleSessions().reduce((total, s) => {
       const exs = s.exercises || s.ejercicios || [];
-      return total + exs.reduce((acc, ex) => {
+      return total + exs.reduce((acc: number, ex: any) => {
         const sets = ex.sets || ex.series || [];
-        return acc + sets.reduce((sv, set) => {
+        return acc + sets.reduce((sv: number, set: any) => {
           const reps   = Number(set.reps   || set.repeticiones || 0);
           const weight = Number(set.weight || set.peso || set.pesokg || 0);
           return sv + reps * weight;
@@ -118,9 +118,9 @@ export class DashboardComponent {
   cycleTotalSets = computed(() =>
     this.cycleSessions().reduce((total, s) => {
       const exs = s.exercises || s.ejercicios || [];
-      return total + exs.reduce((acc, ex) => {
+      return total + exs.reduce((acc: number, ex: any) => {
         const sets = ex.sets || ex.series || [];
-        return acc + sets.filter(set => set.completed !== false).length;
+        return acc + sets.filter((set: any) => set.completed !== false).length;
       }, 0);
     }, 0)
   );
@@ -243,3 +243,4 @@ export class DashboardComponent {
     this.router.navigate(['/generator']);
   }
 }
+

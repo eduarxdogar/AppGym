@@ -1,12 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { BaseAiService } from './base-ai.service';
-import { WeeklyDietPlan } from '../../../models/ai-requests.model';
+import { WeeklyDietPlan } from '../../models/ai-requests.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NutritionAiService {
-  private baseAi = inject(BaseAiService);
+  private readonly baseAi = inject(BaseAiService);
 
   /**
    * Generates a WeeklyDietPlan using Gemini.
@@ -73,7 +73,7 @@ Datos del usuario:
 - Presupuesto / Supermercado (MUY IMPORTANTE para las sugerencias de alimentos): ${profileData.budgetTier}
 
 INSTRUCCIONES DE AYUNO: ${fastingNote}
-
+${seelegRule ? `${seelegRule}\n` : ''}
 IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta (2 planes base):
 {
   "trainingDay": {

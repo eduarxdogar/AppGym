@@ -1,9 +1,9 @@
 import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
 import { Firestore, doc, setDoc, docData } from '@angular/fire/firestore';
 import { Auth, authState } from '@angular/fire/auth';
-import { from, Observable, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
-import { WeeklyDietPlan } from '../../models/ai-requests.model';
+import { WeeklyDietPlan } from '../../core/models/ai-requests.model';
 
 export interface DailyNutritionLog {
   date: string; // YYYY-MM-DD
@@ -18,9 +18,9 @@ export interface DailyNutritionLog {
   providedIn: 'root'
 })
 export class NutritionService {
-  private firestore = inject(Firestore);
-  private auth = inject(Auth);
-  private injector = inject(Injector);
+  private readonly firestore = inject(Firestore);
+  private readonly auth = inject(Auth);
+  private readonly injector = inject(Injector);
 
   /** Guarda (sobrescribe) el plan nutricional del usuario autenticado. */
   async savePlan(plan: WeeklyDietPlan): Promise<void> {
@@ -37,7 +37,7 @@ export class NutritionService {
           const ref = doc(this.firestore, `nutrition_plans/${user.uid}`);
           return docData(ref).pipe(
             map(data => {
-              if (data && data['plan']) {
+              if (data?.['plan']) {
                 return data['plan'] as WeeklyDietPlan;
               }
               return null;
@@ -67,3 +67,4 @@ export class NutritionService {
     await setDoc(ref, log, { merge: true });
   }
 }
+

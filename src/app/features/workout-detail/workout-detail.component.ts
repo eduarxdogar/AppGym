@@ -1,8 +1,8 @@
 import { Component, OnInit, OnDestroy, input, effect, inject, computed, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { Firestore, collection, doc, deleteField } from '@angular/fire/firestore';
-import { Workout } from '../../models/workout.model';
-import { Ejercicio } from '../../models/ejercicio.model';
+import { Workout } from '../../core/models/workout.model';
+import { Ejercicio } from '../../core/models/ejercicio.model';
 import { WorkoutService } from '../../core/services/workout.service';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -16,7 +16,7 @@ import { SafeYoutubePipe } from '../../shared/pipes/safe-youtube.pipe';
 import { ChatAiService } from '../../core/services/ai/chat-ai.service';
 import { RestTimerService, REST_PRESETS_SECONDS } from '../../core/services/rest-timer.service';
 import { RecoveryService } from '../../core/services/recovery.service';
-import { WorkoutSession, WorkoutSessionExercise } from '../../models/workout-session.model';
+import { WorkoutSession, WorkoutSessionExercise } from '../../core/models/workout-session.model';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ToastService } from '../../core/services/toast.service';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
@@ -131,8 +131,8 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
     let currentReps = sets[0].reps || 0;
 
     if (completedSets.length > 0) {
-      currentKg = completedSets[completedSets.length - 1].weight;
-      currentReps = completedSets[completedSets.length - 1].reps;
+      currentKg = completedSets.at(-1)!.weight;
+      currentReps = completedSets.at(-1)!.reps;
     }
 
     return {
@@ -221,7 +221,7 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
     const elapsed = this.sessionSeconds();
     const target = 3600;
     const progress = (elapsed / target) * 100;
-    return progress > 100 ? 100 : progress;
+    return Math.min(progress, 100);
   });
 
   constructor() {
@@ -390,106 +390,104 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       this.showRestModal.set(false);
       
       const workout = this.workout();
-      const startTime = this.trainingSessionService.getCurrentSession()?.fechaInicio || new Date();
-      
-           if (workout) {
-               const sessionExercises: WorkoutSessionExercise[] = workout.ejercicios.map((ex, index) => {
-                   const sets = this.activeSets().get(index) || [];
-                   return {
-                       exerciseId: ex.id || index,
-                       name: ex.nombre,
-                       grupoMuscular: ex.grupoMuscular || '', // AGREGADO PARA RECOVERY SERVICE
-                       targetSets: ex.series || 0,
-                       sets: sets.map(s => ({
-                           weight: s.weight,
-                           reps: s.reps,
-                           completed: s.completed,
-                           type: s.type
-                       }))
-                   };
-               });
-
-           const muscles = new Set<string>();
-           workout.musculos?.forEach(m => muscles.add(m));
-           workout.ejercicios.forEach(ex => {
-               if(ex.grupoMuscular) muscles.add(ex.grupoMuscular);
-           });
-
-           const session: WorkoutSession = {
-               id: doc(collection(this.firestore, 'dummy')).id,
-               userId: '', 
-               workoutId: workout.id,
-               name: workout.nombre,
-               startTime: startTime.toISOString(),
-               endTime: new Date().toISOString(),
-               duration: this.sessionTimeFormatted(),
-               totalVolume: this.calculateTotalVolume(),
-               musclesWorked: Array.from(muscles),
-               exercises: sessionExercises,
-               feeling: 'good',
-               calories: Math.round((this.sessionSeconds() / 60 * 5) + (this.calculateTotalVolume() * 0.0005))
-           };
-
-           await this.trainingHistoryService.addSession(session);
-
-           if (muscles.size > 0) {
-               this.toastService.showSuccess(`Sesión guardada. Desgaste registrado en: ${Array.from(muscles).join(', ')}`);
-           }
-
-           // Mark workout as completed and clear active session fields
-           const updatedWorkout: Workout = {
-               ...workout,
-               isCompleted: true,
-               completedAt: new Date().toISOString(),
-               durationMinutes: Math.floor(this.sessionSeconds() / 60),
-               status: 'completed',
-               activeSetsState: deleteField() as any,
-               activeStartTime: deleteField() as any
-           };
-           await this.workoutService.updateWorkout(updatedWorkout);
-
-           // --- DYNAMIC DATE SHIFT LOGIC ---
-           if (workout.fecha) {
-               const scheduledDate = new Date(workout.fecha);
-               scheduledDate.setHours(0, 0, 0, 0);
-               const today = new Date();
-               today.setHours(0, 0, 0, 0);
-
-               const diffTime = today.getTime() - scheduledDate.getTime();
-               const daysOffset = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-               if (daysOffset > 0) {
-                   const allWorkouts = this.workoutService.workouts();
-                   
-                   const futureWorkouts = allWorkouts.filter(w => {
-                       if (w.id === workout.id || w.isCompleted || w.status === 'completed') return false;
-                       if (!w.fecha) return false;
-                       
-                       const wDate = new Date(w.fecha);
-                       wDate.setHours(0, 0, 0, 0);
-                       return wDate.getTime() > scheduledDate.getTime();
-                   });
-
-                   for (const w of futureWorkouts) {
-                       const newDate = new Date(w.fecha!);
-                       newDate.setDate(newDate.getDate() + daysOffset);
-                       
-                       await this.workoutService.updateWorkout({
-                           ...w,
-                           fecha: newDate.toISOString()
-                       });
-                   }
-                   if (futureWorkouts.length > 0) {
-                       this.toastService.showInfo(`Calendario ajustado: Se empujaron ${futureWorkouts.length} día(s) por el retraso.`);
-                   }
-               }
-           }
-           // ---------------------------------
-
-           this.trainingSessionService.saveSession(null);
+      if (!workout) {
+          this.router.navigate(['/weekly-plan']);
+          return;
       }
-      
+
+      const startTime = this.trainingSessionService.getCurrentSession()?.fechaInicio || new Date();
+
+      const sessionExercises: WorkoutSessionExercise[] = workout.ejercicios.map((ex, index) => {
+          const sets = this.activeSets().get(index) || [];
+          return {
+              exerciseId: ex.id || index,
+              name: ex.nombre,
+              grupoMuscular: ex.grupoMuscular || '',
+              targetSets: ex.series || 0,
+              sets: sets.map(s => ({
+                  weight: s.weight,
+                  reps: s.reps,
+                  completed: s.completed,
+                  type: s.type
+              }))
+          };
+      });
+
+      const muscles = new Set<string>();
+      workout.musculos?.forEach(m => muscles.add(m));
+      workout.ejercicios.forEach(ex => {
+          if (ex.grupoMuscular) muscles.add(ex.grupoMuscular);
+      });
+
+      const session: WorkoutSession = {
+          id: doc(collection(this.firestore, 'dummy')).id,
+          userId: '', 
+          workoutId: workout.id,
+          name: workout.nombre,
+          startTime: startTime.toISOString(),
+          endTime: new Date().toISOString(),
+          duration: this.sessionTimeFormatted(),
+          totalVolume: this.calculateTotalVolume(),
+          musclesWorked: Array.from(muscles),
+          exercises: sessionExercises,
+          feeling: 'good',
+          calories: Math.round((this.sessionSeconds() / 60 * 5) + (this.calculateTotalVolume() * 0.0005))
+      };
+
+      await this.trainingHistoryService.addSession(session);
+
+      if (muscles.size > 0) {
+          this.toastService.showSuccess(`Sesión guardada. Desgaste registrado en: ${Array.from(muscles).join(', ')}`);
+      }
+
+      const updatedWorkout: Workout = {
+          ...workout,
+          isCompleted: true,
+          completedAt: new Date().toISOString(),
+          durationMinutes: Math.floor(this.sessionSeconds() / 60),
+          status: 'completed',
+          activeSetsState: deleteField() as any,
+          activeStartTime: deleteField() as any
+      };
+      await this.workoutService.updateWorkout(updatedWorkout);
+
+      if (workout.fecha) {
+          await this.shiftFutureWorkouts(workout, workout.fecha);
+      }
+
+      this.trainingSessionService.saveSession(null);
       this.router.navigate(['/weekly-plan']);
+  }
+
+  private async shiftFutureWorkouts(workout: Workout, fechaStr: string): Promise<void> {
+      const scheduledDate = new Date(fechaStr);
+      scheduledDate.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const diffTime = today.getTime() - scheduledDate.getTime();
+      const daysOffset = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      if (daysOffset <= 0) return;
+
+      const allWorkouts = this.workoutService.workouts();
+      const futureWorkouts = allWorkouts.filter(w => {
+          if (w.id === workout.id || w.isCompleted || w.status === 'completed' || !w.fecha) return false;
+          const wDate = new Date(w.fecha);
+          wDate.setHours(0, 0, 0, 0);
+          return wDate.getTime() > scheduledDate.getTime();
+      });
+
+      for (const w of futureWorkouts) {
+          const newDate = new Date(w.fecha!);
+          newDate.setDate(newDate.getDate() + daysOffset);
+          await this.workoutService.updateWorkout({
+              ...w,
+              fecha: newDate.toISOString()
+          });
+      }
+      if (futureWorkouts.length > 0) {
+          this.toastService.showInfo(`Calendario ajustado: Se empujaron ${futureWorkouts.length} día(s) por el retraso.`);
+      }
   }
 
   // --- SETS MANAGEMENT ---
@@ -522,8 +520,8 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   toggleSetType(exIndex: number, setIndex: number) {
       const map = new Map(this.activeSets());
       const current = map.get(exIndex);
-      if (current && current[setIndex]) {
-          const s = current[setIndex];
+      const s = current?.[setIndex];
+      if (s) {
           const typeMap: Record<string, 'warmup'|'effective'|'topset'|'backoff'> = {
               'warmup': 'effective',
               'effective': 'topset',
@@ -541,8 +539,8 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       const map = new Map(this.activeSets());
       const current = map.get(exIndex);
       const w = this.workout();
-      if (current && current[setIndex] && w) {
-          const s = current[setIndex];
+      const s = current?.[setIndex];
+      if (s && w) {
           if (s.superWeight !== undefined || s.superReps !== undefined) {
               s.superWeight = undefined;
               s.superReps = undefined;
@@ -560,9 +558,10 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   clearSupersetData(exIndex: number, setIndex: number) {
       const map = new Map(this.activeSets());
       const current = map.get(exIndex);
-      if (current && current[setIndex]) {
-          delete current[setIndex].superWeight;
-          delete current[setIndex].superReps;
+      const s = current?.[setIndex];
+      if (s) {
+          delete s.superWeight;
+          delete s.superReps;
           map.set(exIndex, current);
           this.activeSets.set(map);
           this.persistWorkoutChanges();
@@ -573,24 +572,23 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
   clearDropSetSupersetData(exIndex: number, setIndex: number, dropIndex: number) {
       const map = new Map(this.activeSets());
       const current = map.get(exIndex);
-      if (current && current[setIndex] && current[setIndex].dropSets) {
-          const dropSets = current[setIndex].dropSets;
-          if (dropSets && dropSets[dropIndex]) {
-              delete dropSets[dropIndex].superWeight;
-              delete dropSets[dropIndex].superReps;
-              map.set(exIndex, current);
-              this.activeSets.set(map);
-              this.persistWorkoutChanges();
-              this.toastService.showInfo('Superserie quitada de este Drop Set');
-          }
+      const dropSets = current?.[setIndex]?.dropSets;
+      if (current && dropSets?.[dropIndex]) {
+          delete dropSets[dropIndex].superWeight;
+          delete dropSets[dropIndex].superReps;
+          map.set(exIndex, current);
+          this.activeSets.set(map);
+          this.persistWorkoutChanges();
+          this.toastService.showInfo('Superserie quitada de este Drop Set');
       }
   }
 
   deleteDropSet(exIndex: number, setIndex: number, dropIndex: number) {
       const map = new Map(this.activeSets());
       const current = map.get(exIndex);
-      if (current && current[setIndex] && current[setIndex].dropSets) {
-          current[setIndex].dropSets!.splice(dropIndex, 1);
+      const dropSets = current?.[setIndex]?.dropSets;
+      if (current && dropSets) {
+          dropSets.splice(dropIndex, 1);
           map.set(exIndex, current);
           this.activeSets.set(map);
           this.persistWorkoutChanges();
@@ -616,9 +614,9 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       
       if (targetSetIndex !== -1) {
           const targetSet = current[targetSetIndex];
-          if (!targetSet.dropSets) targetSet.dropSets = [];
+          targetSet.dropSets ??= [];
           
-          const baseForDrop = targetSet.dropSets.length > 0 ? targetSet.dropSets[targetSet.dropSets.length - 1] : targetSet;
+          const baseForDrop = targetSet.dropSets.at(-1) ?? targetSet;
           
           const dropWeight = Math.floor((baseForDrop.weight || 0) * 0.8);
           const newReps = (baseForDrop.reps || 10) + 4;
@@ -648,37 +646,31 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       }
   }
 
+  private parseRestTimeSeconds(descanso: string | number | undefined): number {
+      if (!descanso) return 90;
+      const match = /^(\d+)\s*([sm])/i.exec(String(descanso).trim());
+      if (match) {
+          const val = Number.parseInt(match[1], 10);
+          return match[2].toLowerCase() === 'm' ? val * 60 : val;
+      }
+      return Number(descanso) || 90;
+  }
+
   toggleSetComplete(exIndex: number, setIndex: number) {
       const map = new Map(this.activeSets());
       const sets = map.get(exIndex);
-      if(sets?.[setIndex]) {
-          const isNowCompleted = !sets[setIndex].completed;
-          sets[setIndex].completed = isNowCompleted;
-          map.set(exIndex, sets);
-          this.activeSets.set(map);
-          // Persist checks in real-time
-          this.persistSetsState();
+      if (!sets?.[setIndex]) return;
 
-          // Auto-start rest timer
-          if (isNowCompleted) {
-             const ex = this.workout()?.ejercicios[exIndex];
-             if (ex && ex.descanso) {
-                 const match = String(ex.descanso).match(/(\d+)\s*(s|m)/i);
-                 if (match) {
-                     const val = parseInt(match[1]);
-                     const unit = match[2].toLowerCase();
-                     const seconds = unit === 'm' ? val * 60 : val;
-                     this.openRestModal(seconds);
-                 } else if (Number(ex.descanso)) {
-                     // Si es solo el número
-                     this.openRestModal(Number(ex.descanso));
-                 } else {
-                     this.openRestModal(90);
-                 }
-             } else {
-                 this.openRestModal(90);
-             }
-          }
+      const isNowCompleted = !sets[setIndex].completed;
+      sets[setIndex].completed = isNowCompleted;
+      map.set(exIndex, sets);
+      this.activeSets.set(map);
+      this.persistSetsState();
+
+      if (isNowCompleted) {
+          const ex = this.workout()?.ejercicios[exIndex];
+          const seconds = this.parseRestTimeSeconds(ex?.descanso);
+          this.openRestModal(seconds);
       }
   }
 
@@ -852,7 +844,7 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
       if (!w) return;
 
       // Sanitización profunda / Deep copy para romper referencias y evitar undefined
-      const safeTarget = JSON.parse(JSON.stringify(targetExercise)) as Ejercicio;
+      const safeTarget = structuredClone(targetExercise);
       safeTarget.notas = safeTarget.notas || 'Sin instrucciones adicionales.';
       safeTarget.videoUrl = safeTarget.videoUrl || '';
       safeTarget.tipo = safeTarget.tipo || 'aislado';
@@ -1019,3 +1011,4 @@ export class WorkoutDetailComponent implements OnInit, OnDestroy {
     return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
   }
 }
+

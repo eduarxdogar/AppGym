@@ -1,7 +1,8 @@
 import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { GamificationService, GAMIFICATION_RANKS } from '../../../core/services/gamification.service';
+import { GamificationService } from '../../../core/services/gamification.service';
+import { GAMIFICATION_RANKS } from '../../../core/models/user-profile.model';
 
 @Component({
   selector: 'app-strength-tier-widget',
@@ -62,7 +63,7 @@ import { GamificationService, GAMIFICATION_RANKS } from '../../../core/services/
   `
 })
 export class StrengthTierWidgetComponent {
-  private gamificationService = inject(GamificationService);
+  private readonly gamificationService = inject(GamificationService);
   
   // Expose the signal
   state = this.gamificationService.gamificationState;

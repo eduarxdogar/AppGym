@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TrainingHistoryService } from '../../core/services/training-history.service';
-import { TrainingSession } from '../../models/training-session.model';
+import { TrainingSession } from '../../core/models/training-session.model';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
@@ -14,7 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
 export class CalendarComponent implements OnInit {
   sesiones: TrainingSession[] = [];
 
-  constructor(private historyService: TrainingHistoryService) {}
+  constructor(private readonly historyService: TrainingHistoryService) {}
 
   ngOnInit(): void {
     this.historyService.getHistory().subscribe({
@@ -34,3 +34,4 @@ export class CalendarComponent implements OnInit {
     });
   }
 }
+

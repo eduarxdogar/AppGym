@@ -1,5 +1,18 @@
 import { Ejercicio } from './workout.model';
 
+export interface ExerciseData {
+  id?: string;
+  name: string;
+  discipline: 'gym' | 'calisthenics' | 'boxing';
+  muscleGroup: 'pecho' | 'espalda' | 'hombros' | 'bíceps' | 'tríceps' | 'cuádriceps' | 'isquios' | 'glúteos' | 'gemelos' | 'core';
+  type: 'compound' | 'isolated';
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  instructions: string[];
+  equipmentRequired: string[];
+  imageUrl: string;
+  videoUrl: string;
+}
+
 export const EXERCISES_CATALOG: Ejercicio[] = [
   {
     id: 1,

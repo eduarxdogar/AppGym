@@ -6,13 +6,14 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { WorkoutService } from '../../core/services/workout.service';
 import { TrainerAiService } from '../../core/services/ai/trainer-ai.service';
-import { WeeklyPlanRequest } from '../../models/ai-requests.model';
-import { UserProfile } from '../../models/user-profile.model';
+import { WeeklyPlanRequest } from '../../core/models/ai-requests.model';
+import { UserProfile } from '../../core/models/user-profile.model';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { RecoveryService } from '../../core/services/recovery.service';
 import { ToastService } from '../../core/services/toast.service';
 import { WeeklySummaryModalComponent } from '../../shared/components/weekly-summary-modal/weekly-summary-modal.component';
-import { ProgressionEngineService, ProgressionOptions } from '../../core/services/progression-engine.service';
+import { ProgressionEngineService } from '../../core/services/progression-engine.service';
+import { ProgressionOptions } from '../../core/models/workout.model';
 import { TrainingHistoryService } from '../../core/services/training-history.service';
 import { WorkoutSession } from '../../core/models/workout-history.model';
 
@@ -256,8 +257,8 @@ import { WorkoutSession } from '../../core/models/workout-history.model';
          *ngIf="showSummaryModal()"
          [cycleStartDate]="cycleStartDate()"
          [cycleEndDate]="cycleEndDate()"
-         (onClose)="showSummaryModal.set(false)"
-         (onRollover)="doRollover($event)">
+         (closeModal)="showSummaryModal.set(false)"
+         (rollover)="doRollover($event)">
        </app-weekly-summary-modal>
     </div>
   `,
@@ -290,7 +291,7 @@ export class WeeklyPlanComponent {
   userGoal: string = '';
   daysPerWeek: number = 3;
 
-  private shouldAutoGenerate = signal<boolean>(false);
+  private readonly shouldAutoGenerate = signal<boolean>(false);
 
   constructor() {
     // AUTO-FILL GENERATOR: Sync with User Profile from Onboarding
@@ -362,7 +363,7 @@ export class WeeklyPlanComponent {
   cycleEndDate = computed<Date>(() => {
     const workouts = this.weekWorkouts();
     if (workouts.length === 0) return new Date();
-    return new Date(workouts[workouts.length - 1].fecha!);
+    return new Date(workouts.at(-1)!.fecha!);
   });
 
   isWeekCompleted = computed(() => {
@@ -405,6 +406,7 @@ export class WeeklyPlanComponent {
         await this.workoutService.updateWorkout(updatedWorkout);
         this.toastService.showSuccess('Título actualizado.');
       } catch (err) {
+        console.error('Error al actualizar el título:', err);
         this.toastService.showError('Error al actualizar el título.');
       }
     }
@@ -431,6 +433,7 @@ export class WeeklyPlanComponent {
       await this.workoutService.updateWorkout(updatedWorkout);
       this.toastService.showSuccess(`Cambiado a ${newDayName}`);
     } catch (err) {
+      console.error('Error al cambiar el día:', err);
       this.toastService.showError('Error al cambiar el día.');
     } finally {
       this.editingDayId.set(null);
@@ -508,11 +511,12 @@ export class WeeklyPlanComponent {
       });
       // Sort each group newest first (by endTime or startTime)
       historyMap.forEach((sessions, key) => {
-        historyMap.set(key, sessions.sort((a, b) => {
+        const sorted = [...sessions].sort((a: WorkoutSession, b: WorkoutSession) => {
           const ta = new Date(a.endTime ?? a.startTime ?? a.fecha ?? 0).getTime();
           const tb = new Date(b.endTime ?? b.startTime ?? b.fecha ?? 0).getTime();
           return tb - ta; // descending
-        }));
+        });
+        historyMap.set(key, sorted);
       });
     } catch (err) {
       console.warn('[WeeklyPlan] Could not load history for progression. Using plan template.', err);
@@ -640,3 +644,4 @@ export class WeeklyPlanComponent {
      }
   }
 }
+
