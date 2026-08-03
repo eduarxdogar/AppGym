@@ -134,9 +134,9 @@ export class ChatAiService {
       }
 
       return responseText;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al chatear con Coach:', err);
-      const errorMessage = err?.message || '';
+      const errorMessage = err instanceof Error ? err.message : String(err);
       if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
         return 'Paciencia, fiera. Estoy recuperando el aliento. Intentá de nuevo en unos segundos.';
       }
@@ -158,7 +158,7 @@ export class ChatAiService {
 Nombre: "${activeWorkout.nombre}"
 Músculos objetivo: ${(activeWorkout.musculos || []).join(', ')}
 Ejercicios de HOY:
-${activeWorkout.ejercicios.map((e: any, i: number) => `  ${i+1}. ${e.nombre} - ${e.series}x${e.repeticiones} @ ${e.pesokg || 0}kg [${e.grupoMuscular}]`).join('\n')}
+${activeWorkout.ejercicios.map((e, i: number) => `  ${i+1}. ${e.nombre} - ${e.series}x${e.repeticiones} @ ${e.pesokg || 0}kg [${e.grupoMuscular}]`).join('\n')}
 ESTA RUTINA ES TU PRIORIDAD. Cuando el usuario pregunte "qué toca hoy" o "cómo hago X", responde SIEMPRE en el contexto de ESTA rutina.`
       : `\nNo hay rutina activa ahora mismo. Historial de rutinas disponible.`;
 
@@ -177,7 +177,7 @@ ESTA RUTINA ES TU PRIORIDAD. Cuando el usuario pregunte "qué toca hoy" o "cómo
       ? fatigueLines.join('\n')
       : '  Sin datos de sesiones previas (músculos al 100%)';
 
-    const equipment: string[] = (userProfile as any)?.equipment || [];
+    const equipment: string[] = userProfile?.equipment || [];
     const equipmentContext = equipment.length > 0
       ? equipment.join(', ')
       : 'No especificado';

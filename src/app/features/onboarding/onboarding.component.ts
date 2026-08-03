@@ -8,6 +8,7 @@ import { UserProfileStateService } from '../../core/services/user-profile-state.
 import { UserProfile } from '../../core/models/user-profile.model';
 import { InbodyAiService } from '../../core/services/ai/inbody-ai.service';
 import { ToastService } from '../../core/services/toast.service';
+import { UserProfileSchema } from '../profile/schemas/user-profile.schema';
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const EQUIPMENT = ['Mancuernas', 'Barra', 'Máquinas', 'Bandas', 'Polea', 'Kettlebells', 'Calistenia'];
@@ -131,9 +132,10 @@ export class OnboardingComponent {
           segmentalMuscle: result.segmentalMuscle || undefined,
           segmentalFat: result.segmentalFat || undefined
         };
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('InBody Scan failed:', err);
-        if (err.code === 'resource-exhausted' || err?.message?.includes('429')) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        if (errorMsg.includes('resource-exhausted') || errorMsg.includes('429')) {
           this.toastService.showWarning('Límite de IA alcanzado. Por favor, intenta de nuevo en unos minutos.');
         } else {
           this.toastService.showError('Falla de conexión con el servidor IA.');
@@ -164,7 +166,10 @@ export class OnboardingComponent {
         availableDays: this.profile.availableDays || [],
         equipment: this.profile.equipment || [],
         baseGym: this.profile.baseGym || 'Gimnasio de Barrio',
-        inbodyData: this.profile.inbodyData ? {
+      };
+
+      if (this.profile.inbodyData) {
+        finalProfile.inbodyData = {
           muscleKg: this.profile.inbodyData.muscleKg ?? null,
           fatPercent: this.profile.inbodyData.fatPercent ?? null,
           bmr: this.profile.inbodyData.bmr ?? null,
@@ -173,13 +178,21 @@ export class OnboardingComponent {
           boneMass: this.profile.inbodyData.boneMass ?? null,
           segmentalMuscle: this.profile.inbodyData.segmentalMuscle ?? undefined,
           segmentalFat: this.profile.inbodyData.segmentalFat ?? undefined
-        } : null as any
-      };
+        };
+      }
 
-      await this.profileService.saveProfile(finalProfile);
+      const validation = UserProfileSchema.safeParse(finalProfile);
+      if (!validation.success) {
+        console.error('Validation error:', validation.error);
+        this.error.set('Datos de perfil inválidos. Revisa el formulario.');
+        this.isSaving.set(false);
+        return;
+      }
+
+      await this.profileService.saveProfile(validation.data);
       this.profileState.refreshProfile();
       this.router.navigate(['/weekly-plan'], { queryParams: { autoGenerate: 'true' } });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Save profile failed:', err);
       this.error.set('Error al guardar el perfil. Intenta de nuevo.');
     } finally {

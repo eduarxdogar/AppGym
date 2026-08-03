@@ -12,6 +12,7 @@ import { UserProfileService } from '../../core/services/user-profile.service';
 import { GamificationService } from '../../core/services/gamification.service';
 import { DatabaseMigrationService } from '../../core/services/database-migration.service';
 import { MigrationReport } from '../../core/models/admin.model';
+import { UserProfileSchema } from './schemas/user-profile.schema';
 
 @Component({
   selector: 'app-profile',
@@ -79,14 +80,20 @@ export class ProfileComponent {
   async saveEquipment() {
      this.isSaving.set(true);
      try {
-        await this.userProfileService.updateEquipment(this.selectedEquipment());
+        const validation = UserProfileSchema.shape.equipment.safeParse(this.selectedEquipment());
+        if (!validation.success) {
+           console.error('Validation error:', validation.error);
+           return;
+        }
+        await this.userProfileService.updateEquipment(validation.data);
         this.userProfileState.refreshProfile();
-     } catch (error) {
+     } catch (error: unknown) {
         console.error('Error saving equipment:', error);
      } finally {
         this.isSaving.set(false);
      }
   }
+
 
   async uploadProfilePhoto(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
