@@ -8,7 +8,7 @@ import { WorkoutService } from '../../core/services/workout.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { EditarSuperSetModalComponent } from '../modals/editar-super-set-modal/editar-super-set-modal.component';
+import { EditarSuperSetModalComponent } from '../workout-detail/modals/editar-super-set-modal/editar-super-set-modal.component';
 import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
 

@@ -6,7 +6,7 @@ import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { AuthService } from '../../core/services/auth.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -25,8 +25,8 @@ export class NavbarComponent {
   isMobile = false;
 
   // Inyectamos el servicio
-  private breakpointObserver = inject(BreakpointObserver);
-  private authService = inject(AuthService);
+  private readonly breakpointObserver = inject(BreakpointObserver);
+  private readonly authService = inject(AuthService);
 
   // Expose user signal
   user = this.authService.currentUser;

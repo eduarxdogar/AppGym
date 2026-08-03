@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './features/login/login.component';
+
 import { authGuard } from './core/guards/auth.guard';
 import { profileGuard } from './core/guards/profile.guard';
 import { subscriptionGuard } from './core/guards/subscription.guard';
@@ -34,11 +34,11 @@ export const routes: Routes = [
         { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
         { path: 'onboarding', loadComponent: () => import('./features/onboarding/onboarding.component').then(m => m.OnboardingComponent) },
         { path: 'recovery', redirectTo: 'recovery-detail', pathMatch: 'full' },
-        { path: 'workouts', loadComponent: () => import('./components/workout-list/workout-list.component').then(m => m.WorkoutListComponent) },
+        { path: 'workouts', loadComponent: () => import('./features/workout-list/workout-list.component').then(m => m.WorkoutListComponent) },
         { path: 'workouts/:id', loadComponent: () => import('./features/workout-detail/workout-detail.component').then(m => m.WorkoutDetailComponent) },
+        { path: 'workout/:id/edit', loadComponent: () => import('./features/workout-edit/workout-edit.component').then(m => m.WorkoutEditComponent) },
         { path: 'calendar', loadComponent: () => import('./features/calendar/calendar.component').then(m => m.CalendarComponent) },
         { path: 'timer', loadComponent: () => import('./features/timer/timer.component').then(m => m.TimerComponent) },
-        { path: 'workout/:id/edit', loadComponent: () => import('./components/workout-edit/workout-edit.component').then(m => m.WorkoutEditComponent) },
         { path: 'generator', loadComponent: () => import('./features/generator/generator.component').then(m => m.GeneratorComponent), canActivate: [subscriptionGuard] },
         { path: 'workout-builder', loadComponent: () => import('./features/workout-builder/workout-builder.component').then(m => m.WorkoutBuilderComponent), canActivate: [subscriptionGuard] },
         { path: 'nutrition', canActivate: [profileGuard, subscriptionGuard], loadComponent: () => import('./features/nutrition/nutrition.component').then(m => m.NutritionComponent) },
