@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule,
@@ -9,11 +9,14 @@ import {
 import { Router } from '@angular/router';
 import { AdminExercisesStore } from './store/admin-exercises.store';
 import { AdminExercise } from './services/admin-exercises.api';
+import { UiTableComponent } from '../../shared/ui/ui-table/ui-table.component';
+import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
+import { createColumnHelper, ColumnDef } from '@tanstack/angular-table';
 
 @Component({
   selector: 'app-admin-exercises',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, UiTableComponent, UiIconComponent],
   templateUrl: './admin-exercises.component.html',
   providers: [AdminExercisesStore],
 })
@@ -58,8 +61,37 @@ export class AdminExercisesComponent implements OnInit {
 
   equipmentRequired: string[] = [];
 
+  @ViewChild('nameCell', { static: true }) nameCell!: TemplateRef<any>;
+  @ViewChild('tagsCell', { static: true }) tagsCell!: TemplateRef<any>;
+  @ViewChild('actionCell', { static: true }) actionCell!: TemplateRef<any>;
+
+  columns: ColumnDef<AdminExercise, any>[] = [];
+
   ngOnInit(): void {
     this.store.loadExercises();
+    
+    const helper = createColumnHelper<AdminExercise>();
+    this.columns = [
+      helper.accessor('name', {
+        header: 'Ejercicio',
+        cell: this.nameCell as any,
+      }),
+      helper.accessor('muscleGroup', {
+        header: 'Músculo',
+      }),
+      helper.accessor('discipline', {
+        header: 'Disciplina',
+      }),
+      helper.accessor('type', {
+        header: 'Detalles',
+        cell: this.tagsCell as any,
+      }),
+      helper.display({
+        id: 'actions',
+        header: 'Acción',
+        cell: this.actionCell as any,
+      })
+    ];
   }
 
   openSideSheet(mode: 'create' | 'edit', ex?: AdminExercise): void {

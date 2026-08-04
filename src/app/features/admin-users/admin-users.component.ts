@@ -5,20 +5,24 @@ import {
   computed,
   ChangeDetectionStrategy,
   OnInit,
+  TemplateRef,
+  ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatIconModule } from '@angular/material/icon';
 import { Firestore, doc, setDoc } from '@angular/fire/firestore';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UserProfile } from '../../core/models/user-profile.model';
+import { UiTableComponent } from '../../shared/ui/ui-table/ui-table.component';
+import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
+import { createColumnHelper, ColumnDef } from '@tanstack/angular-table';
 
 type AdminUserRow = UserProfile & { uid: string };
 
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, UiTableComponent, UiIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-users.component.html',
 })
@@ -41,8 +45,41 @@ export class AdminUsersComponent implements OnInit {
   readonly activeUsers = computed(() => this.users().filter(u => !u.isDeleted).length);
   readonly deletedUsers = computed(() => this.users().filter(u => u.isDeleted).length);
 
+  @ViewChild('nameCell', { static: true }) nameCell!: TemplateRef<any>;
+  @ViewChild('emailCell', { static: true }) emailCell!: TemplateRef<any>;
+  @ViewChild('subCell', { static: true }) subCell!: TemplateRef<any>;
+  @ViewChild('statusCell', { static: true }) statusCell!: TemplateRef<any>;
+  @ViewChild('actionCell', { static: true }) actionCell!: TemplateRef<any>;
+
+  columns: ColumnDef<AdminUserRow, any>[] = [];
+
   ngOnInit(): void {
     this.load();
+    const helper = createColumnHelper<AdminUserRow>();
+    this.columns = [
+      helper.accessor('displayName', {
+        header: 'Nombre',
+        cell: this.nameCell as any,
+      }),
+      helper.accessor('email', {
+        header: 'Email / UID',
+        cell: this.emailCell as any,
+      }),
+      helper.accessor('subscriptionStatus', {
+        header: 'Suscripción',
+        cell: this.subCell as any,
+      }),
+      helper.display({
+        id: 'status',
+        header: 'Estado',
+        cell: this.statusCell as any,
+      }),
+      helper.display({
+        id: 'action',
+        header: 'Acción',
+        cell: this.actionCell as any,
+      }),
+    ];
   }
 
   async load(): Promise<void> {

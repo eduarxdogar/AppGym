@@ -5,7 +5,7 @@
     <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="h-9 w-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-          <mat-icon class="text-red-400 text-lg">admin_panel_settings</mat-icon>
+          <app-ui-icon name="shield" customClass="text-red-400" [size]="18"></app-ui-icon>
         </div>
         <div>
           <h1 class="text-lg font-bold tracking-wide">Super Admin — Gestión de Usuarios</h1>
@@ -19,7 +19,7 @@
           (click)="load()"
           [disabled]="isLoading()"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 text-xs font-medium transition disabled:opacity-40 disabled:cursor-not-allowed">
-          <mat-icon class="text-sm" [class.animate-spin]="isLoading()">refresh</mat-icon>
+          <app-ui-icon name="refresh-cw" customClass="text-zinc-400" [size]="16" [class.animate-spin]="isLoading()"></app-ui-icon>
           Recargar
         </button>
       </div>
@@ -30,7 +30,7 @@
   <div class="max-w-6xl mx-auto px-6 pt-6 pb-2 grid grid-cols-3 gap-4">
     <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center gap-3">
       <div class="h-9 w-9 rounded-lg bg-[#CCFF00]/10 border border-[#CCFF00]/20 flex items-center justify-center shrink-0">
-        <mat-icon class="text-[#CCFF00] text-lg">group</mat-icon>
+        <app-ui-icon name="users" customClass="text-[#CCFF00]" [size]="18"></app-ui-icon>
       </div>
       <div>
         <p class="text-xl font-bold text-white">{{ totalUsers() }}</p>
@@ -39,7 +39,7 @@
     </div>
     <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center gap-3">
       <div class="h-9 w-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-        <mat-icon class="text-emerald-400 text-lg">verified_user</mat-icon>
+        <app-ui-icon name="user-check" customClass="text-emerald-400" [size]="18"></app-ui-icon>
       </div>
       <div>
         <p class="text-xl font-bold text-white">{{ activeUsers() }}</p>
@@ -48,7 +48,7 @@
     </div>
     <div class="bg-[#151921] border border-zinc-800 rounded-xl p-4 flex items-center gap-3">
       <div class="h-9 w-9 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
-        <mat-icon class="text-red-400 text-lg">block</mat-icon>
+        <app-ui-icon name="user-x" customClass="text-red-400" [size]="18"></app-ui-icon>
       </div>
       <div>
         <p class="text-xl font-bold text-white">{{ deletedUsers() }}</p>
@@ -76,7 +76,7 @@
       <div
         class="mt-6 flex flex-col items-center justify-center py-16 text-center">
         <div class="h-12 w-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
-          <mat-icon class="text-red-400">error_outline</mat-icon>
+          <app-ui-icon name="circle-alert" customClass="text-red-400" [size]="24"></app-ui-icon>
         </div>
         <p class="text-red-400 font-semibold mb-1">Error al cargar usuarios</p>
         <p class="text-zinc-500 text-sm mb-4">{{ error() }}</p>
@@ -91,109 +91,102 @@
     @if (!isLoading() && !error() && users().length === 0) {
       <div
         class="flex flex-col items-center justify-center py-20 text-center">
-        <mat-icon class="text-zinc-700 text-5xl mb-4">person_off</mat-icon>
+        <app-ui-icon name="user-minus" customClass="text-zinc-700 mb-4" [size]="48"></app-ui-icon>
         <p class="text-zinc-500">No se encontraron usuarios registrados.</p>
       </div>
     }
 
     <!-- ── Data Table ── -->
     @if (!isLoading() && !error() && users().length > 0) {
-      <div
-        class="mt-4 bg-[#151921] border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
-        <!-- Table Header -->
-        <div class="grid grid-cols-[2fr_2fr_1fr_1fr_auto] gap-4 px-5 py-3 bg-[#0f1219] border-b border-zinc-800">
-          <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Nombre</span>
-          <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Email / UID</span>
-          <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Suscripción</span>
-          <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Estado</span>
-          <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Acción</span>
-        </div>
-        <!-- Rows -->
-        @for (user of users(); track user; let last = $last) {
-          <div
-            class="grid grid-cols-[2fr_2fr_1fr_1fr_auto] gap-4 items-center px-5 py-4 transition-colors hover:bg-white/[0.02]"
-            [class.border-b]="!last"
-            [class.border-zinc-800]="!last"
-            [class.opacity-50]="user.isDeleted">
-            <!-- Nombre -->
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="h-8 w-8 rounded-full shrink-0 flex items-center justify-center text-xs font-bold uppercase"
-                   [ngClass]="user.isDeleted
-                     ? 'bg-zinc-700 text-zinc-400'
-                     : 'bg-lime-400/10 text-lime-400'">
-                {{ (user.displayName || 'U').charAt(0) }}
-              </div>
-              <span class="truncate text-sm font-medium text-white">
-                {{ user.displayName || '—' }}
-              </span>
-            </div>
-            <!-- Email / UID -->
-            <div class="min-w-0">
-              <p class="truncate text-sm text-zinc-300">{{ user.email || '—' }}</p>
-              <p class="truncate text-[10px] text-zinc-600 font-mono mt-0.5">{{ user.uid }}</p>
-            </div>
-            <!-- Suscripción -->
-            <div>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest"
-                    [ngClass]="{
-                      'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': user.subscriptionStatus === 'active',
-                      'bg-[#CCFF00]/10 text-[#CCFF00] border border-[#CCFF00]/20': user.subscriptionStatus === 'trialing',
-                      'bg-zinc-700/40 text-zinc-500 border border-zinc-700': !user.subscriptionStatus || user.subscriptionStatus === 'canceled',
-                      'bg-red-500/10 text-red-400 border border-red-500/20': user.subscriptionStatus === 'past_due'
-                    }">
-                {{ subscriptionLabel(user.subscriptionStatus) }}
-              </span>
-            </div>
-            <!-- Estado Soft-Delete -->
-            <div>
-              @if (!user.isDeleted) {
-                <span
-                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block"></span>
-                  Activo
-                </span>
-              }
-              @if (user.isDeleted) {
-                <span
-                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20"
-                  [title]="'Eliminado: ' + formatDeletedAt(user.deletedAt)">
-                  <span class="h-1.5 w-1.5 rounded-full bg-red-400 inline-block"></span>
-                  Eliminado
-                </span>
-              }
-            </div>
-            <!-- Acción Hard Delete e Inyectar Data -->
-            <div class="flex justify-end gap-2">
-              <button
-                [id]="'btn-seed-' + user.uid"
-                (click)="seedTestData(user)"
-                [disabled]="seedingUid() === user.uid || deletingUid() === user.uid"
-                class="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-500/20 text-purple-400 text-xs font-bold uppercase tracking-wider hover:bg-purple-500 hover:text-white hover:border-purple-500 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
-                @if (seedingUid() !== user.uid) {
-                  <mat-icon class="text-sm">science</mat-icon>
-                }
-                @if (seedingUid() === user.uid) {
-                  <div class="h-3.5 w-3.5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                }
-                {{ seedingUid() === user.uid ? 'Inyectando...' : 'Inyectar 1 Mes' }}
-              </button>
-              <button
-                [id]="'btn-hard-delete-' + user.uid"
-                (click)="confirmHardDelete(user)"
-                [disabled]="deletingUid() === user.uid"
-                class="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-wider hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_8px_rgba(239,68,68,0.1)] hover:shadow-[0_0_16px_rgba(239,68,68,0.3)]">
-                @if (deletingUid() !== user.uid) {
-                  <mat-icon class="text-sm">delete_forever</mat-icon>
-                }
-                @if (deletingUid() === user.uid) {
-                  <div class="h-3.5 w-3.5 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
-                }
-                {{ deletingUid() === user.uid ? 'Eliminando...' : 'Hard Delete' }}
-              </button>
-            </div>
-          </div>
-        }
+      <div class="mt-4">
+        <app-ui-table [data]="users()" [columns]="columns"></app-ui-table>
       </div>
+
+      <ng-template #nameCell let-info>
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="h-8 w-8 rounded-full shrink-0 flex items-center justify-center text-xs font-bold uppercase"
+               [ngClass]="info.row.original.isDeleted
+                 ? 'bg-zinc-700 text-zinc-400'
+                 : 'bg-lime-400/10 text-lime-400'">
+            {{ (info.row.original.displayName || 'U').charAt(0) }}
+          </div>
+          <span class="truncate text-sm font-medium" [ngClass]="info.row.original.isDeleted ? 'text-zinc-500' : 'text-white'">
+            {{ info.row.original.displayName || '—' }}
+          </span>
+        </div>
+      </ng-template>
+
+      <ng-template #emailCell let-info>
+        <div class="min-w-0" [class.opacity-50]="info.row.original.isDeleted">
+          <p class="truncate text-sm text-zinc-300">{{ info.row.original.email || '—' }}</p>
+          <p class="truncate text-[10px] text-zinc-600 font-mono mt-0.5">{{ info.row.original.uid }}</p>
+        </div>
+      </ng-template>
+
+      <ng-template #subCell let-info>
+        <div [class.opacity-50]="info.row.original.isDeleted">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest"
+                [ngClass]="{
+                  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': info.row.original.subscriptionStatus === 'active',
+                  'bg-[#CCFF00]/10 text-[#CCFF00] border border-[#CCFF00]/20': info.row.original.subscriptionStatus === 'trialing',
+                  'bg-zinc-700/40 text-zinc-500 border border-zinc-700': !info.row.original.subscriptionStatus || info.row.original.subscriptionStatus === 'canceled',
+                  'bg-red-500/10 text-red-400 border border-red-500/20': info.row.original.subscriptionStatus === 'past_due'
+                }">
+            {{ subscriptionLabel(info.row.original.subscriptionStatus) }}
+          </span>
+        </div>
+      </ng-template>
+
+      <ng-template #statusCell let-info>
+        <div [class.opacity-50]="info.row.original.isDeleted">
+          @if (!info.row.original.isDeleted) {
+            <span
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block"></span>
+              Activo
+            </span>
+          }
+          @if (info.row.original.isDeleted) {
+            <span
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20"
+              [title]="'Eliminado: ' + formatDeletedAt(info.row.original.deletedAt)">
+              <span class="h-1.5 w-1.5 rounded-full bg-red-400 inline-block"></span>
+              Eliminado
+            </span>
+          }
+        </div>
+      </ng-template>
+
+      <ng-template #actionCell let-info>
+        <div class="flex justify-end gap-2">
+          <button
+            [id]="'btn-seed-' + info.row.original.uid"
+            (click)="seedTestData(info.row.original)"
+            [disabled]="seedingUid() === info.row.original.uid || deletingUid() === info.row.original.uid"
+            class="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-500/20 text-purple-400 text-xs font-bold uppercase tracking-wider hover:bg-purple-500 hover:text-white hover:border-purple-500 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
+            @if (seedingUid() !== info.row.original.uid) {
+              <app-ui-icon name="flask-conical" [size]="16"></app-ui-icon>
+            }
+            @if (seedingUid() === info.row.original.uid) {
+              <div class="h-3.5 w-3.5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+            }
+            {{ seedingUid() === info.row.original.uid ? 'Inyectando...' : 'Inyectar' }}
+          </button>
+          <button
+            [id]="'btn-hard-delete-' + info.row.original.uid"
+            (click)="confirmHardDelete(info.row.original)"
+            [disabled]="deletingUid() === info.row.original.uid"
+            class="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-wider hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_8px_rgba(239,68,68,0.1)] hover:shadow-[0_0_16px_rgba(239,68,68,0.3)]">
+            @if (deletingUid() !== info.row.original.uid) {
+              <app-ui-icon name="trash-2" [size]="16"></app-ui-icon>
+            }
+            @if (deletingUid() === info.row.original.uid) {
+              <div class="h-3.5 w-3.5 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
+            }
+            {{ deletingUid() === info.row.original.uid ? 'Eliminando...' : 'Eliminar' }}
+          </button>
+        </div>
+      </ng-template>
     }
 
   </div>
@@ -205,7 +198,7 @@
       <div class="bg-[#151921] border border-red-500/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl shadow-red-500/10 animate-in zoom-in-95 duration-200">
         <div class="flex items-center gap-3 mb-4">
           <div class="h-11 w-11 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
-            <mat-icon class="text-red-400">warning</mat-icon>
+            <app-ui-icon name="triangle-alert" customClass="text-red-400" [size]="24"></app-ui-icon>
           </div>
           <div>
             <h3 class="text-base font-bold text-white">Eliminar Usuario Permanentemente</h3>

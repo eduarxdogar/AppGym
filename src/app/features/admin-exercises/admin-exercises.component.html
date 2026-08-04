@@ -48,43 +48,43 @@
       </div>
     </div>
 
-    <!-- Exercises Grid Master -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      @for (ex of store.filteredExercises(); track ex.id) {
-        <div class="bg-surface border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between group hover:border-zinc-600 transition-all shadow-sm hover:shadow-lg">
-          <div class="flex items-start gap-4 mb-4">
-            <div class="h-16 w-16 rounded-xl bg-zinc-800 overflow-hidden relative border border-zinc-700 flex-shrink-0 shadow-inner">
-              <img [src]="ex.imageUrl || 'assets/default-exercise.png'" alt="Exercise" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                (error)="$any($event.target).src='assets/default-exercise.png'">
-              </div>
-              <div class="flex-1 min-w-0 pt-1">
-                <h4 class="text-text-main font-bold text-sm leading-tight truncate" [title]="ex.name">{{ ex.name }}</h4>
-                <div class="flex gap-1.5 mt-2 flex-wrap">
-                  <span class="px-2 py-0.5 bg-zinc-800/80 border border-zinc-700 rounded text-[9px] uppercase tracking-widest text-text-muted">
-                    {{ ex.muscleGroup }}
-                  </span>
-                  @if (ex.videoUrl) {
-                    <span class="px-2 py-0.5 bg-red-500/10 border border-red-500/30 rounded text-[9px] uppercase tracking-widest text-red-500 font-bold" title="Tiene Video de YouTube">
-                      Video
-                    </span>
-                  }
-                </div>
-              </div>
-            </div>
-            <div class="flex justify-end pt-3 border-t border-zinc-800/50">
-              <button (click)="openSideSheet('edit', ex)" class="text-text-muted hover:text-primary bg-zinc-900/50 hover:bg-zinc-800 px-3 py-1.5 rounded-lg border border-transparent hover:border-zinc-700 text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2">
-                Editar <span class="text-[12px]">✏️</span>
-              </button>
-            </div>
-          </div>
-          } @empty {
-          <div class="col-span-full py-20 flex flex-col items-center justify-center text-text-muted bg-surface rounded-2xl border border-zinc-800 border-dashed">
-            <div class="text-5xl mb-4 opacity-50">🔍</div>
-            <p class="font-medium tracking-wide">No se encontraron ejercicios que coincidan con los filtros.</p>
-            <button (click)="store.searchQuery.set(''); store.filterMuscle.set(''); store.filterDiscipline.set('')" class="mt-4 text-primary hover:underline text-xs uppercase tracking-widest font-bold">Limpiar Filtros</button>
-          </div>
+    <!-- Exercises Table Master -->
+    <div class="mt-4">
+      <app-ui-table [data]="store.filteredExercises()" [columns]="columns"></app-ui-table>
+    </div>
+
+    <ng-template #nameCell let-info>
+      <div class="flex items-center gap-4 py-1">
+        <div class="h-10 w-10 rounded-xl bg-zinc-800 overflow-hidden relative border border-zinc-700 flex-shrink-0 shadow-inner">
+          <img [src]="info.row.original.imageUrl || 'assets/default-exercise.png'" alt="Exercise" class="h-full w-full object-cover transition-opacity"
+            (error)="$any($event.target).src='assets/default-exercise.png'">
+        </div>
+        <div class="flex-1 min-w-0">
+          <h4 class="text-text-main font-bold text-sm leading-tight truncate" [title]="info.row.original.name">{{ info.row.original.name }}</h4>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #tagsCell let-info>
+      <div class="flex gap-1.5 flex-wrap">
+        <span class="px-2 py-0.5 bg-zinc-800/80 border border-zinc-700 rounded text-[9px] uppercase tracking-widest text-text-muted">
+          {{ info.row.original.type }}
+        </span>
+        @if (info.row.original.videoUrl) {
+          <span class="px-2 py-0.5 bg-red-500/10 border border-red-500/30 rounded text-[9px] uppercase tracking-widest text-red-500 font-bold" title="Tiene Video de YouTube">
+            Video
+          </span>
         }
       </div>
+    </ng-template>
+
+    <ng-template #actionCell let-info>
+      <div class="flex justify-end">
+        <button (click)="openSideSheet('edit', info.row.original)" class="text-text-muted hover:text-primary bg-zinc-900/50 hover:bg-zinc-800 px-3 py-1.5 rounded-lg border border-transparent hover:border-zinc-700 text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2">
+          Editar <app-ui-icon name="pencil" [size]="12"></app-ui-icon>
+        </button>
+      </div>
+    </ng-template>
     </div>
 
     <!-- SIDE SHEET (Detail Overlay) -->
@@ -99,8 +99,11 @@
         <!-- Sheet Header -->
         <div class="flex-none flex items-center justify-between p-6 border-b border-zinc-800 bg-surface shadow-sm relative z-10">
           <h2 class="text-xl font-bold tracking-tight text-text-main flex items-center gap-2">
-            <span class="text-xl">{{ store.editingExerciseId() ? '✏️' : '✨' }}</span>
-            {{ store.editingExerciseId() ? 'Editar Ejercicio' : 'Nuevo Ejercicio' }}
+            @if (store.editingExerciseId()) {
+              <app-ui-icon name="pencil" [size]="20"></app-ui-icon> Editar Ejercicio
+            } @else {
+              <app-ui-icon name="plus" [size]="20"></app-ui-icon> Nuevo Ejercicio
+            }
           </h2>
           <button (click)="closeSideSheet()" class="text-text-muted hover:text-text-main transition-colors h-8 w-8 flex items-center justify-center rounded-full hover:bg-zinc-800 border border-transparent hover:border-zinc-700">
             <span class="text-xl leading-none">&times;</span>

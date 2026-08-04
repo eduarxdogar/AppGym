@@ -1,5 +1,5 @@
 // src/app/app.config.ts
-import { ApplicationConfig, provideZoneChangeDetection, LOCALE_ID } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, LOCALE_ID, importProvidersFrom } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import localeEsCo from '@angular/common/locales/es-CO';
 
@@ -11,7 +11,6 @@ import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 // Providers de Angular Material necesarios:
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient } from '@angular/common/http';
-import { importProvidersFrom } from '@angular/core';
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore';
 import { provideAuth, getAuth } from '@angular/fire/auth';
@@ -21,6 +20,14 @@ import { environment } from '../environments/environment';
 import { provideNgtRenderer } from 'angular-three/dom';
 
 import { MatNativeDateModule } from '@angular/material/core';
+import { 
+  LucideAngularModule, 
+  Shield, RefreshCw, Users, UserCheck, UserX, CircleAlert, 
+  UserMinus, FlaskConical, Trash2, TriangleAlert, ArrowLeft, 
+  Search, Check, Info, Pencil, Settings, Play, House, 
+  LayoutDashboard, Dumbbell, Calendar, LogOut, ChevronRight, 
+  ChevronLeft, ChevronDown, ChevronUp, Plus, Activity
+} from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -36,6 +43,15 @@ export const appConfig: ApplicationConfig = {
     provideStorage(() => getStorage()),
     provideNgtRenderer(),
     provideCharts(withDefaultRegisterables()),
+    importProvidersFrom(
+      LucideAngularModule.pick({
+        Shield, RefreshCw, Users, UserCheck, UserX, CircleAlert, 
+        UserMinus, FlaskConical, Trash2, TriangleAlert, ArrowLeft, 
+        Search, Check, Info, Pencil, Settings, Play, House, 
+        LayoutDashboard, Dumbbell, Calendar, LogOut, ChevronRight, 
+        ChevronLeft, ChevronDown, ChevronUp, Plus, Activity
+      })
+    ),
     { provide: LOCALE_ID, useValue: 'es-CO' }
   ]
 };
