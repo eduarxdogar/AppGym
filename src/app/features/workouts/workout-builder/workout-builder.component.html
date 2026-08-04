@@ -1,0 +1,207 @@
+<div class="min-h-screen bg-[#0B0E14] text-white p-4 md:p-8 font-sans">
+
+  <div class="max-w-7xl mx-auto mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight">
+        CONSTRUCTOR <span class="text-[#CCFF00]">MANUAL</span>
+      </h1>
+      <p class="text-zinc-400 text-sm mt-1">Diseña tu rutina seleccionando ejercicios del catálogo.</p>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+    <!-- LEFT COLUMN: CATALOG (5 cols) -->
+    <div class="lg:col-span-5 bg-[#151921] border border-zinc-800/50 rounded-2xl p-6 shadow-xl flex flex-col h-[80vh]">
+
+      <h2 class="text-white font-bold mb-4 flex items-center gap-2">
+        <mat-icon class="text-zinc-400">fitness_center</mat-icon> Catálogo
+      </h2>
+
+      <!-- Filters -->
+      <div class="space-y-3 mb-6">
+        <input
+          type="text"
+          id="builder-exercise-search"
+          [(ngModel)]="searchQuery"
+          placeholder="Buscar ejercicio..."
+          aria-label="Buscar ejercicio"
+          class="w-full bg-[#0B0E14] text-white rounded-xl border border-zinc-800 p-3 focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00] outline-none text-sm placeholder:text-zinc-600 transition"
+          >
+
+          <div class="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
+            <button
+              (click)="selectedMuscle.set('')"
+              [class.bg-[#CCFF00]]="selectedMuscle() === ''"
+              [class.text-black]="selectedMuscle() === ''"
+              [class.bg-zinc-800]="selectedMuscle() !== ''"
+              [class.text-zinc-400]="selectedMuscle() !== ''"
+              class="whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition">
+              Todos
+            </button>
+            @for (muscle of availableMuscles(); track muscle) {
+              <button
+                (click)="selectedMuscle.set(muscle)"
+                [class.bg-[#CCFF00]]="selectedMuscle() === muscle"
+                [class.text-black]="selectedMuscle() === muscle"
+                [class.bg-zinc-800]="selectedMuscle() !== muscle"
+                [class.text-zinc-400]="selectedMuscle() !== muscle"
+                class="whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition capitalize">
+                {{ muscle }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Exercise List Virtual/Scroll -->
+        <div class="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+          @if (filteredCatalog().length === 0) {
+            <div class="text-center py-10 text-zinc-500 text-sm">
+              No se encontraron ejercicios.
+            </div>
+          }
+
+          @for (ex of filteredCatalog(); track ex) {
+            <div class="bg-[#0B0E14] border border-zinc-800/80 p-3 rounded-xl flex items-center justify-between group hover:border-zinc-700 transition">
+              <div>
+                <h4 class="text-sm font-bold text-white">{{ ex.nombre }}</h4>
+                <div class="flex gap-2 mt-1">
+                  <span class="text-[10px] text-zinc-500 uppercase tracking-widest bg-zinc-900 px-1.5 py-0.5 rounded">{{ ex.grupoMuscular }}</span>
+                  @if (ex.tipo) {
+                    <span class="text-[10px] text-zinc-500 uppercase tracking-widest bg-zinc-900 px-1.5 py-0.5 rounded">{{ ex.tipo }}</span>
+                  }
+                </div>
+              </div>
+              <button (click)="addToCanvas(ex)" class="h-8 w-8 rounded-lg bg-zinc-800 hover:bg-[#CCFF00] text-zinc-400 hover:text-black transition flex items-center justify-center">
+                <mat-icon class="text-sm">add</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: CANVAS (7 cols) -->
+      <div class="lg:col-span-7 flex flex-col h-full space-y-6">
+
+        <!-- Routine Name Input -->
+        <div class="bg-[#151921] border border-zinc-800/50 rounded-2xl p-6 shadow-xl">
+          <label for="builder-workout-name" class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Nombre de la Rutina</label>
+          <input
+            type="text"
+            id="builder-workout-name"
+            [(ngModel)]="workoutName"
+            class="w-full bg-[#0B0E14] text-white font-bold text-xl rounded-xl border border-zinc-800 p-4 focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00] transition-all outline-none"
+            >
+          </div>
+
+          <!-- Canvas Area -->
+          <div class="bg-[#151921] border border-zinc-800/50 rounded-2xl p-6 shadow-xl flex-1 flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-white font-bold flex items-center gap-2">
+                <mat-icon class="text-zinc-400">view_list</mat-icon> Diseño
+              </h2>
+              <span class="text-xs text-zinc-500 font-bold bg-zinc-900 px-2 py-1 rounded-md">{{ canvasExercises().length }} Ejercicios</span>
+            </div>
+
+            <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
+
+              @if (canvasExercises().length === 0) {
+                <div class="h-full flex flex-col items-center justify-center text-zinc-500 text-sm border-2 border-dashed border-zinc-800 rounded-xl p-8">
+                  <mat-icon class="text-4xl text-zinc-700 mb-2">touch_app</mat-icon>
+                  Añade ejercicios desde el catálogo
+                </div>
+              }
+
+              <!-- Canvas Items -->
+              @for (ce of canvasExercises(); track ce; let i = $index) {
+                <div
+                     [ngClass]="{
+                        'border-[#CCFF00]/40 bg-[#CCFF00]/5': ce.tipos === 'top-set',
+                        'border-purple-500/40 bg-purple-500/5': ce.tipos === 'drop-set',
+                        'border-blue-500/40 bg-blue-500/5': ce.tipos === 'back-set',
+                        'border-orange-500/40 bg-orange-500/5': ce.tipos === 'super-serie'
+                     }"
+                  class="bg-[#0B0E14] border border-zinc-800 p-4 rounded-xl relative group transition-colors">
+                  <div class="flex flex-col sm:flex-row gap-4 sm:items-center">
+                    <!-- Info -->
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2 mb-1">
+                        <div class="h-6 w-6 rounded bg-zinc-800 flex items-center justify-center text-zinc-400 font-bold text-xs">
+                          {{ i + 1 }}
+                        </div>
+                        <h4 class="text-white font-bold text-sm">{{ ce.nombre }}</h4>
+                      </div>
+                    </div>
+                    <!-- Settings Inline -->
+                    <div class="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+                      <!-- TIPO DE SERIE -->
+                      <div class="flex flex-col">
+                        <label [for]="'builder-set-type-' + i" class="text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Tipo</label>
+                        <select
+                          [id]="'builder-set-type-' + i"
+                          [(ngModel)]="ce.tipos"
+                          class="bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:border-[#CCFF00] outline-none cursor-pointer">
+                          <option value="normal">Normal</option>
+                          <option value="top-set">Top Set</option>
+                          <option value="back-set">Back-off</option>
+                          <option value="drop-set">Drop Set</option>
+                          <option value="super-serie">Super Set</option>
+                        </select>
+                      </div>
+                      <!-- SERIES -->
+                      <div class="flex flex-col w-12 text-center">
+                        <label [for]="'builder-sets-' + i" class="text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Sets</label>
+                        <input type="number" [id]="'builder-sets-' + i" [(ngModel)]="ce.series" min="1" max="10" class="bg-zinc-900 border border-zinc-700 rounded-lg px-1 py-1.5 text-xs text-white text-center focus:border-[#CCFF00] outline-none">
+                      </div>
+                      <!-- REPS -->
+                      <div class="flex flex-col w-12 text-center">
+                        <label [for]="'builder-reps-' + i" class="text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Reps</label>
+                        <input type="number" [id]="'builder-reps-' + i" [(ngModel)]="ce.repeticiones" min="1" max="50" class="bg-zinc-900 border border-zinc-700 rounded-lg px-1 py-1.5 text-xs text-white text-center focus:border-[#CCFF00] outline-none">
+                      </div>
+                      <!-- RIR -->
+                      <div class="flex flex-col w-12 text-center">
+                        <label [for]="'builder-rir-' + i" class="text-[9px] text-zinc-500 uppercase tracking-widest mb-1">RIR</label>
+                        <input type="number" [id]="'builder-rir-' + i" [(ngModel)]="ce.rir" min="0" max="5" class="bg-zinc-900 border border-zinc-700 rounded-lg px-1 py-1.5 text-xs text-white text-center focus:border-[#CCFF00] outline-none">
+                      </div>
+                      <!-- Actions -->
+                      <div class="flex items-center gap-1 self-end sm:self-center ml-auto sm:ml-2">
+                        <div class="flex flex-col -space-y-1">
+                          <button (click)="moveUp(i)" [disabled]="i === 0" class="text-zinc-500 hover:text-white disabled:opacity-30 p-1">
+                            <mat-icon class="text-[16px] w-[16px] h-[16px]">expand_less</mat-icon>
+                          </button>
+                          <button (click)="moveDown(i)" [disabled]="i === canvasExercises().length - 1" class="text-zinc-500 hover:text-white disabled:opacity-30 p-1">
+                            <mat-icon class="text-[16px] w-[16px] h-[16px]">expand_more</mat-icon>
+                          </button>
+                        </div>
+                        <button (click)="removeFromCanvas(i)" class="h-8 w-8 rounded text-zinc-500 hover:bg-red-500/20 hover:text-red-400 transition flex items-center justify-center">
+                          <mat-icon class="text-[18px] w-[18px] h-[18px]">delete_outline</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+
+            </div>
+
+            <!-- Save Button -->
+            <div class="pt-4 mt-2 border-t border-zinc-800/80">
+              <button
+                (click)="saveRoutine()"
+                [disabled]="!canSave() || isSaving()"
+                class="w-full py-4 bg-[#CCFF00] hover:bg-[#bbe600] disabled:opacity-50 disabled:cursor-not-allowed text-black font-extrabold text-sm rounded-xl transition-all shadow-[0_0_15px_rgba(204,255,0,0.3)] flex items-center justify-center gap-2">
+                @if (!isSaving()) {
+                  <mat-icon>save</mat-icon>
+                }
+                @if (isSaving()) {
+                  <mat-icon class="animate-spin">sync</mat-icon>
+                }
+                {{ isSaving() ? 'GUARDANDO...' : 'GUARDAR Y ASIGNAR RUTINA' }}
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>

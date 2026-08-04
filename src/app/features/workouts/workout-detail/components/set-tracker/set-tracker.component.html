@@ -1,0 +1,199 @@
+<!-- Sets Table -->
+<div class="bg-[#151921] rounded-2xl border border-zinc-800 overflow-hidden">
+    
+    <!-- Table Header -->
+    <div class="grid grid-cols-10 gap-1 sm:gap-2 px-1 sm:px-4 py-3 bg-zinc-900/50 border-b border-zinc-800 text-[9px] sm:text-[10px] uppercase font-bold text-zinc-500 tracking-wider text-center">
+        <div class="col-span-1">Set</div>
+        <div class="col-span-3">KG</div>
+        <div class="col-span-3">Reps</div>
+        <div class="col-span-2">Check</div>
+        <div class="col-span-1"></div>
+    </div>
+
+    <!-- Rows -->
+    @for (set of sets(); track $index; let sIndex = $index) {
+      <div class="border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-colors">
+        
+        <!-- Parent Row -->
+        <div [id]="'set-row-' + exIndex() + '-' + sIndex" class="grid grid-cols-10 gap-1 sm:gap-2 px-1 sm:px-4 py-2 sm:py-2.5 items-center"
+             [ngClass]="{'opacity-50': set.completed, 'bg-green-900/10': set.completed}">
+    <!-- Set Number / Badge -->
+    <div class="col-span-1 flex flex-col items-center justify-center relative">
+      <div class="flex items-center flex-col sm:flex-row gap-1">
+        @if (set.type === 'warmup') {
+          <button (click)="toggleType.emit({exIndex: exIndex(), setIndex: sIndex})" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/40 transition-colors" title="Warm-up (Click to change)">W</button>
+        }
+        @if (set.type === 'effective' || !set.type) {
+          <button (click)="toggleType.emit({exIndex: exIndex(), setIndex: sIndex})" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-[#CCFF00]/20 text-[#CCFF00] border border-[#CCFF00]/50 hover:bg-[#CCFF00]/40 transition-colors" title="Effective (Click to change)">E</button>
+        }
+        @if (set.type === 'topset') {
+          <button (click)="toggleType.emit({exIndex: exIndex(), setIndex: sIndex})" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-red-500/20 text-red-500 border border-red-500/50 hover:bg-red-500/40 transition-colors" title="Top Set (Click to change)">T</button>
+        }
+        @if (set.type === 'backoff') {
+          <button (click)="toggleType.emit({exIndex: exIndex(), setIndex: sIndex})" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-yellow-500/20 text-yellow-500 border border-yellow-500/50 hover:bg-yellow-500/40 transition-colors" title="Back-off Set (Click to change)">B</button>
+        }
+        <div class="text-xs font-bold text-zinc-300 w-4 text-center">{{ sIndex + 1 }}</div>
+        <!-- Link Toggle (Superset) -->
+        @if (ex().superSetEjercicio && set.type !== 'warmup') {
+          <button
+            (click)="toggleSuperset.emit({exIndex: exIndex(), setIndex: sIndex})"
+            [ngClass]="(set.superWeight !== undefined || set.superReps !== undefined) ? 'text-purple-400 bg-purple-500/20 border-purple-500/50' : 'text-zinc-600 bg-zinc-800/50 border-zinc-700 hover:text-purple-400'"
+            class="w-4 h-4 rounded flex-shrink-0 flex items-center justify-center text-[10px] border transition-colors"
+            title="Vincular/Desvincular Superserie">
+            <mat-icon class="text-[12px] w-[12px] h-[12px] leading-[12px]">link</mat-icon>
+          </button>
+        }
+      </div>
+    </div>
+    <!-- KG Input -->
+    <div class="col-span-3">
+      <input type="number" [id]="'set-weight-' + exIndex() + '-' + sIndex" [ngModel]="set.weight" (ngModelChange)="updateWeight.emit({exIndex: exIndex(), setIndex: sIndex, weight: $event})" aria-label="Peso en kilogramos"
+        class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none"
+        placeholder="0">
+      </div>
+      <!-- Reps Input -->
+      <div class="col-span-3">
+        <input type="number" [id]="'set-reps-' + exIndex() + '-' + sIndex" [ngModel]="set.reps" (ngModelChange)="updateReps.emit({exIndex: exIndex(), setIndex: sIndex, reps: $event})" aria-label="Número de repeticiones"
+          class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none"
+          placeholder="0">
+        </div>
+        <!-- Checkbox -->
+        <div class="col-span-2 flex justify-center">
+          <button (click)="toggleComplete.emit({exIndex: exIndex(), setIndex: sIndex})"
+            [class.bg-[#CCFF00]]="set.completed"
+            [class.text-black]="set.completed"
+            [class.bg-zinc-700]="!set.completed"
+            [class.text-zinc-500]="!set.completed"
+            class="h-6 sm:h-8 w-8 sm:w-12 rounded-lg flex items-center justify-center transition-all active:scale-95">
+            @if (set.completed) {
+              <mat-icon>check</mat-icon>
+            }
+            @if (!set.completed) {
+              <mat-icon>check_box_outline_blank</mat-icon>
+            }
+          </button>
+        </div>
+        <!-- Delete Button -->
+        <div class="col-span-1 flex justify-center">
+          @if (sets().length > 1) {
+            <button
+              (click)="deleteSet.emit({exIndex: exIndex(), setIndex: sIndex})"
+              class="text-zinc-600 hover:text-red-500 transition-colors">
+              <mat-icon class="text-lg">delete</mat-icon>
+            </button>
+          }
+        </div>
+      </div>
+      <!-- Superset Row (Double Entry) -->
+      @if (ex().superSetEjercicio && (set.superWeight !== undefined || set.superReps !== undefined)) {
+        <div
+          class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c212a] border-l-2 border-purple-500 ml-4 sm:ml-6 mb-2 rounded-r-lg animate-in fade-in slide-in-from-top-2 duration-200"
+          [ngClass]="{'opacity-50': set.completed}">
+          <div class="col-span-1 flex justify-center">
+            <mat-icon class="text-purple-500 text-sm">subdirectory_arrow_right</mat-icon>
+          </div>
+          <!-- KG Input Child -->
+          <div class="col-span-3">
+            <input type="number" [id]="'set-superweight-' + exIndex() + '-' + sIndex" [(ngModel)]="set.superWeight" aria-label="Peso en kilogramos para superserie"
+              class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+              placeholder="0">
+            </div>
+            <!-- Reps Input Child -->
+            <div class="col-span-3">
+              <input type="number" [id]="'set-superreps-' + exIndex() + '-' + sIndex" [(ngModel)]="set.superReps" aria-label="Repeticiones para superserie"
+                class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                placeholder="0">
+              </div>
+              <div class="col-span-2"></div> <!-- Empty space under check -->
+              <!-- Delete Button Superset Child -->
+              <div class="col-span-1 flex justify-center">
+                @if (set.superWeight !== undefined || set.superReps !== undefined) {
+                  <button
+                    (click)="clearSuperset.emit({exIndex: exIndex(), setIndex: sIndex})"
+                    class="text-zinc-600 hover:text-red-500 transition-colors">
+                    <mat-icon class="text-[16px] leading-[16px] w-[16px] h-[16px]">delete</mat-icon>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+          <!-- Nested Drop Sets -->
+          @if (set.dropSets && set.dropSets.length > 0) {
+            @for (dropSet of set.dropSets; track $index; let dIndex = $index) {
+              <div class="mt-1">
+                <!-- Drop Set Row -->
+                <div class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c1815] border-l-2 border-orange-500 ml-4 sm:ml-6 rounded-r-lg mb-1 animate-in fade-in slide-in-from-top-2 duration-200"
+                  [ngClass]="{'opacity-50': set.completed}">
+                  <div class="col-span-1 flex justify-center items-center gap-1">
+                    <div class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-orange-500/20 text-orange-500 border border-orange-500/50">D</div>
+                  </div>
+                  <!-- KG Input DropSet -->
+                  <div class="col-span-3">
+                    <input type="number" [id]="'dropset-weight-' + exIndex() + '-' + sIndex + '-' + dIndex" [ngModel]="dropSet.weight" (ngModelChange)="updateDropSet.emit({exIndex: exIndex(), setIndex: sIndex, dropIndex: dIndex, weight: $event, reps: dropSet.reps})" aria-label="Peso en kilogramos para drop set"
+                      class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                      placeholder="0">
+                    </div>
+                    <!-- Reps Input DropSet -->
+                    <div class="col-span-3">
+                      <input type="number" [id]="'dropset-reps-' + exIndex() + '-' + sIndex + '-' + dIndex" [ngModel]="dropSet.reps" (ngModelChange)="updateDropSet.emit({exIndex: exIndex(), setIndex: sIndex, dropIndex: dIndex, weight: dropSet.weight, reps: $event})" aria-label="Repeticiones para drop set"
+                        class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                        placeholder="0">
+                      </div>
+                      <div class="col-span-2"></div> <!-- Empty space under check -->
+                      <!-- Delete Button DropSet -->
+                      <div class="col-span-1 flex justify-center">
+                        <button (click)="deleteDropSet.emit({exIndex: exIndex(), setIndex: sIndex, dropIndex: dIndex})"
+                          class="text-zinc-600 hover:text-red-500 transition-colors">
+                          <mat-icon class="text-[16px] leading-[16px] w-[16px] h-[16px]">delete</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                    <!-- Drop Set Superset Row (If parent exercise is a superset) -->
+                    @if (ex().superSetEjercicio && (dropSet.superWeight !== undefined || dropSet.superReps !== undefined)) {
+                      <div
+                        class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c212a] border-l-2 border-purple-500 ml-8 sm:ml-10 rounded-r-lg mb-2 animate-in fade-in slide-in-from-top-2 duration-200"
+                        [ngClass]="{'opacity-50': set.completed}">
+                        <div class="col-span-1 flex justify-center">
+                          <mat-icon class="text-purple-500 text-sm">subdirectory_arrow_right</mat-icon>
+                        </div>
+                        <div class="col-span-3">
+                          <input type="number" [id]="'dropset-superweight-' + exIndex() + '-' + sIndex + '-' + dIndex" [(ngModel)]="dropSet.superWeight" aria-label="Peso en kilogramos para superserie de drop set"
+                            class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                            placeholder="0">
+                          </div>
+                          <div class="col-span-3">
+                            <input type="number" [id]="'dropset-superreps-' + exIndex() + '-' + sIndex + '-' + dIndex" [(ngModel)]="dropSet.superReps" aria-label="Repeticiones para superserie de drop set"
+                              class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                              placeholder="0">
+                            </div>
+                            <div class="col-span-2"></div> <!-- Empty space under check -->
+                            <!-- Delete Button DropSet Superset Child -->
+                            <div class="col-span-1 flex justify-center">
+                              @if (dropSet.superWeight !== undefined || dropSet.superReps !== undefined) {
+                                <button
+                                  (click)="clearDropSetSuperset.emit({exIndex: exIndex(), setIndex: sIndex, dropIndex: dIndex})"
+                                  class="text-zinc-600 hover:text-red-500 transition-colors">
+                                  <mat-icon class="text-[16px] leading-[16px] w-[16px] h-[16px]">delete</mat-icon>
+                                </button>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+              }
+            <!-- Actions Footer -->
+            <div class="flex flex-wrap items-center justify-center gap-1 sm:gap-2 p-1.5 sm:p-2 border-t border-zinc-800">
+              <button (click)="addSet.emit(exIndex())" class="flex-1 min-w-[30%] py-2 sm:py-3 bg-zinc-800/30 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-[#CCFF00] text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[36px] sm:min-h-[44px]">
+                <mat-icon class="text-sm">add</mat-icon> Set
+              </button>
+              <button (click)="addDropSet.emit(exIndex())" class="flex-1 min-w-[30%] py-2 sm:py-3 bg-zinc-800/30 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[36px] sm:min-h-[44px]">
+                <mat-icon class="text-sm">trending_down</mat-icon> Drop
+              </button>
+              <button (click)="openSuperserieModal.emit(exIndex())" class="flex-1 min-w-[30%] py-2 sm:py-3 bg-zinc-800/30 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-purple-400 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[36px] sm:min-h-[44px]">
+                <mat-icon class="text-sm">link</mat-icon> Super
+              </button>
+            </div>
+          </div>

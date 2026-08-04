@@ -7,7 +7,6 @@ import { UserProfileService } from '../../../../core/services/user-profile.servi
 import { InbodyAiService } from '../../../../core/services/ai/inbody-ai.service';
 import { NgtCanvas } from 'angular-three/dom';
 import { BiometricModelComponent } from '../../../../shared/components/biometric-model/biometric-model.component';
-import { SegmentalData } from '../../../../models/user-profile.model';
 
 @Component({
   selector: 'app-recovery-monitor',
@@ -24,10 +23,10 @@ import { SegmentalData } from '../../../../models/user-profile.model';
 export class RecoveryMonitorComponent {
   @ViewChild('inbodyFileInput') inbodyFileInput!: ElementRef<HTMLInputElement>;
 
-  private recoveryService = inject(RecoveryService);
-  private profileState = inject(UserProfileStateService);
-  private profileService = inject(UserProfileService);
-  private inbodyAi = inject(InbodyAiService);
+  private readonly recoveryService = inject(RecoveryService);
+  private readonly profileState = inject(UserProfileStateService);
+  private readonly profileService = inject(UserProfileService);
+  private readonly inbodyAi = inject(InbodyAiService);
   
   public statusMap = this.recoveryService.getMuscleRecoveryStatus();
   public profile = this.profileState.profile;
@@ -56,6 +55,28 @@ export class RecoveryMonitorComponent {
   showSheet = signal(false);
   toggleSheet() { this.showSheet.update(v => !v); }
   closeSheet() { this.showSheet.set(false); }
+
+  /** Tooltip State */
+  tooltipPosition = signal<{x: number, y: number} | null>(null);
+
+  onTooltipData(event: {muscle: string, x: number, y: number} | null) {
+    if (!event) {
+       this.closeTooltip();
+       return;
+    }
+    this.tooltipPosition.set({ x: event.x, y: event.y });
+    // The selection is already handled by the 3D component via the service,
+    // but we can ensure it stays in sync.
+  }
+
+  closeTooltip() {
+    this.recoveryService.setSelectedMuscle(null);
+    this.tooltipPosition.set(null);
+  }
+
+  onCanvasMissed() {
+    this.closeTooltip();
+  }
 
   /** Controls the InBody re-scan modal */
   showRescanModal = signal(false);
@@ -127,10 +148,6 @@ export class RecoveryMonitorComponent {
     });
   }
 
-  closeHUD() {
-    this.recoveryService.setSelectedMuscle(null);
-  }
-
   getEtaHours(percentage: number): number {
     return Math.max(0, Math.round(48 * (1 - (percentage / 100))));
   }
@@ -139,6 +156,11 @@ export class RecoveryMonitorComponent {
    * Maps a muscle group name to its corresponding segmental InBody data.
    * Returns { muscle: string, fat: string } or null if no data.
    */
+  private formatPairedSegment(right?: string | null, left?: string | null): string {
+    if (right && left) return `D:${right} / I:${left}`;
+    return right || left || '--';
+  }
+
   getSegmentalInfo(muscleName: string): { muscle: string; fat: string } | null {
     const inbody = this.profile()?.inbodyData;
     if (!inbody?.segmentalMuscle && !inbody?.segmentalFat) return null;
@@ -154,19 +176,11 @@ export class RecoveryMonitorComponent {
     let fatVal = '--';
 
     if (ARM_MUSCLES.includes(muscleName)) {
-      const rA = sm?.rightArm;
-      const lA = sm?.leftArm;
-      muscleVal = rA && lA ? `D:${rA} / I:${lA}` : (rA || lA || '--');
-      const rfA = sf?.rightArm;
-      const lfA = sf?.leftArm;
-      fatVal = rfA && lfA ? `D:${rfA} / I:${lfA}` : (rfA || lfA || '--');
+      muscleVal = this.formatPairedSegment(sm?.rightArm, sm?.leftArm);
+      fatVal = this.formatPairedSegment(sf?.rightArm, sf?.leftArm);
     } else if (LEG_MUSCLES.includes(muscleName)) {
-      const rL = sm?.rightLeg;
-      const lL = sm?.leftLeg;
-      muscleVal = rL && lL ? `D:${rL} / I:${lL}` : (rL || lL || '--');
-      const rfL = sf?.rightLeg;
-      const lfL = sf?.leftLeg;
-      fatVal = rfL && lfL ? `D:${rfL} / I:${lfL}` : (rfL || lfL || '--');
+      muscleVal = this.formatPairedSegment(sm?.rightLeg, sm?.leftLeg);
+      fatVal = this.formatPairedSegment(sf?.rightLeg, sf?.leftLeg);
     } else if (TRUNK_MUSCLES.includes(muscleName)) {
       muscleVal = sm?.trunk || '--';
       fatVal = sf?.trunk || '--';
@@ -176,3 +190,4 @@ export class RecoveryMonitorComponent {
     return { muscle: muscleVal, fat: fatVal };
   }
 }
+

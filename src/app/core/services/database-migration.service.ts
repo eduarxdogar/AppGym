@@ -12,6 +12,8 @@ import {
 import { AuthService } from './auth.service';
 import { WorkoutSession, MIGRATION_SENTINELS } from '../models/workout-history.model';
 
+import { MigrationReport } from '../models/admin.model';
+
 /** Maximum Firestore writes per batch (hard limit: 500). We use 450 for safety. */
 const BATCH_SIZE = 450;
 
@@ -27,15 +29,6 @@ const MUSCLE_MIGRATION_MAP: Record<string, string> = {
   'hombro': 'Hombro Lateral',
   'shoulder': 'Hombro Lateral',
 };
-
-export interface MigrationReport {
-  totalRead: number;
-  totalPatched: number;
-  totalSkipped: number;
-  batchesCommitted: number;
-  errors: string[];
-  durationMs: number;
-}
 
 @Injectable({ providedIn: 'root' })
 export class DatabaseMigrationService {
@@ -188,3 +181,4 @@ export class DatabaseMigrationService {
     return report;
   }
 }
+

@@ -1,22 +1,17 @@
 import { Injectable, inject } from '@angular/core';
 import { BaseAiService } from './base-ai.service';
-import { WeeklyDietPlan } from '../../../models/ai-requests.model';
+import { ToastService } from '../toast.service';
+import { WeeklyDietPlanSchema, NutritionLabelSchema, WeeklyDietPlan } from '../../../features/nutrition/schemas/nutrition.schema';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NutritionAiService {
-  private baseAi = inject(BaseAiService);
+  private readonly baseAi = inject(BaseAiService);
+  private readonly toastService = inject(ToastService);
 
   /**
    * Generates a WeeklyDietPlan using Gemini.
-   *
-   * @param profileData   User profile fields needed for the prompt.
-   * @param targetCalories  Daily calorie target (training day).
-   * @param useSeelegSupplements  Opt-in flag. When true (set explicitly by
-   *   the user), one meal per day is flagged as a Seeleg-sponsored recipe.
-   *   Defaults to false — the flag MUST come from the user's saved preference,
-   *   never hardcoded or assumed.
    */
   async generateDietPlan(
     profileData: {
@@ -40,7 +35,6 @@ export class NutritionAiService {
       : 'El usuario NO practica ayuno intermitente. Distribuye las comidas a lo largo del día de forma balanceada.';
 
     // ── Sponsored supplement rule ─────────────────────────────────────────────
-    // This block is ONLY injected when the user has explicitly opted in.
     let seelegRule = '';
     let mealSchemaExtensions = '';
 
@@ -73,7 +67,7 @@ Datos del usuario:
 - Presupuesto / Supermercado (MUY IMPORTANTE para las sugerencias de alimentos): ${profileData.budgetTier}
 
 INSTRUCCIONES DE AYUNO: ${fastingNote}
-
+${seelegRule ? `${seelegRule}\n` : ''}
 IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta (2 planes base):
 {
   "trainingDay": {
@@ -111,8 +105,18 @@ NOTA: El día de descanso debe tener ~15-20% menos calorías, priorizando prote�
     try {
       const resultText = await this.baseAi.generateContent(prompt, true, undefined, undefined, undefined, useSeelegSupplements);
       const text = this.baseAi.cleanJson(resultText);
-      return JSON.parse(text) as WeeklyDietPlan;
-    } catch (error: any) {
+      
+      const parsedData = JSON.parse(text);
+      const validation = WeeklyDietPlanSchema.safeParse(parsedData);
+      
+      if (!validation.success) {
+        console.error('Zod validation failed for WeeklyDietPlan:', validation.error);
+        this.toastService.showError('La IA devolvió datos malformados. Por favor, intenta de nuevo.');
+        throw new Error('Invalid JSON structure returned by AI');
+      }
+      
+      return validation.data;
+    } catch (error: unknown) {
       console.error('Error generating diet plan:', error);
       throw error;
     }
@@ -128,8 +132,18 @@ Devuelve SOLO un JSON con estos campos exactos (usa solo números, sin unidades)
     try {
       const textResult = await this.baseAi.generateContent(prompt, true, base64, mimeType);
       const text = this.baseAi.cleanJson(textResult);
-      return JSON.parse(text);
-    } catch (error: any) {
+      
+      const parsedData = JSON.parse(text);
+      const validation = NutritionLabelSchema.safeParse(parsedData);
+      
+      if (!validation.success) {
+        console.error('Zod validation failed for Nutrition Label:', validation.error);
+        this.toastService.showError('La IA no pudo leer correctamente la etiqueta. Intenta con una foto más clara.');
+        throw new Error('Invalid JSON structure from nutrition label scan');
+      }
+      
+      return validation.data;
+    } catch (error: unknown) {
       console.error('Error scanning label:', error);
       throw error;
     }

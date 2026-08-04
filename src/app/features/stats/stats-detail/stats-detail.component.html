@@ -43,7 +43,7 @@
 
       <!-- Sesiones -->
       <div [routerLink]="['/trends', 'workouts']"
-           class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-zinc-600 hover:bg-[#1a1f29] transition group">
+        class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-zinc-600 hover:bg-[#1a1f29] transition group">
         <div class="flex items-center gap-3">
           <div class="h-9 w-9 rounded-xl bg-zinc-800 flex items-center justify-center group-hover:bg-[#CCFF00] transition-colors">
             <mat-icon class="text-zinc-400 group-hover:text-black transition-colors text-sm">event_note</mat-icon>
@@ -58,7 +58,7 @@
 
       <!-- Tonelaje -->
       <div [routerLink]="['/trends', 'volume']"
-           class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-zinc-600 hover:bg-[#1a1f29] transition group">
+        class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-zinc-600 hover:bg-[#1a1f29] transition group">
         <div class="flex items-center gap-3">
           <div class="h-9 w-9 rounded-xl bg-zinc-800 flex items-center justify-center group-hover:bg-[#CCFF00] transition-colors">
             <mat-icon class="text-zinc-400 group-hover:text-black transition-colors text-sm">fitness_center</mat-icon>
@@ -67,8 +67,8 @@
             <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Tonelaje</p>
             <p class="text-xl font-black text-white">
               {{ metrics().totalVolume >= 1000
-                   ? (metrics().totalVolume / 1000 | number:'1.1-1') + 't'
-                   : (metrics().totalVolume | number:'1.0-0') + ' kg' }}
+              ? (metrics().totalVolume / 1000 | number:'1.1-1') + 't'
+              : (metrics().totalVolume | number:'1.0-0') + ' kg' }}
             </p>
           </div>
         </div>
@@ -77,7 +77,7 @@
 
       <!-- Calorías -->
       <div [routerLink]="['/trends', 'calories']"
-           class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-orange-500/30 hover:bg-[#1a1f29] transition group">
+        class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-orange-500/30 hover:bg-[#1a1f29] transition group">
         <div class="flex items-center gap-3">
           <div class="h-9 w-9 rounded-xl bg-zinc-800 flex items-center justify-center group-hover:bg-orange-500 transition-colors">
             <mat-icon class="text-orange-400 group-hover:text-white transition-colors text-sm">local_fire_department</mat-icon>
@@ -92,7 +92,7 @@
 
       <!-- Series -->
       <div [routerLink]="['/trends', 'sets']"
-           class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-zinc-600 hover:bg-[#1a1f29] transition group">
+        class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-zinc-600 hover:bg-[#1a1f29] transition group">
         <div class="flex items-center gap-3">
           <div class="h-9 w-9 rounded-xl bg-zinc-800 flex items-center justify-center group-hover:bg-[#CCFF00] transition-colors">
             <mat-icon class="text-zinc-400 group-hover:text-black transition-colors text-sm">repeat</mat-icon>
@@ -122,17 +122,21 @@
         <mat-icon class="text-[#CCFF00]">accessibility_new</mat-icon> Distribución Muscular
       </h3>
 
-      <div class="h-[300px] w-full flex justify-center" *ngIf="muscleData() as data">
-        <canvas baseChart
-                [data]="data"
-                [options]="radarChartOptions"
-                [type]="radarChartType">
-        </canvas>
-      </div>
+      @if (muscleData(); as data) {
+        <div class="h-[300px] w-full flex justify-center">
+          <canvas baseChart
+            [data]="data"
+            [options]="radarChartOptions"
+            [type]="radarChartType">
+          </canvas>
+        </div>
+      }
 
-      <div *ngIf="!muscleData()" class="h-[300px] flex items-center justify-center text-zinc-600">
-        <mat-icon class="animate-spin mr-2">donut_large</mat-icon> Cargando...
-      </div>
+      @if (!muscleData()) {
+        <div class="h-[300px] flex items-center justify-center text-zinc-600">
+          <mat-icon class="animate-spin mr-2">donut_large</mat-icon> Cargando...
+        </div>
+      }
 
       <p class="text-center text-xs text-zinc-500 mt-4 max-w-md mx-auto">
         Basado en la frecuencia de tus ejercicios guardados. Un gráfico equilibrado indica un desarrollo físico simétrico.

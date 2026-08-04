@@ -3,35 +3,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { TrainingHistoryService } from './training-history.service';
-import { WorkoutSession } from '../models/workout-history.model';
-
-export interface RankTier {
-  name: string;
-  minKg: number;
-  maxKg: number;
-  color?: string;
-  icon?: string;
-}
-
-export const GAMIFICATION_RANKS: RankTier[] = [
-  { name: 'Madera', minKg: 0, maxKg: 50000, color: '#8B5A2B', icon: 'forest' },
-  { name: 'Bronce', minKg: 50000, maxKg: 250000, color: '#CD7F32', icon: 'workspace_premium' },
-  { name: 'Plata', minKg: 250000, maxKg: 1000000, color: '#C0C0C0', icon: 'star_half' },
-  { name: 'Oro', minKg: 1000000, maxKg: 3000000, color: '#FFD700', icon: 'star' },
-  { name: 'Platino', minKg: 3000000, maxKg: 10000000, color: '#E5E4E2', icon: 'diamond' },
-  { name: 'Élite', minKg: 10000000, maxKg: Infinity, color: '#CCFF00', icon: 'local_fire_department' },
-];
-
-export interface GamificationState {
-  currentRank: RankTier;
-  currentTonnage: number;
-  nextRankTarget: number | null;
-  progressPercentage: number;
-}
+import { WorkoutSession, WorkoutExercise, WorkoutSet } from '../models/workout-history.model';
+import { GAMIFICATION_RANKS, GamificationState } from '../models/user-profile.model';
 
 @Injectable({ providedIn: 'root' })
 export class GamificationService {
-  private historyService = inject(TrainingHistoryService);
+  private readonly historyService = inject(TrainingHistoryService);
 
   // Reactive signal containing the full history of workouts
   private readonly history = toSignal(
@@ -45,15 +22,15 @@ export class GamificationService {
    * Total accumulated tonnage from all finished sessions
    */
   readonly currentTonnage = computed<number>(() => {
-    return this.history().reduce((total, session) => {
+    return (this.history() ?? []).reduce((total, session) => {
       // Prioritize explicit session totalVolume, fallback to calculating it
       let sessionVol = session.totalVolume || 0;
       if (!sessionVol && session.exercises) {
-        session.exercises.forEach((ex: any) => {
-          ex.sets?.forEach((s: any) => {
+        (session.exercises as WorkoutExercise[]).forEach(ex => {
+          ex.sets?.forEach((s: WorkoutSet) => {
             if (s.completed !== false) {
-              const weight = Number(s.weight || s.peso || s.pesokg || 0);
-              const reps = Number(s.reps || s.repeticiones || 0);
+              const weight = Number(s.weight || (s as any).peso || (s as any).pesokg || 0);
+              const reps = Number(s.reps || (s as any).repeticiones || 0);
               sessionVol += (weight * reps);
             }
           });
@@ -70,7 +47,7 @@ export class GamificationService {
     const tonnage = this.currentTonnage();
     
     // Find current rank based on tonnage
-    let currentRank = GAMIFICATION_RANKS[GAMIFICATION_RANKS.length - 1]; // Default to highest
+    let currentRank = GAMIFICATION_RANKS.at(-1)!; // Default to highest
     for (const rank of GAMIFICATION_RANKS) {
       if (tonnage >= rank.minKg && tonnage < rank.maxKg) {
         currentRank = rank;
@@ -99,7 +76,9 @@ export class GamificationService {
       currentRank,
       currentTonnage: tonnage,
       nextRankTarget,
-      progressPercentage: parseFloat(progressPercentage.toFixed(1))
+      progressPercentage: Number.parseFloat(progressPercentage.toFixed(1))
     };
   });
 }
+
+

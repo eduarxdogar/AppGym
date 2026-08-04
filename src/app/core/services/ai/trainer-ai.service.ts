@@ -1,8 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { BaseAiService } from './base-ai.service';
-import { Workout } from '../../../models/workout.model';
-import { UserProfile } from '../../../models/user-profile.model';
-import { WeeklyPlanRequest } from '../../../models/ai-requests.model';
+import { ToastService } from '../toast.service';
+import { Workout } from '../../models/workout.model';
+import { UserProfile } from '../../models/user-profile.model';
+import { WeeklyPlanRequest } from '../../models/ai-requests.model';
+import { WorkoutSchema } from '../../models/workout/schemas/workout.schema';
+import { z } from 'zod';
 
 const SYSTEM_PROMPT = `
 Eres COACH TRÍADA, un Entrenador Élite de Culturismo y Powerbuilding (IFBB Pro Persona). 
@@ -48,7 +51,8 @@ REGLAS DE ORO INTRANSABLES:
   providedIn: 'root'
 })
 export class TrainerAiService {
-  private baseAi = inject(BaseAiService);
+  private readonly baseAi = inject(BaseAiService);
+  private readonly toastService = inject(ToastService);
   public activeModel = this.baseAi.activeModel;
 
   async generateWorkout(userPrompt: string, userProfile: UserProfile): Promise<Workout> {
@@ -63,15 +67,23 @@ export class TrainerAiService {
     try {
         const text = await this.baseAi.generateContent(prompt, true);
         const cleanText = this.baseAi.cleanJson(text);
-        const workoutData = JSON.parse(cleanText);
+        const parsedData = JSON.parse(cleanText);
         
-        return {
-            ...workoutData,
+        const validation = WorkoutSchema.safeParse({
+            ...parsedData,
             id: crypto.randomUUID(),
             fecha: new Date().toISOString(),
-            ejercicios: workoutData.ejercicios || []
-        };
-    } catch (error: any) {
+            ejercicios: parsedData.ejercicios || []
+        });
+
+        if (!validation.success) {
+            console.error('Zod validation failed for Workout:', validation.error);
+            this.toastService.showError('La IA generó una rutina inválida. Intenta nuevamente.');
+            throw new Error('Invalid JSON structure returned by AI');
+        }
+        
+        return validation.data;
+    } catch (error: unknown) {
         console.error('Error generating workout:', error);
         throw error;
     }
@@ -89,15 +101,20 @@ export class TrainerAiService {
     try {
       const text = await this.baseAi.generateContent(prompt, true);
       const cleanText = this.baseAi.cleanJson(text);
-      const workoutsData: any[] = JSON.parse(cleanText); 
+      const parsedData = JSON.parse(cleanText);
 
-      if (!Array.isArray(workoutsData)) {
-         throw new Error('AI did not return an array of workouts');
+      const workoutAiSchema = WorkoutSchema.omit({ id: true, fecha: true });
+      const validation = z.array(workoutAiSchema).safeParse(parsedData);
+
+      if (!validation.success) {
+         console.error('Zod validation failed for Weekly Plan:', validation.error);
+         this.toastService.showError('La IA devolvió datos semanales malformados. Intenta de nuevo.');
+         throw new TypeError('AI did not return a valid array of workouts');
       }
 
       const today = new Date();
 
-      return workoutsData.map((data, index) => {
+      return validation.data.map((data, index) => {
          const workoutDate = new Date(today);
          workoutDate.setDate(today.getDate() + index);
 
@@ -106,10 +123,10 @@ export class TrainerAiService {
             id: crypto.randomUUID(),
             fecha: workoutDate.toISOString(),
             ejercicios: data.ejercicios || []
-         };
+         } as Workout;
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error generating weekly plan:', error);
       throw error;
     }

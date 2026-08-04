@@ -3,16 +3,10 @@ import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, w
 import { Observable, of } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { Workout } from '../../models/workout.model';
+import { Workout } from '../../core/models/workout.model';
 import { WorkoutSession } from '../models/workout-history.model';
-
-export interface ChatMessage {
-  id: string;
-  workoutId: string;
-  role: 'user' | 'coach';
-  text: string;
-  timestamp: string; // ISO string
-}
+import { ChatMessage } from '../models/ai-requests.model';
+import { LoggerService } from './logger.service';
 
 @Injectable({
   providedIn: 'root'
@@ -21,6 +15,7 @@ export class StorageService {
   private readonly firestore = inject(Firestore);
   private readonly authService = inject(AuthService);
   private readonly injector = inject(Injector);
+  private readonly logger = inject(LoggerService);
 
   constructor() { }
 
@@ -33,16 +28,16 @@ export class StorageService {
         return runInInjectionContext(this.injector, () => {
              const workoutsCol = collection(this.firestore, 'workouts');
              const q = query(workoutsCol, where('userId', '==', user.uid));
-             return (collectionData(q, { idField: 'id' }) as any as Observable<Workout[]>).pipe(
+             return (collectionData(q, { idField: 'id' }) as Observable<Workout[]>).pipe(
                  catchError(err => {
-                     console.error('Firestore rule or collection error:', err);
+                     this.logger.error('Firestore rule or collection error:', err);
                      return of([] as Workout[]);
                  })
              );
         });
       }),
       catchError(err => {
-        console.error('Auth state error in getWorkouts:', err);
+        this.logger.error('Auth state error in getWorkouts:', err);
         return of([] as Workout[]);
       })
     );
@@ -56,14 +51,14 @@ export class StorageService {
     }
     const cleanObj: any = {};
     for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      if (Object.hasOwn(obj, key)) {
         cleanObj[key] = this.sanitizeData(obj[key]);
       }
     }
     return cleanObj;
   }
 
-  async saveWorkout(workout: any): Promise<void> {
+  async saveWorkout(workout: Workout): Promise<void> {
     const user = this.authService.currentUser();
     if (!user) {
       throw new Error('Debe estar autenticado para guardar.');
@@ -75,7 +70,7 @@ export class StorageService {
       const safeWorkout = this.sanitizeData({ ...workout, userId: user.uid });
       await setDoc(docRef, safeWorkout, { merge: true });
     } catch (error) {
-      console.error('Error saving workout:', error);
+      this.logger.error('Error saving workout:', error);
       throw error;
     }
   }
@@ -86,7 +81,7 @@ export class StorageService {
       const docRef = doc(workoutsCol, String(id));
       await deleteDoc(docRef);
     } catch (error) {
-      console.error('Error deleting workout:', error);
+      this.logger.error('Error deleting workout:', error);
       throw error;
     }
   }
@@ -104,7 +99,7 @@ export class StorageService {
         });
       }),
       catchError(err => {
-        console.error('Auth state error in getHistory:', err);
+        this.logger.error('Auth state error in getHistory:', err);
         return of([]);
       })
     );
@@ -122,16 +117,22 @@ export class StorageService {
       const safeSession = this.sanitizeData({ ...session, id: docId, userId: user.uid });
       await setDoc(docRef, safeSession, { merge: true });
     } catch (error) {
-      console.error('Error saving history:', error);
+      this.logger.error('Error saving history:', error);
       throw error;
     }
   }
 
   // --- LEGACY METHODS ---
-  getItem<T>(key: string): T | null { return null; }
-  setItem<T>(key: string, value: T): void {}
-  removeItem(key: string): void {}
-  clear(): void {}
+  getItem<T>(_key: string): T | null { return null; }
+  setItem<T>(_key: string, _value: T): void {
+    // Legacy stub: no-op in Firestore storage
+  }
+  removeItem(_key: string): void {
+    // Legacy stub: no-op in Firestore storage
+  }
+  clear(): void {
+    // Legacy stub: no-op in Firestore storage
+  }
 
   // --- CHAT HISTORY (sub-collection per workout) ---
 
@@ -157,3 +158,6 @@ export class StorageService {
     );
   }
 }
+
+
+

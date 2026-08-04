@@ -5,28 +5,18 @@ import { of } from 'rxjs';
 import { WorkoutService } from './workout.service';
 import { StorageService } from './storage.service';
 import { CardioSessionService } from './cardio-session.service';
-import { Workout } from '../../models/workout.model';
-import { WorkoutSession } from '../models/workout-history.model';
-
-export interface WeeklyMetrics {
-  workoutsCount: number;
-  totalVolume: number;
-  estimatedCalories: number;   // Gym + Cardio
-  gymCalories: number;
-  cardioCalories: number;
-  totalSets: number;
-  cardioSessionsCount: number;
-}
+import { WorkoutSession, WorkoutExercise, WorkoutSet } from '../models/workout-history.model';
+import { WeeklyMetrics } from '../models/stats-data.model';
 
 const DEFAULT_USER_WEIGHT_KG = 75;
-const RESISTANCE_MET = 5.0;
+const RESISTANCE_MET = 6;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Injectable({ providedIn: 'root' })
 export class MetricsService {
-  private workoutService = inject(WorkoutService);
-  private storageService = inject(StorageService);
-  private cardioService = inject(CardioSessionService);
+  private readonly workoutService = inject(WorkoutService);
+  private readonly storageService = inject(StorageService);
+  private readonly cardioService = inject(CardioSessionService);
 
   // ─── Reactive history signal (from workout_history Firestore collection) ─────
   // This is the TRUE source of completed sessions, updated in real time.
@@ -42,7 +32,7 @@ export class MetricsService {
   private isWithinLastNDays(isoDate: string | undefined, days: number): boolean {
     if (!isoDate) return false;
     const d = new Date(isoDate);
-    if (isNaN(d.getTime())) return false;
+    if (Number.isNaN(d.getTime())) return false;
     const now = new Date();
     if (d.getTime() > now.getTime()) return false;
     const start = new Date(now);
@@ -99,9 +89,9 @@ export class MetricsService {
   readonly totalSets = computed<number>(() =>
     this.last7DaysSessions().reduce((total, session) => {
       const exercises = session.exercises || session.ejercicios || [];
-      return total + exercises.reduce((acc, ex) => {
+      return total + (exercises as WorkoutExercise[]).reduce((acc: number, ex: WorkoutExercise) => {
         const sets = ex.sets || ex.series || [];
-        return acc + sets.filter(s => s.completed !== false).length;
+        return acc + sets.filter((s: WorkoutSet) => s.completed !== false).length;
       }, 0);
     }, 0)
   );
@@ -150,14 +140,6 @@ export class MetricsService {
     totalSets: this.totalSets(),
     cardioSessionsCount: this.cardioSessionsCount(),
   }));
-
-  // ─── Helpers ─────────────────────────────────────────────────────────
-
-  formatVolume(kg: number): string {
-    return kg >= 1000 ? `${(kg / 1000).toFixed(1)}t` : `${kg.toLocaleString('es-ES')} kg`;
-  }
-
-  formatCalories(kcal: number): string {
-    return `${kcal.toLocaleString('es-ES')} kcal`;
-  }
 }
+
+

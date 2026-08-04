@@ -1,0 +1,52 @@
+@if (showRestModal) {
+<div class="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center animate-fadeIn"
+     (click)="closeRestModal()"
+     (keydown.escape)="closeRestModal()">
+     <div class="relative bg-[#151921] border border-zinc-800 p-8 rounded-3xl flex flex-col items-center gap-6 shadow-2xl w-full max-w-xs mx-4"
+          (click)="$event.stopPropagation()"
+          (keydown.escape)="closeRestModal()">
+       <button (click)="closeRestModal()" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors">
+           <mat-icon>close</mat-icon>
+       </button>
+       <h3 class="text-xl font-bold text-white uppercase tracking-widest">Descanso</h3>
+       
+       <!-- Timer Display -->
+       <div class="text-6xl font-mono font-bold tracking-tighter"
+            [ngClass]="restTimer.remaining() <= 5 ? 'text-red-500 animate-pulse' : 'text-[#CCFF00]'">
+           {{ restTimer.formatted() }}
+       </div>
+       
+       <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+           <div class="h-full bg-[#CCFF00] transition-all duration-1000 ease-linear"
+                [style.width.%]="restTimer.progress() * 100"></div>
+       </div>
+
+       <!-- Presets -->
+       <div class="grid grid-cols-4 gap-2 w-full mt-2">
+           @for (p of restPresets; track p) {
+             <button (click)="restTimer.quickStart(p)"
+                     class="py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-bold transition">
+                 {{ p }}s
+             </button>
+           }
+       </div>
+       
+       <button (click)="restTimer.stop(); closeRestModal()" class="mt-2 text-red-500/80 hover:text-red-500 font-bold uppercase text-xs tracking-widest hover:underline">
+           Detener y Cerrar
+       </button>
+   </div>
+</div>
+}
+
+<!-- FAB to open Rest Timer (Floating Action Button) -->
+@if (!showRestModal) {
+<button (click)="openRestModal()" 
+      class="fixed bottom-24 right-4 h-12 w-12 rounded-full bg-[#151921] border border-zinc-700 text-[#CCFF00] shadow-[0_0_15px_rgba(204,255,0,0.15)] flex items-center justify-center z-40 hover:scale-105 transition-transform">
+  @if (!restTimer.isRunning()) {
+      <mat-icon>timer</mat-icon>
+  }
+  @if (restTimer.isRunning()) {
+      <span class="text-xs font-mono font-bold">{{ restTimer.formatted() }}</span>
+  }
+</button>
+}

@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { BaseChartDirective } from 'ng2-charts';
@@ -10,11 +10,11 @@ import { WorkoutSession } from '../../../core/models/workout-history.model';
 @Component({
   selector: 'app-progress-chart',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseChartDirective, MatIconModule],
+  imports: [FormsModule, BaseChartDirective, MatIconModule],
   providers: [DatePipe],
   template: `
     <div class="w-full flex flex-col gap-4 animate-in fade-in duration-500">
-      
+    
       <!-- Controls -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -23,51 +23,59 @@ import { WorkoutSession } from '../../../core/models/workout-history.model';
           </h2>
           <p class="text-zinc-400 text-xs tracking-widest uppercase mt-1">Sobrecarga Progresiva (Peso Máximo)</p>
         </div>
-        
+    
         <div class="relative w-full md:w-64">
           <select [ngModel]="selectedExercise()" (ngModelChange)="selectedExercise.set($event)"
-                  class="w-full appearance-none bg-[#151921] border border-zinc-700 hover:border-[#CCFF00] rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-[#CCFF00] cursor-pointer transition-colors shadow-lg">
+            class="w-full appearance-none bg-[#151921] border border-zinc-700 hover:border-[#CCFF00] rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-[#CCFF00] cursor-pointer transition-colors shadow-lg">
             <option value="" disabled selected>Selecciona un ejercicio...</option>
-            <option *ngFor="let ex of uniqueExercises()" [value]="ex">{{ ex }}</option>
+            @for (ex of uniqueExercises(); track ex) {
+              <option [value]="ex">{{ ex }}</option>
+            }
           </select>
           <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
             ▼
           </div>
         </div>
       </div>
-
+    
       <!-- Chart Container -->
       <div class="relative w-full h-64 md:h-80 bg-[#151921] rounded-2xl p-4 shadow-xl border border-zinc-800">
-        
-        <div *ngIf="!selectedExercise()" class="absolute inset-0 flex flex-col items-center justify-center text-center z-10 p-6 bg-[#151921]/80 backdrop-blur-sm rounded-2xl">
-           <span class="text-4xl mb-4 opacity-50">🏋️‍♂️</span>
-           <h3 class="text-white font-bold text-lg mb-1">Sin Ejercicio Seleccionado</h3>
-           <p class="text-zinc-500 text-sm">Aún no hay datos para graficar. ¡Ve a entrenar!</p>
-        </div>
-
-        <div *ngIf="selectedExercise() && chartData().datasets[0].data.length === 0" class="absolute inset-0 flex flex-col items-center justify-center text-center z-10 p-6 bg-[#151921]/80 backdrop-blur-sm rounded-2xl">
-           <span class="text-4xl mb-4 opacity-50">📉</span>
-           <h3 class="text-white font-bold text-lg mb-1">Sin Datos Suficientes</h3>
-           <p class="text-zinc-500 text-sm">No hay registros de peso para este ejercicio.</p>
-        </div>
-
-        <canvas *ngIf="selectedExercise()"
-                baseChart
-                [data]="chartData()"
-                [options]="chartOptions"
-                [type]="'line'">
-        </canvas>
+    
+        @if (!selectedExercise()) {
+          <div class="absolute inset-0 flex flex-col items-center justify-center text-center z-10 p-6 bg-[#151921]/80 backdrop-blur-sm rounded-2xl">
+            <span class="text-4xl mb-4 opacity-50">🏋️‍♂️</span>
+            <h3 class="text-white font-bold text-lg mb-1">Sin Ejercicio Seleccionado</h3>
+            <p class="text-zinc-500 text-sm">Aún no hay datos para graficar. ¡Ve a entrenar!</p>
+          </div>
+        }
+    
+        @if (selectedExercise() && chartData().datasets[0] && chartData().datasets[0].data.length === 0) {
+          <div class="absolute inset-0 flex flex-col items-center justify-center text-center z-10 p-6 bg-[#151921]/80 backdrop-blur-sm rounded-2xl">
+            <span class="text-4xl mb-4 opacity-50">📉</span>
+            <h3 class="text-white font-bold text-lg mb-1">Sin Datos Suficientes</h3>
+            <p class="text-zinc-500 text-sm">No hay registros de peso para este ejercicio.</p>
+          </div>
+        }
+    
+        @if (selectedExercise()) {
+          <canvas
+            baseChart
+            [data]="chartData()"
+            [options]="chartOptions"
+            [type]="'line'">
+          </canvas>
+        }
       </div>
-
+    
     </div>
   `
 })
 export class ProgressChartComponent implements OnInit {
-  private historyService = inject(TrainingHistoryService);
-  private datePipe = inject(DatePipe);
+  private readonly historyService = inject(TrainingHistoryService);
+  private readonly datePipe = inject(DatePipe);
 
   // State
-  private history = signal<WorkoutSession[]>([]);
+  private readonly history = signal<WorkoutSession[]>([]);
   selectedExercise = signal<string>('');
 
   ngOnInit() {
@@ -104,7 +112,7 @@ export class ProgressChartComponent implements OnInit {
       });
     });
 
-    return Array.from(exercisesSet).sort();
+    return Array.from(exercisesSet).sort((a, b) => a.localeCompare(b));
   });
 
   // Computed signal to generate Chart Data based on the selected exercise
@@ -131,7 +139,7 @@ export class ProgressChartComponent implements OnInit {
       // Find all instances of this exercise in the session
       const matchingExs = ejercicios.filter(ex => {
         const name = ex.name || ex.nombre;
-        return name && name.trim().toLowerCase() === exerciseName.toLowerCase();
+        return name?.trim().toLowerCase() === exerciseName.toLowerCase();
       });
 
       if (matchingExs.length > 0) {

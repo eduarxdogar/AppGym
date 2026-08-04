@@ -1,10 +1,10 @@
 import { Component, input, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-ui-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <div [class]="classes()">
       @if (title()) {

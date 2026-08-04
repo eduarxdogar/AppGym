@@ -1,7 +1,7 @@
 <div class="min-h-screen bg-[#0B0E14] flex flex-col p-6 relative overflow-y-auto font-sans pb-24">
   <!-- Background Glow based on rank color -->
   <div class="absolute top-0 left-1/2 -translate-x-1/2 h-[400px] w-[100%] rounded-full blur-[150px] pointer-events-none opacity-20"
-       [style.backgroundColor]="gamificationState().currentRank.color"></div>
+  [style.backgroundColor]="gamificationState().currentRank.color"></div>
 
   <!-- Header / Navigation -->
   <div class="flex items-center justify-between relative z-10 mb-8">
@@ -18,30 +18,35 @@
 
     <!-- AVATAR GIGANTE & INFO -->
     <div class="flex flex-col items-center text-center">
-      
+
       <!-- Avatar con borde de color del rango -->
-      <div class="relative group cursor-pointer mb-6" (click)="triggerFileInput()" title="Cambiar foto de perfil">
-        <input type="file" id="photoUpload" class="hidden" accept="image/*" (change)="uploadProfilePhoto($event)">
-        
+      <button type="button" class="relative group cursor-pointer mb-6 border-none bg-transparent p-0 text-left" (click)="triggerFileInput()" title="Cambiar foto de perfil">
+        <input type="file" id="photoUpload" class="hidden" accept="image/*" (change)="uploadProfilePhoto($event)" aria-label="Subir foto de perfil">
+
         <div class="relative h-40 w-40 rounded-full p-1.5 transition-transform group-hover:scale-105 duration-300"
-             [style.borderColor]="gamificationState().currentRank.color"
-             [style.boxShadow]="'0 0 30px ' + gamificationState().currentRank.color + '40'"
-             style="border-width: 3px;">
-          
+          [style.borderColor]="gamificationState().currentRank.color"
+          [style.boxShadow]="'0 0 30px ' + gamificationState().currentRank.color + '40'"
+          style="border-width: 3px;">
+
           <div class="h-full w-full rounded-full overflow-hidden bg-zinc-900 flex items-center justify-center relative">
-            <img *ngIf="currentUser()?.photoURL && !isUploading(); else defaultAvatar" 
-                 [src]="currentUser()?.photoURL" 
-                 alt="Profile" 
-                 class="h-full w-full object-cover" />
-            
-            <ng-template #defaultAvatar>
-              <mat-icon *ngIf="!isUploading()" class="text-6xl text-zinc-600">person</mat-icon>
-            </ng-template>
+            @if (currentUser()?.photoURL && !isUploading()) {
+              <img
+                [src]="currentUser()?.photoURL"
+                alt="Profile"
+                class="h-full w-full object-cover" />
+            } @else {
+              @if (!isUploading()) {
+                <mat-icon class="text-6xl text-zinc-600">person</mat-icon>
+              }
+            }
+
 
             <!-- Loading Overlay -->
-            <div *ngIf="isUploading()" class="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
-              <mat-icon class="animate-spin text-white">sync</mat-icon>
-            </div>
+            @if (isUploading()) {
+              <div class="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
+                <mat-icon class="animate-spin text-white">sync</mat-icon>
+              </div>
+            }
 
             <!-- Hover Edit Overlay -->
             <div class="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]">
@@ -52,12 +57,12 @@
 
         <!-- Badge de Rango -->
         <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full border border-[#0B0E14] bg-zinc-900 flex items-center gap-1.5 whitespace-nowrap shadow-xl"
-             [style.borderColor]="gamificationState().currentRank.color"
-             style="border-width: 2px;">
+          [style.borderColor]="gamificationState().currentRank.color"
+          style="border-width: 2px;">
           <mat-icon class="text-[16px]" [style.color]="gamificationState().currentRank.color">{{ gamificationState().currentRank.icon }}</mat-icon>
           <span class="text-xs font-black uppercase tracking-widest text-white">{{ gamificationState().currentRank.name }}</span>
         </div>
-      </div>
+      </button>
 
       <!-- Nombre y Email -->
       <h2 class="text-3xl font-black text-white tracking-tight">{{ currentUser()?.displayName || 'Atleta Anónimo' }}</h2>
@@ -66,7 +71,7 @@
 
     <!-- TABLERO DE CONTROL (Métricas base) -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      
+
       <!-- Nivel de Fitness -->
       <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 text-center">
         <mat-icon class="text-zinc-500 text-base mb-1">trending_up</mat-icon>
@@ -94,12 +99,48 @@
         <span class="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Altura</span>
         <span class="text-sm font-bold text-white uppercase">{{ userProfile()?.height ? userProfile()?.height + ' cm' : '--' }}</span>
       </div>
-      
+
+    </div>
+
+    <!-- SECCIÓN DE SUSCRIPCIÓN -->
+    <div class="bg-[#151921] border border-zinc-800 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden mb-6">
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h3 class="text-lg font-bold text-white tracking-wide flex items-center gap-2 mb-2">
+            <mat-icon class="text-emerald-400">workspace_premium</mat-icon> Suscripción
+          </h3>
+          <div class="flex items-center gap-3">
+            @if (userProfile()?.subscriptionStatus === 'active') {
+              <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
+                <mat-icon class="text-[16px]">check_circle</mat-icon> Activa
+              </span>
+            } @else {
+              <span class="px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
+                <mat-icon class="text-[16px]">schedule</mat-icon> {{ userProfile()?.subscriptionStatus === 'trialing' ? 'En periodo de prueba' : 'Expirada / Pendiente' }}
+              </span>
+            }
+          </div>
+        </div>
+
+        @if (userProfile()?.subscriptionStatus !== 'active') {
+          <button
+            (click)="renewSubscription()"
+            [disabled]="isBillingLoading()"
+            class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-900 font-bold text-sm tracking-wide uppercase rounded-xl transition-all shadow-lg hover:shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap">
+            @if (!isBillingLoading()) {
+              <mat-icon class="text-sm">credit_card</mat-icon> Actualizar Pago
+            }
+            @if (isBillingLoading()) {
+              <mat-icon class="text-sm animate-spin">sync</mat-icon> Procesando...
+            }
+          </button>
+        }
+      </div>
     </div>
 
     <!-- SECCIÓN DE EQUIPAMIENTO -->
     <div class="bg-[#151921] border border-zinc-800 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
-      
+
       <!-- Fondo decorativo -->
       <mat-icon class="absolute -right-10 -bottom-10 text-[150px] text-zinc-900 opacity-30 rotate-12 pointer-events-none">fitness_center</mat-icon>
 
@@ -115,112 +156,116 @@
 
         <!-- Grid de Equipo -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-          <button *ngFor="let eq of availableEquipment"
-                  (click)="toggleEquipment(eq.name)"
-                  class="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border transition-all duration-300"
+          @for (eq of availableEquipment; track eq) {
+            <button
+              (click)="toggleEquipment(eq.name)"
+              class="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border transition-all duration-300"
                   [ngClass]="selectedEquipment().includes(eq.name) 
                     ? 'bg-[#1a1f29] text-[#CCFF00] drop-shadow-[0_0_8px_rgba(204,255,0,0.8)] border border-[#CCFF00] shadow-[0_0_10px_rgba(204,255,0,0.2)] scale-[1.02]' 
                     : 'bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:bg-zinc-800'">
-            <mat-icon [class.text-[#CCFF00]]="selectedEquipment().includes(eq.name)"
-                      [class.text-zinc-600]="!selectedEquipment().includes(eq.name)">
-              {{ eq.icon }}
-            </mat-icon>
-            <span class="text-[10px] font-bold uppercase tracking-widest text-center">{{ eq.name }}</span>
-          </button>
+              <mat-icon [class.text-[#CCFF00]]="selectedEquipment().includes(eq.name)"
+                [class.text-zinc-600]="!selectedEquipment().includes(eq.name)">
+                {{ eq.icon }}
+              </mat-icon>
+              <span class="text-[10px] font-bold uppercase tracking-widest text-center">{{ eq.name }}</span>
+            </button>
+          }
         </div>
 
         <!-- Action Button -->
         <button (click)="saveEquipment()" [disabled]="isSaving()"
-                class="w-full py-4 bg-[#CCFF00] hover:bg-[#bce600] text-black font-black text-sm tracking-[0.2em] uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(204,255,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-          <ng-container *ngIf="!isSaving()">
+          class="w-full py-4 bg-[#CCFF00] hover:bg-[#bce600] text-black font-black text-sm tracking-[0.2em] uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(204,255,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          @if (!isSaving()) {
             <mat-icon class="text-sm">save</mat-icon> Guardar Configuración
-          </ng-container>
-          <ng-container *ngIf="isSaving()">
+          }
+          @if (isSaving()) {
             <mat-icon class="text-sm animate-spin">sync</mat-icon> Guardando...
-          </ng-container>
+          }
         </button>
       </div>
     </div>
 
     <!-- ════════════════════════════════════════════════════════════════════
-         DEV-ONLY: Database Migration Panel
-         Visible ONLY when running with `ng serve` (isDevMode() === true).
-         This section is tree-shaken out of production builds.
-         ════════════════════════════════════════════════════════════════════ -->
-    <div *ngIf="isAdmin$ | async" class="bg-[#0f1117] border border-amber-500/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-      <!-- Corner badge -->
-      <div class="absolute top-3 right-3 px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded-full">
-        <span class="text-[9px] font-black text-amber-400 uppercase tracking-widest">DEV ONLY</span>
-      </div>
-
-      <div class="flex items-center gap-3 mb-4">
-        <div class="h-10 w-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-          <mat-icon class="text-amber-400">storage</mat-icon>
+    DEV-ONLY: Database Migration Panel
+    Visible ONLY when running with `ng serve` (isDevMode() === true).
+    This section is tree-shaken out of production builds.
+    ════════════════════════════════════════════════════════════════════ -->
+    @if (isAdmin$ | async) {
+      <div class="bg-[#0f1117] border border-amber-500/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+        <!-- Corner badge -->
+        <div class="absolute top-3 right-3 px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded-full">
+          <span class="text-[9px] font-black text-amber-400 uppercase tracking-widest">DEV ONLY</span>
         </div>
-        <div>
-          <h3 class="text-sm font-bold text-white">Migración de Base de Datos</h3>
-          <p class="text-[11px] text-zinc-500 mt-0.5">Retrocompatibilidad: backfill de <code class="text-amber-400">microcycleId</code>, <code class="text-amber-400">originWorkoutId</code> y remapeo de grupos musculares legacy.</p>
-        </div>
-      </div>
-
-      <!-- Warning note -->
-      <div class="flex items-start gap-2 bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 mb-5">
-        <mat-icon class="text-amber-400 text-base flex-shrink-0 mt-0.5">warning</mat-icon>
-        <p class="text-[11px] text-amber-300/80 leading-relaxed">
-          Ejecutar una sola vez por usuario. El script es <strong class="text-amber-300">idempotente</strong> (seguro de re-ejecutar), pero las escrituras a Firestore tienen costo. Documentos ya migrados son omitidos automáticamente.
-        </p>
-      </div>
-
-      <!-- Run Button -->
-      <button (click)="runMigration()" [disabled]="isMigrating()"
-              class="w-full py-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-300 font-bold text-sm uppercase tracking-widest hover:bg-amber-500/20 hover:border-amber-500/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
-        <ng-container *ngIf="!isMigrating()">
-          <mat-icon class="text-amber-400">bolt</mat-icon> Ejecutar Migración
-        </ng-container>
-        <ng-container *ngIf="isMigrating()">
-          <div class="h-4 w-4 border-2 border-amber-500/30 border-t-amber-400 rounded-full animate-spin"></div>
-          <span>Migrando documentos...</span>
-        </ng-container>
-      </button>
-
-      <!-- Migration Report -->
-      <div *ngIf="migrationReport()" class="mt-5 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-        <div class="h-px bg-amber-500/15"></div>
-        <p class="text-[10px] font-bold text-amber-400/60 uppercase tracking-widest">Reporte de Migración</p>
-
-        <div class="grid grid-cols-3 gap-2">
-          <div class="bg-zinc-900/60 border border-zinc-800 rounded-xl p-3 text-center">
-            <div class="text-xl font-black text-white">{{ migrationReport()!.totalRead }}</div>
-            <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mt-0.5">Leídos</div>
+        <div class="flex items-center gap-3 mb-4">
+          <div class="h-10 w-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+            <mat-icon class="text-amber-400">storage</mat-icon>
           </div>
-          <div class="bg-zinc-900/60 border border-zinc-800 rounded-xl p-3 text-center">
-            <div class="text-xl font-black" [class.text-[#CCFF00]]="migrationReport()!.totalPatched > 0" [class.text-zinc-500]="migrationReport()!.totalPatched === 0">{{ migrationReport()!.totalPatched }}</div>
-            <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mt-0.5">Migrados</div>
-          </div>
-          <div class="bg-zinc-900/60 border border-zinc-800 rounded-xl p-3 text-center">
-            <div class="text-xl font-black text-zinc-400">{{ migrationReport()!.totalSkipped }}</div>
-            <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mt-0.5">Omitidos</div>
+          <div>
+            <h3 class="text-sm font-bold text-white">Migración de Base de Datos</h3>
+            <p class="text-[11px] text-zinc-500 mt-0.5">Retrocompatibilidad: backfill de <code class="text-amber-400">microcycleId</code>, <code class="text-amber-400">originWorkoutId</code> y remapeo de grupos musculares legacy.</p>
           </div>
         </div>
-
-        <div class="flex items-center justify-between text-[11px] text-zinc-500 px-1">
-          <span>Batches: <strong class="text-zinc-300">{{ migrationReport()!.batchesCommitted }}</strong></span>
-          <span>Duración: <strong class="text-zinc-300">{{ migrationReport()!.durationMs }}ms</strong></span>
+        <!-- Warning note -->
+        <div class="flex items-start gap-2 bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 mb-5">
+          <mat-icon class="text-amber-400 text-base flex-shrink-0 mt-0.5">warning</mat-icon>
+          <p class="text-[11px] text-amber-300/80 leading-relaxed">
+            Ejecutar una sola vez por usuario. El script es <strong class="text-amber-300">idempotente</strong> (seguro de re-ejecutar), pero las escrituras a Firestore tienen costo. Documentos ya migrados son omitidos automáticamente.
+          </p>
         </div>
-
-        <!-- Errors -->
-        <div *ngIf="migrationReport()!.errors.length > 0" class="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-          <p class="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-2">Errores ({{ migrationReport()!.errors.length }})</p>
-          <p *ngFor="let err of migrationReport()!.errors" class="text-[11px] text-red-300/80 font-mono">{{ err }}</p>
-        </div>
-
-        <!-- Success state -->
-        <div *ngIf="migrationReport()!.errors.length === 0" class="flex items-center gap-2 text-[11px] text-[#CCFF00]/80">
-          <mat-icon class="text-[#CCFF00] text-base">check_circle</mat-icon>
-          Migración completada sin errores.
-        </div>
+        <!-- Run Button -->
+        <button (click)="runMigration()" [disabled]="isMigrating()"
+          class="w-full py-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-300 font-bold text-sm uppercase tracking-widest hover:bg-amber-500/20 hover:border-amber-500/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+          @if (!isMigrating()) {
+            <mat-icon class="text-amber-400">bolt</mat-icon> Ejecutar Migración
+          }
+          @if (isMigrating()) {
+            <div class="h-4 w-4 border-2 border-amber-500/30 border-t-amber-400 rounded-full animate-spin"></div>
+            <span>Migrando documentos...</span>
+          }
+        </button>
+        <!-- Migration Report -->
+        @if (migrationReport()) {
+          <div class="mt-5 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div class="h-px bg-amber-500/15"></div>
+            <p class="text-[10px] font-bold text-amber-400/60 uppercase tracking-widest">Reporte de Migración</p>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="bg-zinc-900/60 border border-zinc-800 rounded-xl p-3 text-center">
+                <div class="text-xl font-black text-white">{{ migrationReport()!.totalRead }}</div>
+                <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mt-0.5">Leídos</div>
+              </div>
+              <div class="bg-zinc-900/60 border border-zinc-800 rounded-xl p-3 text-center">
+                <div class="text-xl font-black" [class.text-[#CCFF00]]="migrationReport()!.totalPatched > 0" [class.text-zinc-500]="migrationReport()!.totalPatched === 0">{{ migrationReport()!.totalPatched }}</div>
+                <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mt-0.5">Migrados</div>
+              </div>
+              <div class="bg-zinc-900/60 border border-zinc-800 rounded-xl p-3 text-center">
+                <div class="text-xl font-black text-zinc-400">{{ migrationReport()!.totalSkipped }}</div>
+                <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mt-0.5">Omitidos</div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-zinc-500 px-1">
+              <span>Batches: <strong class="text-zinc-300">{{ migrationReport()!.batchesCommitted }}</strong></span>
+              <span>Duración: <strong class="text-zinc-300">{{ migrationReport()!.durationMs }}ms</strong></span>
+            </div>
+            <!-- Errors -->
+            @if (migrationReport()!.errors.length > 0) {
+              <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+                <p class="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-2">Errores ({{ migrationReport()!.errors.length }})</p>
+                @for (err of migrationReport()!.errors; track err) {
+                  <p class="text-[11px] text-red-300/80 font-mono">{{ err }}</p>
+                }
+              </div>
+            }
+            <!-- Success state -->
+            @if (migrationReport()!.errors.length === 0) {
+              <div class="flex items-center gap-2 text-[11px] text-[#CCFF00]/80">
+                <mat-icon class="text-[#CCFF00] text-base">check_circle</mat-icon>
+                Migración completada sin errores.
+              </div>
+            }
+          </div>
+        }
       </div>
-    </div>
+    }
 
   </div>
 </div>

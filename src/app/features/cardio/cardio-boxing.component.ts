@@ -4,7 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { BoxingAiService } from '../../core/services/ai/boxing-ai.service';
-import { BoxingRoutine } from '../../models/ai-requests.model';
+import { BoxingRoutine } from '../../core/models/ai-requests.model';
 import { CardioSessionService } from '../../core/services/cardio-session.service';
 
 @Component({
@@ -14,7 +14,7 @@ import { CardioSessionService } from '../../core/services/cardio-session.service
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-[#0B0E14] text-white pb-20 font-sans">
-
+    
       <!-- Header -->
       <div class="sticky top-0 z-50 bg-[#0B0E14]/90 backdrop-blur-md border-b border-zinc-800 px-4 py-4 flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -30,15 +30,15 @@ import { CardioSessionService } from '../../core/services/cardio-session.service
           <mat-icon class="text-blue-400 text-sm">sports_mma</mat-icon>
         </div>
       </div>
-
+    
       <div class="max-w-2xl mx-auto p-5 space-y-6">
-
+    
         <!-- Config Form -->
         <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 space-y-4">
           <h2 class="text-sm font-bold text-zinc-300 uppercase tracking-widest flex items-center gap-2">
             <mat-icon class="text-blue-400 text-sm">tune</mat-icon> Configuración
           </h2>
-
+    
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">Nivel</label>
@@ -58,114 +58,128 @@ import { CardioSessionService } from '../../core/services/cardio-session.service
               </select>
             </div>
           </div>
-
+    
           <button (click)="generate()" [disabled]="isLoading()"
             class="w-full py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all
                    bg-blue-500 text-white hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed
                    shadow-[0_0_15px_rgba(59,130,246,0.3)] flex items-center justify-center gap-2">
-            <mat-icon *ngIf="!isLoading()" class="text-sm">sports_mma</mat-icon>
-            <mat-icon *ngIf="isLoading()" class="text-sm animate-spin">refresh</mat-icon>
+            @if (!isLoading()) {
+              <mat-icon class="text-sm">sports_mma</mat-icon>
+            }
+            @if (isLoading()) {
+              <mat-icon class="text-sm animate-spin">refresh</mat-icon>
+            }
             {{ isLoading() ? 'Generando rutina...' : 'Generar Sesión de Boxeo' }}
           </button>
         </div>
-
+    
         <!-- Error -->
-        <div *ngIf="error()" class="bg-red-900/20 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm flex items-center gap-2">
-          <mat-icon class="text-sm">error_outline</mat-icon> {{ error() }}
-        </div>
-
+        @if (error()) {
+          <div class="bg-red-900/20 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm flex items-center gap-2">
+            <mat-icon class="text-sm">error_outline</mat-icon> {{ error() }}
+          </div>
+        }
+    
         <!-- Results -->
-        <div *ngIf="routine() as r" class="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-
-          <!-- Title Card -->
-          <div class="bg-gradient-to-r from-blue-900/40 to-[#151921] border border-blue-500/30 rounded-2xl p-5 flex justify-between items-center">
-            <div>
-              <h2 class="text-lg font-black text-white">{{ r.title }}</h2>
-              <p class="text-xs text-blue-400 flex items-center gap-1 mt-1">
-                <mat-icon class="text-xs w-3 h-3">schedule</mat-icon> {{ r.totalDuration }} minutos totales
-              </p>
+        @if (routine(); as r) {
+          <div class="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <!-- Title Card -->
+            <div class="bg-gradient-to-r from-blue-900/40 to-[#151921] border border-blue-500/30 rounded-2xl p-5 flex justify-between items-center">
+              <div>
+                <h2 class="text-lg font-black text-white">{{ r.title }}</h2>
+                <p class="text-xs text-blue-400 flex items-center gap-1 mt-1">
+                  <mat-icon class="text-xs w-3 h-3">schedule</mat-icon> {{ r.totalDuration }} minutos totales
+                </p>
+              </div>
+              <mat-icon class="text-blue-400 text-4xl opacity-50">sports_mma</mat-icon>
             </div>
-            <mat-icon class="text-blue-400 text-4xl opacity-50">sports_mma</mat-icon>
-          </div>
-
-          <!-- Warmup -->
-          <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-5">
-            <h3 class="text-sm font-bold text-[#CCFF00] uppercase tracking-widest mb-3 flex items-center gap-2">
-              <mat-icon class="text-sm">local_fire_department</mat-icon> Calentamiento
-            </h3>
-            <ul class="space-y-2">
-              <li *ngFor="let item of r.warmup" class="flex items-start gap-2 text-sm text-zinc-300">
-                <mat-icon class="text-zinc-600 text-xs mt-1 flex-shrink-0">chevron_right</mat-icon>
-                {{ item }}
-              </li>
-            </ul>
-          </div>
-
-          <!-- Rounds -->
-          <div *ngFor="let round of r.rounds; let i = index"
-               class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition relative overflow-hidden">
-            <!-- Focus Badge -->
-            <div class="absolute top-0 right-0 m-3">
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+            <!-- Warmup -->
+            <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-5">
+              <h3 class="text-sm font-bold text-[#CCFF00] uppercase tracking-widest mb-3 flex items-center gap-2">
+                <mat-icon class="text-sm">local_fire_department</mat-icon> Calentamiento
+              </h3>
+              <ul class="space-y-2">
+                @for (item of r.warmup; track item) {
+                  <li class="flex items-start gap-2 text-sm text-zinc-300">
+                    <mat-icon class="text-zinc-600 text-xs mt-1 flex-shrink-0">chevron_right</mat-icon>
+                    {{ item }}
+                  </li>
+                }
+              </ul>
+            </div>
+            <!-- Rounds -->
+            @for (round of r.rounds; track round; let i = $index) {
+              <div
+                class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition relative overflow-hidden">
+                <!-- Focus Badge -->
+                <div class="absolute top-0 right-0 m-3">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
                     [ngClass]="{
                       'bg-blue-500/20 text-blue-400 border border-blue-500/30': round.focus === 'Cardio',
                       'bg-[#CCFF00]/20 text-[#CCFF00] border border-[#CCFF00]/30': round.focus === 'Technique',
                       'bg-red-500/20 text-red-400 border border-red-500/30': round.focus === 'Power'
                     }">
-                {{ round.focus }}
-              </span>
-            </div>
-            <div class="flex items-center gap-3 mb-3">
-              <div class="h-8 w-8 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-sm font-black text-blue-400">
-                {{ round.roundNumber }}
+                    {{ round.focus }}
+                  </span>
+                </div>
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="h-8 w-8 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-sm font-black text-blue-400">
+                    {{ round.roundNumber }}
+                  </div>
+                  <div>
+                    <span class="font-bold text-white text-sm">Round {{ round.roundNumber }}</span>
+                    <span class="text-xs text-zinc-500 ml-2">{{ round.duration }}</span>
+                  </div>
+                </div>
+                <p class="text-sm text-zinc-300 leading-relaxed pl-11">{{ round.instructions }}</p>
               </div>
-              <div>
-                <span class="font-bold text-white text-sm">Round {{ round.roundNumber }}</span>
-                <span class="text-xs text-zinc-500 ml-2">{{ round.duration }}</span>
-              </div>
+            }
+            <!-- Cooldown -->
+            <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 mb-6">
+              <h3 class="text-sm font-bold text-purple-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <mat-icon class="text-sm">self_improvement</mat-icon> Cooldown
+              </h3>
+              <ul class="space-y-2">
+                @for (item of r.cooldown; track item) {
+                  <li class="flex items-start gap-2 text-sm text-zinc-300">
+                    <mat-icon class="text-zinc-600 text-xs mt-1 flex-shrink-0">chevron_right</mat-icon>
+                    {{ item }}
+                  </li>
+                }
+              </ul>
             </div>
-            <p class="text-sm text-zinc-300 leading-relaxed pl-11">{{ round.instructions }}</p>
-          </div>
-
-          <!-- Cooldown -->
-          <div class="bg-[#151921] border border-zinc-800 rounded-2xl p-5 mb-6">
-            <h3 class="text-sm font-bold text-purple-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-              <mat-icon class="text-sm">self_improvement</mat-icon> Cooldown
-            </h3>
-            <ul class="space-y-2">
-              <li *ngFor="let item of r.cooldown" class="flex items-start gap-2 text-sm text-zinc-300">
-                <mat-icon class="text-zinc-600 text-xs mt-1 flex-shrink-0">chevron_right</mat-icon>
-                {{ item }}
-              </li>
-            </ul>
-          </div>
-
-          <!-- Save Button -->
-          <button (click)="saveSession()" [disabled]="isSaving()"
+            <!-- Save Button -->
+            <button (click)="saveSession()" [disabled]="isSaving()"
             class="w-full py-4 rounded-xl font-black text-lg uppercase tracking-wider transition-all
                    bg-[#CCFF00] text-black hover:bg-[#bce600] disabled:opacity-50 disabled:cursor-not-allowed
                    shadow-[0_0_20px_rgba(204,255,0,0.3)] flex items-center justify-center gap-2">
-            <mat-icon *ngIf="isSaving()" class="text-sm animate-spin">refresh</mat-icon>
-            <mat-icon *ngIf="!isSaving()" class="text-lg">done_all</mat-icon>
-            {{ isSaving() ? 'Guardando...' : 'Finalizar Sesión' }}
-          </button>
-
-        </div>
-
+              @if (isSaving()) {
+                <mat-icon class="text-sm animate-spin">refresh</mat-icon>
+              }
+              @if (!isSaving()) {
+                <mat-icon class="text-lg">done_all</mat-icon>
+              }
+              {{ isSaving() ? 'Guardando...' : 'Finalizar Sesión' }}
+            </button>
+          </div>
+        }
+    
         <!-- Empty State -->
-        <div *ngIf="!routine() && !isLoading()" class="text-center py-16 text-zinc-600">
-          <mat-icon class="text-6xl mb-4 opacity-30">sports_mma</mat-icon>
-          <p class="text-sm">Configura tu sesión y genera tu rutina de boxeo y cardio personalizada.</p>
-        </div>
-
+        @if (!routine() && !isLoading()) {
+          <div class="text-center py-16 text-zinc-600">
+            <mat-icon class="text-6xl mb-4 opacity-30">sports_mma</mat-icon>
+            <p class="text-sm">Configura tu sesión y genera tu rutina de boxeo y cardio personalizada.</p>
+          </div>
+        }
+    
       </div>
     </div>
-  `
+    `
 })
 export class CardioBoxingComponent {
-  private aiCoach = inject(BoxingAiService);
-  private cardioService = inject(CardioSessionService);
-  private router = inject(Router);
+  private readonly aiCoach = inject(BoxingAiService);
+  private readonly cardioService = inject(CardioSessionService);
+  private readonly router = inject(Router);
 
   level = 'Intermedio';
   duration = '30';
@@ -182,6 +196,7 @@ export class CardioBoxingComponent {
       const result = await this.aiCoach.generateBoxingRoutine(this.level, +this.duration);
       this.routine.set(result);
     } catch (err: any) {
+      console.error('Error al generar la rutina de boxeo:', err);
       this.error.set('No se pudo generar la rutina. Verifica tu API Key de Gemini.');
     } finally {
       this.isLoading.set(false);
@@ -204,8 +219,10 @@ export class CardioBoxingComponent {
       });
       this.router.navigate(['/dashboard']);
     } catch (e: any) {
+      console.error('Error al guardar la sesión de boxeo:', e);
       this.error.set('No se pudo guardar la sesión en Firebase.');
       this.isSaving.set(false);
     }
   }
 }
+

@@ -1,0 +1,57 @@
+<!-- Main Exercise Header -->
+<div class="flex items-center gap-2 sm:gap-4 mb-4 relative">
+    <!-- Drag Handle -->
+    <div cdkDragHandle class="text-zinc-600 hover:text-white cursor-grab active:cursor-grabbing flex items-center justify-center -ml-1 sm:ml-0 p-1">
+        <mat-icon>drag_indicator</mat-icon>
+    </div>
+    <div class="h-14 w-14 rounded-lg bg-zinc-800 overflow-hidden border border-zinc-700 relative z-10 flex-shrink-0">
+        <img [src]="exerciseImgService.getExerciseThumbnail(ex().nombre)" alt="Exercise" class="w-full h-full object-cover">
+    </div>
+    <div class="flex-1 pr-10">
+        <div class="flex items-center gap-2">
+            <h3 class="text-xl font-bold text-white leading-tight">{{ ex().nombre }}</h3>
+            <button (click)="openDetail.emit(ex())" class="text-zinc-500 hover:text-[#CCFF00] min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors">
+                <mat-icon class="text-xl">info</mat-icon>
+            </button>
+        </div>
+        <p class="text-xs text-[#CCFF00] mt-1">{{ ex().series }} Sets Objetivo</p>
+    </div>
+    <button (click)="delete.emit(exIndex())" class="absolute right-0 top-0 text-zinc-600 hover:text-red-500 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors">
+        <mat-icon>delete</mat-icon>
+    </button>
+</div>
+
+<!-- Superset Connector & Secondary Exercise -->
+@if (ex().superSetEjercicio) {
+  <div class="flex flex-col relative pl-7 mb-4 -mt-2">
+    <!-- Visual Connector Line -->
+    <div class="absolute left-[27px] top-[-10px] bottom-6 w-0.5 bg-purple-500/50"></div>
+    
+    <div class="flex items-center gap-4 relative z-10 mt-2">
+        <div class="h-12 w-12 rounded-lg bg-zinc-800 overflow-hidden border-2 border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.3)] flex-shrink-0">
+            <img [src]="exerciseImgService.getExerciseThumbnail(ex().superSetEjercicio!.nombre)" alt="Superset Exercise" class="w-full h-full object-cover">
+        </div>
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="bg-purple-500/20 text-purple-400 text-[8px] font-black uppercase px-2 py-0.5 rounded tracking-widest border border-purple-500/30">Super</span>
+                <h3 class="text-base font-bold text-zinc-300 leading-tight truncate">{{ ex().superSetEjercicio!.nombre }}</h3>
+                <!-- INLINE GOAL EDITING -->
+                <div class="flex items-center gap-1 text-[10px] text-zinc-500 ml-1">
+                    <input type="number" [id]="'superset-series-' + exIndex()" [ngModel]="ex().superSetEjercicio!.series" (ngModelChange)="updateSupersetField.emit({exIndex: exIndex(), field: 'series', value: $event})" aria-label="Series de superserie" class="w-8 bg-transparent text-center border-b border-zinc-700 focus:border-purple-500 outline-none text-purple-400 font-bold transition-colors" />
+                    <span>x</span>
+                    <input type="number" [id]="'superset-reps-' + exIndex()" [ngModel]="ex().superSetEjercicio!.repeticiones" (ngModelChange)="updateSupersetField.emit({exIndex: exIndex(), field: 'repeticiones', value: $event})" aria-label="Repeticiones de superserie" class="w-8 bg-transparent text-center border-b border-zinc-700 focus:border-purple-500 outline-none text-purple-400 font-bold transition-colors" />
+                </div>
+                <button (click)="openDetail.emit(ex().superSetEjercicio!)" class="text-zinc-500 hover:text-purple-400 min-w-[36px] min-h-[36px] flex items-center justify-center transition-colors flex-shrink-0">
+                    <mat-icon class="text-lg">info</mat-icon>
+                </button>
+            </div>
+        </div>
+        <!-- Unlink Button -->
+        <button (click)="unlinkSuperset.emit({exIndex: exIndex(), event: $event})"
+                class="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-lg bg-purple-900/30 border border-purple-500/30 text-purple-400 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-400 transition-all text-[10px] font-bold uppercase tracking-wider">
+            <mat-icon class="text-sm">link_off</mat-icon>
+            <span class="hidden sm:inline">Quitar</span>
+        </button>
+    </div>
+  </div>
+}

@@ -1,5 +1,5 @@
 import { Component, input, output, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 export type UiButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger';
 export type UiButtonSize = 'sm' | 'md' | 'lg' | 'icon';
@@ -7,7 +7,7 @@ export type UiButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 @Component({
   selector: 'app-ui-button',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <button
       [class]="classes()"

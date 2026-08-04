@@ -1,12 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { BaseAiService } from './base-ai.service';
-import { BoxingRoutine } from '../../../models/ai-requests.model';
+import { BoxingRoutine } from '../../models/ai-requests.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BoxingAiService {
-  private baseAi = inject(BaseAiService);
+  private readonly baseAi = inject(BaseAiService);
 
   async generateBoxingRoutine(level: string, durationMinutes: number): Promise<BoxingRoutine> {
     if (!this.baseAi.isConfigured) {

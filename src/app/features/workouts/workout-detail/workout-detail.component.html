@@ -1,0 +1,298 @@
+<div class="min-h-screen bg-[#0B0E14] text-white font-sans animate-fadeIn pb-24 relative">
+
+  @if (workout(); as workout) {
+    <div class="relative z-10 mx-auto" [class.max-w-lg]="!isActive()" [class.max-w-xl]="isActive()">
+      <!-- OVERVIEW -->
+      @if (!isActive()) {
+        <div class="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-blue-900/10 to-[#0B0E14] pointer-events-none"></div>
+        <div class="px-4 py-4 flex items-center justify-between sticky top-0 bg-[#0B0E14]/80 backdrop-blur-md z-50 border-b border-white/5">
+          <button (click)="goBack()" class="flex items-center gap-1 text-[#CCFF00] font-medium text-sm hover:text-white transition-colors">
+            <mat-icon class="text-lg">arrow_back_ios</mat-icon>
+            {{ workout.fecha | date:'EEEE' | titlecase }}
+          </button>
+          <button class="text-white"><mat-icon>more_horiz</mat-icon></button>
+        </div>
+        <div class="px-5 pt-2 pb-6 space-y-8">
+          <button type="button" class="w-full text-left bg-[#151921] rounded-2xl p-5 border border-zinc-800 flex items-center gap-4 relative overflow-hidden group cursor-pointer hover:border-zinc-700 transition-all">
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-blue-500/10 blur-[50px] rounded-full pointer-events-none"></div>
+            <div class="h-10 w-10 rounded-lg bg-white/10 flex items-center justify-center text-white"><mat-icon>sports_gymnastics</mat-icon></div>
+            <div class="flex-1">
+              <h3 class="text-white font-bold text-sm">Entrenador</h3>
+              <p class="text-zinc-400 text-xs leading-relaxed mt-1">¡Eleva tu estado físico! Descubre los secretos detrás de la selección de ejercicios.</p>
+            </div>
+            <mat-icon class="text-zinc-600 group-hover:text-white transition-colors">chevron_right</mat-icon>
+          </button>
+          
+          <div>
+            <h3 class="text-lg font-bold text-white mb-4">Músculos a entrenar</h3>
+            <div class="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x">
+              @for (m of workout.musculos; track m) {
+                <div class="snap-start flex-shrink-0 bg-[#151921] rounded-xl p-3 w-[140px] border border-zinc-800 flex flex-col items-center gap-2 group hover:border-[#CCFF00]/50 transition-colors">
+                  <div class="h-16 w-16 bg-zinc-800 rounded-full flex items-center justify-center overflow-hidden border border-zinc-700 relative">
+                    <img [src]="'https://placehold.co/100x100/1c1c1c/CCFF00?text=' + m.substring(0,2).toUpperCase()" class="opacity-80 group-hover:opacity-100 transition-opacity" [alt]="m">
+                  </div>
+                  <div class="text-center w-full">
+                    <p class="text-white font-bold text-sm truncate w-full">{{ m }}</p>
+                    <span class="inline-block mt-1 px-2 py-0.5 bg-[#CCFF00] text-black text-[10px] font-bold rounded-full">
+                      {{ musclePercentages()[m] || 0 }}%
+                    </span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+    
+          <div class="space-y-4">
+              <div class="flex items-center justify-between border-b border-zinc-800 pb-2 mb-4">
+                  <h3 class="text-xl font-bold text-white">{{ workout.ejercicios.length }} ejercicios</h3>
+              </div>
+              @for (ex of workout.ejercicios; track ex.nombre; let i = $index) {
+                <button type="button" class="w-full text-left bg-[#151921] p-3 rounded-2xl flex items-center gap-4 relative group hover:bg-[#1a1f29] transition-colors cursor-pointer border border-transparent hover:border-zinc-800"
+                     (click)="toggleExpand(i)">
+                    <div class="h-20 w-20 flex-shrink-0 rounded-xl bg-zinc-800 overflow-hidden relative border border-zinc-700">
+                        <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" alt="Exercise" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                    </div>
+                    <div class="flex-1 min-w-0 pr-8">
+                         <h4 class="text-white font-bold text-base mb-1 truncate leading-tight">{{ ex.nombre }}</h4>
+                         <p class="text-zinc-400 text-xs font-medium">{{ ex.series }} series - {{ ex.repeticiones }} reps @if (ex.pesokg) { <span>- {{ ex.pesokg }} kg</span> }</p>
+                    </div>
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1"><mat-icon class="text-zinc-600">favorite_border</mat-icon></div>
+                </button>
+              }
+          </div>
+    
+          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-sm px-6 z-40">
+              <button (click)="iniciarRutina()" 
+                      class="w-full py-4 bg-[#CCFF00] hover:bg-[#bce600] text-black font-extrabold text-sm uppercase tracking-widest rounded-2xl shadow-[0_0_20px_rgba(204,255,0,0.4)] transition-all hover:scale-[1.02] flex items-center justify-center gap-2">
+                  <mat-icon>play_arrow</mat-icon> COMENZAR RUTINA
+              </button>
+          </div>
+        </div>
+      }
+
+      <!-- ACTIVE MODE -->
+      @if (isActive()) {
+        <app-rest-timer></app-rest-timer>
+        
+        <app-workout-header
+          [sessionTimeFormatted]="sessionService.sessionTimeFormatted()"
+          [timerProgress]="sessionService.timerProgress()"
+          (cancel)="cancelActiveSession()"
+          (save)="finalizarRutina()">
+        </app-workout-header>
+
+        <div class="p-4 space-y-6 pb-32 no-scrollbar" cdkDropList (cdkDropListDropped)="drop($event)">
+            @for (ex of workout.ejercicios; track ex.nombre; let i = $index) {
+              <div cdkDrag class="bg-[#151921]/50 p-2 sm:p-4 rounded-2xl border border-transparent hover:border-zinc-800 transition-all">
+                
+                <app-exercise-card
+                  [ex]="ex"
+                  [exIndex]="i"
+                  (openDetail)="openExerciseDetail($event)"
+                  (delete)="deleteExercise($event)"
+                  (updateSupersetField)="updateSupersetField($event)"
+                  (unlinkSuperset)="unlinkSuperset($event)">
+                </app-exercise-card>
+
+                <app-set-tracker
+                  [ex]="ex"
+                  [exIndex]="i"
+                  [sets]="sessionService.getSetsForExercise(i)"
+                  (toggleType)="sessionService.toggleSetType($event.exIndex, $event.setIndex)"
+                  (toggleSuperset)="sessionService.toggleSupersetForSet($event.exIndex, $event.setIndex)"
+                  (toggleComplete)="sessionService.toggleSetComplete($event.exIndex, $event.setIndex, sessionService.restTimer.quickStart.bind(sessionService.restTimer))"
+                  (deleteSet)="sessionService.deleteSet($event.exIndex, $event.setIndex)"
+                  (updateWeight)="sessionService.updateSetWeight($event.exIndex, $event.setIndex, $event.weight)"
+                  (updateReps)="sessionService.updateSetReps($event.exIndex, $event.setIndex, $event.reps)"
+                  (clearSuperset)="sessionService.clearSupersetData($event.exIndex, $event.setIndex)"
+                  (updateDropSet)="sessionService.updateDropSet($event.exIndex, $event.setIndex, $event.dropIndex, $event.weight, $event.reps)"
+                  (deleteDropSet)="sessionService.deleteDropSet($event.exIndex, $event.setIndex, $event.dropIndex)"
+                  (clearDropSetSuperset)="sessionService.clearDropSetSupersetData($event.exIndex, $event.setIndex, $event.dropIndex)"
+                  (addSet)="sessionService.addSet($event)"
+                  (addDropSet)="sessionService.addDropSet($event)"
+                  (openSuperserieModal)="openSuperserieModal($event)">
+                </app-set-tracker>
+
+              </div>
+            }
+            
+            <button (click)="openAddExerciseModal()" class="w-full mt-6 py-4 border-2 border-dashed border-zinc-700 hover:border-[#CCFF00] hover:bg-zinc-800/50 rounded-2xl flex items-center justify-center gap-3 text-zinc-400 hover:text-[#CCFF00] transition-all font-bold text-sm tracking-widest uppercase outline-none focus:ring-2 focus:ring-[#CCFF00]">
+              <mat-icon>add_circle_outline</mat-icon> Añadir Ejercicio Manual
+            </button>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="flex flex-col items-center justify-center min-h-screen">
+      <div class="h-10 w-10 border-4 border-zinc-800 border-t-[#CCFF00] rounded-full animate-spin mb-4"></div>
+      <p class="text-zinc-500 text-xs tracking-widest uppercase">Cargando Rutina...</p>
+    </div>
+  }
+
+  <!-- MODALS -->
+
+  <!-- Fatigue Warning Modal -->
+  @if (showFatigueWarning()) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
+      <div class="bg-[#151921] border border-orange-500/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95">
+        <div class="h-16 w-16 bg-orange-500/10 rounded-full flex items-center justify-center mb-4">
+          <mat-icon class="text-orange-500 text-3xl">warning_amber</mat-icon>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">Fatiga Detectada</h3>
+        <p class="text-zinc-400 text-sm mb-6">
+          Los músculos objetivos (<span class="text-orange-400 font-bold">{{ fatiguedMusclesDesc() }}</span>) tienen una recuperación estimada del <span class="text-orange-400 font-bold">{{ fatiguedAverage() }}%</span>.
+          Entrenar con alta fatiga puede ser contraproducente.
+        </p>
+        <div class="w-full flex gap-3">
+          <button (click)="cancelFatigueWarning()" class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl text-sm transition-colors">Cancelar</button>
+          <button (click)="confirmStartRoutine()" class="flex-1 py-3 bg-orange-500/20 hover:bg-orange-500/30 text-orange-500 border border-orange-500/50 font-bold rounded-xl text-sm transition-colors">Forzar Inicio</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Exit / Save Modal -->
+  @if (showExitModal()) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
+      <div class="bg-[#151921] border border-zinc-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl flex flex-col items-center text-center">
+        <mat-icon class="text-[#CCFF00] text-4xl mb-4">
+          {{ pendingExitAction() === 'save' ? 'save' : (pendingExitAction() === 'cancel' ? 'cancel' : 'exit_to_app') }}
+        </mat-icon>
+        <h3 class="text-lg font-bold text-white mb-2">
+          {{ pendingExitAction() === 'save' ? '¿Finalizar Rutina?' : (pendingExitAction() === 'cancel' ? '¿Cancelar Sesión?' : '¿Salir?') }}
+        </h3>
+        <p class="text-zinc-400 text-sm mb-6">
+          {{ pendingExitAction() === 'save' ? 'Se guardarán tus progresos en el historial y se ajustará el volumen.' : (pendingExitAction() === 'cancel' ? 'Se perderá todo el progreso de esta sesión.' : 'La rutina quedará en estado activo.') }}
+        </p>
+        <div class="w-full flex gap-3">
+          <button (click)="cancelExitModal()" class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl text-sm transition-colors">No, volver</button>
+          <button (click)="confirmExitModal()" class="flex-1 py-3 bg-[#CCFF00]/20 hover:bg-[#CCFF00]/30 text-[#CCFF00] border border-[#CCFF00]/50 font-bold rounded-xl text-sm transition-colors">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Exercise Detail Modal -->
+  @if (showExerciseModal()) {
+    <div class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm"
+      (click)="closeExerciseModal()"
+      (keydown.escape)="closeExerciseModal()">
+      <div class="bg-[#151921] w-full max-w-md sm:rounded-2xl rounded-t-3xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh]"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()">
+        @if (selectedExercise(); as ex) {
+          <div class="relative w-full aspect-video bg-black flex-shrink-0">
+            @if (getVideoEmbedUrl(ex.videoUrl); as videoUrl) {
+              <iframe
+                [src]="videoUrl | safeYoutube"
+                [title]="ex.nombre || 'Video de ejercicio'"
+                class="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+              </iframe>
+            } @else {
+              <div class="w-full h-full flex flex-col items-center justify-center text-zinc-600 bg-zinc-900 border-b border-zinc-800">
+                <mat-icon class="text-4xl mb-2 opacity-50">videocam_off</mat-icon>
+                <p class="text-xs font-bold uppercase tracking-widest">Video no disponible</p>
+              </div>
+            }
+          </div>
+          <div class="flex-1 overflow-y-auto p-5 custom-scroll space-y-6">
+            <div>
+              <div class="flex items-start justify-between gap-4 mb-2">
+                <h2 class="text-2xl font-black text-white leading-tight uppercase tracking-wide">{{ ex.nombre }}</h2>
+              </div>
+              <div class="flex flex-wrap gap-2 mt-3">
+                <span class="px-3 py-1 bg-zinc-800 border border-zinc-700 text-zinc-300 text-[10px] font-bold uppercase tracking-wider rounded-lg">{{ ex.tipo || 'Aislado' }}</span>
+                <span class="px-3 py-1 bg-[#CCFF00]/10 border border-[#CCFF00]/20 text-[#CCFF00] text-[10px] font-bold uppercase tracking-wider rounded-lg">{{ ex.dificultad || 'Intermedio' }}</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex items-center gap-3 bg-zinc-900 rounded-xl p-3 border border-zinc-800/50">
+                <mat-icon class="text-[#CCFF00]">fitness_center</mat-icon>
+                <div><p class="text-[10px] text-zinc-500 uppercase tracking-widest">Equipamiento</p><p class="text-white font-bold text-sm leading-tight">{{ ex.equipmentRequired?.join(', ') || 'N/A' }}</p></div>
+              </div>
+              @if (ex.descanso) {
+                <div class="flex items-center gap-3 bg-zinc-900 rounded-xl p-3 border border-zinc-800/50">
+                  <mat-icon class="text-zinc-400">timer</mat-icon>
+                  <div><p class="text-[10px] text-zinc-500 uppercase tracking-widest">Descanso</p><p class="text-white font-bold text-sm leading-tight">{{ ex.descanso }}</p></div>
+                </div>
+              }
+            </div>
+            @if (ex.notas) {
+              <div class="bg-[#CCFF00]/5 border border-[#CCFF00]/20 rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-2"><mat-icon class="text-[#CCFF00] text-sm">tips_and_updates</mat-icon><span class="text-xs font-bold text-[#CCFF00] uppercase tracking-wider">Técnica del Coach</span></div>
+                <p class="text-zinc-300 text-sm leading-relaxed">{{ ex.notas }}</p>
+              </div>
+            }
+            <div class="flex items-center gap-4 bg-zinc-900 rounded-xl p-4 border border-zinc-800/50">
+              <img [src]="exerciseImgService.getMuscleImage(ex.grupoMuscular)" [alt]="ex.grupoMuscular" class="h-16 w-16 object-contain opacity-80" (error)="$any($event.target).style.display='none'">
+              <div><p class="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Músculo objetivo</p><p class="text-white font-bold">{{ ex.grupoMuscular }}</p></div>
+            </div>
+          </div>
+          <div class="flex-none p-4 border-t border-zinc-800 bg-[#0D1017]">
+            <button (click)="closeExerciseModal()" class="w-full py-3.5 rounded-xl bg-zinc-800 text-white hover:bg-zinc-700 font-bold text-sm uppercase tracking-wider transition border border-zinc-700 active:scale-95">Cerrar</button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Catalog Modal -->
+  @if (showCatalogModal()) {
+    <div class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm"
+      (click)="closeCatalogModal()"
+      (keydown.escape)="closeCatalogModal()">
+      <div class="bg-[#151921] border border-purple-500/30 rounded-t-3xl sm:rounded-2xl w-full max-w-lg shadow-2xl flex flex-col" style="max-height: 85dvh" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+        <div class="p-5 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50 rounded-t-2xl">
+          <div>
+            <h3 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+              <mat-icon [ngClass]="catalogModalMode() === 'superset' ? 'text-purple-500' : 'text-[#CCFF00]'">{{ catalogModalMode() === 'superset' ? 'link' : 'add_circle' }}</mat-icon>
+              {{ catalogModalMode() === 'superset' ? 'Vincular Superserie' : 'Añadir Ejercicio' }}
+            </h3>
+            <p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Busca o filtra por músculo</p>
+          </div>
+          <button (click)="closeCatalogModal()" class="text-zinc-500 hover:text-white transition-colors"><mat-icon>close</mat-icon></button>
+        </div>
+        <div class="p-4 border-b border-zinc-800 relative bg-[#0B0E14] flex-none">
+          <mat-icon class="absolute left-7 top-1/2 -translate-y-1/2 text-zinc-500 text-lg">search</mat-icon>
+          <input id="superset-search-input" aria-label="Buscar ejercicio específico" type="text" [(ngModel)]="supersetSearchQuery" class="w-full bg-[#151921] border border-zinc-700 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-purple-500 outline-none" placeholder="Buscar ejercicio específico...">
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 custom-scroll">
+          @if (!supersetSelectedMuscle() && !supersetSearchQuery()) {
+            <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 no-scrollbar">
+              @for (m of supersetMuscleGroups(); track m) {
+                <button (click)="supersetSelectedMuscle.set(m)" class="bg-zinc-900 border border-zinc-800 hover:border-purple-500 hover:bg-purple-500/10 rounded-xl p-3 flex flex-col items-center gap-2 group">
+                  <div class="h-12 w-12 rounded-lg bg-[#151921] p-1"><img [src]="exerciseImgService.getMuscleImage(m)" class="w-full h-full object-contain opacity-80 group-hover:opacity-100" [alt]="m"></div>
+                  <span class="text-[10px] font-bold text-zinc-400 group-hover:text-purple-400 uppercase tracking-wider text-center line-clamp-1">{{ m }}</span>
+                </button>
+              }
+            </div>
+          }
+          @if (supersetSelectedMuscle() || supersetSearchQuery()) {
+            <div class="space-y-2">
+              @if (supersetSelectedMuscle()) {
+                <div class="flex items-center gap-2 mb-4 bg-purple-500/10 p-2 rounded-lg border border-purple-500/20">
+                  <button (click)="supersetSelectedMuscle.set(null)" class="text-purple-400 hover:text-purple-300 p-1 bg-[#151921] rounded-md border border-purple-500/30"><mat-icon class="text-sm">arrow_back</mat-icon></button>
+                  <span class="text-xs font-bold text-purple-400 uppercase tracking-widest">{{ supersetSelectedMuscle() }}</span>
+                </div>
+              }
+              @for (ex of filteredSupersetExercises(); track ex) {
+                <button (click)="selectExerciseFromCatalog(ex)" class="w-full bg-[#151921] border border-zinc-800 hover:border-[#CCFF00]/50 rounded-xl p-3 flex items-center gap-4 text-left group" [ngClass]="{'opacity-50': !hasRequiredEquipment(ex)}">
+                  <div class="h-10 w-10 rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden flex-shrink-0">
+                    <img [src]="ex.imageUrl || exerciseImgService.getExerciseThumbnail(ex.nombre)" class="w-full h-full object-cover opacity-70 group-hover:opacity-100" [alt]="ex.nombre">
+                  </div>
+                  <div><p class="text-sm font-bold text-zinc-300 group-hover:text-white">{{ ex.nombre }}</p><p class="text-[10px] text-zinc-600 uppercase tracking-widest">{{ ex.grupoMuscular }}</p></div>
+                  <mat-icon class="ml-auto text-zinc-600 group-hover:text-[#CCFF00]">
+                    {{ catalogModalMode() === 'superset' ? 'add_link' : 'add' }}
+                  </mat-icon>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

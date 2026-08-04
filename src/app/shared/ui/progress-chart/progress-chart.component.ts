@@ -1,10 +1,10 @@
 import { Component, input, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-progress-chart',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <div class="w-full h-48 relative bg-black/20 rounded-lg p-4 border border-white/5">
       <!-- Title -->

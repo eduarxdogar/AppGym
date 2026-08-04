@@ -5,7 +5,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, Chart, registerables } from 'chart.js';
 import { TrainingHistoryService } from '../../../core/services/training-history.service';
-import { StatsData } from '../../../models/stats-data.model';
+import { StatsData } from '../../../core/models/stats-data.model';
+
+export type TimeRange = 'week' | 'month' | 'year' | 'total';
 
 @Component({
   selector: 'app-trend-detail',
@@ -14,15 +16,15 @@ import { StatsData } from '../../../models/stats-data.model';
   templateUrl: './trend-detail.component.html'
 })
 export class TrendDetailComponent implements OnInit {
-  private route = inject(ActivatedRoute);
-  private historyService = inject(TrainingHistoryService);
-  private cd = inject(ChangeDetectorRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly historyService = inject(TrainingHistoryService);
+  private readonly cd = inject(ChangeDetectorRef);
 
   // Estado
   type = signal<'volume' | 'workouts' | 'sets' | 'calories'>('volume');
-  range = signal<'week' | 'month' | 'year' | 'total'>('month');
+  range = signal<TimeRange>('month');
 
-  ranges: ('week' | 'month' | 'year' | 'total')[] = ['week', 'month', 'year', 'total'];
+  ranges: TimeRange[] = ['week', 'month', 'year', 'total'];
   rangeLabels: Record<string, string> = {
     'week': 'Semana',
     'month': 'Mes',

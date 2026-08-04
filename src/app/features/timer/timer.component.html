@@ -1,8 +1,8 @@
 <div class="flex flex-col items-center">
-  
+
   <!-- Circular Timer Container -->
   <div class="relative w-48 h-48">
-    
+
     <!-- SVG Ring -->
     <svg class="w-full h-full transform -rotate-90">
       <!-- Background Circle -->
@@ -10,11 +10,11 @@
         cx="50%"
         cy="50%"
         [attr.r]="radius"
-        stroke="#27272a" 
+        stroke="#27272a"
         stroke-width="8"
         fill="transparent"
       ></circle>
-      
+
       <!-- Progress Circle -->
       <circle
         cx="50%"
@@ -41,49 +41,50 @@
 
   <!-- Minimal Controls -->
   <div class="flex flex-col items-center mt-4 gap-3">
-    
+
     <!-- Main Controls -->
-    <div class="flex items-center gap-6" *ngIf="!isFinished; else finishedControls">
-        <button 
-        (click)="start()" 
-        [disabled]="isRunning"
-        class="p-4 rounded-full bg-zinc-800 text-primary hover:bg-zinc-700 hover:scale-110 transition-all disabled:opacity-50 disabled:hover:scale-100 shadow-lg">
-        <mat-icon class="scale-125">play_arrow</mat-icon>
+    @if (!isFinished) {
+      <div class="flex items-center gap-6">
+        <button
+          (click)="start()"
+          [disabled]="isRunning"
+          class="p-4 rounded-full bg-zinc-800 text-primary hover:bg-zinc-700 hover:scale-110 transition-all disabled:opacity-50 disabled:hover:scale-100 shadow-lg">
+          <mat-icon class="scale-125">play_arrow</mat-icon>
         </button>
-
-        <button 
-        (click)="pause()" 
-        [disabled]="!isRunning"
-        class="p-4 rounded-full bg-zinc-800 text-yellow-500 hover:bg-zinc-700 hover:scale-110 transition-all disabled:opacity-50 disabled:hover:scale-100 shadow-lg">
-        <mat-icon class="scale-125">pause</mat-icon>
+        <button
+          (click)="pause()"
+          [disabled]="!isRunning"
+          class="p-4 rounded-full bg-zinc-800 text-yellow-500 hover:bg-zinc-700 hover:scale-110 transition-all disabled:opacity-50 disabled:hover:scale-100 shadow-lg">
+          <mat-icon class="scale-125">pause</mat-icon>
         </button>
-
-        <button 
-        (click)="reset()" 
-        class="p-4 rounded-full bg-zinc-800 text-red-500 hover:bg-zinc-700 hover:scale-110 transition-all shadow-lg">
-        <mat-icon class="scale-125">refresh</mat-icon>
+        <button
+          (click)="reset()"
+          class="p-4 rounded-full bg-zinc-800 text-red-500 hover:bg-zinc-700 hover:scale-110 transition-all shadow-lg">
+          <mat-icon class="scale-125">refresh</mat-icon>
         </button>
-    </div>
-
-    <!-- Finished Controls -->
-    <ng-template #finishedControls>
-        <button 
-        (click)="reset()" 
+      </div>
+    } @else {
+      <button
+        (click)="reset()"
         class="px-8 py-3 rounded-full bg-primary text-black font-bold hover:scale-105 transition-all shadow-[0_0_20px_rgba(204,252,126,0.3)] animate-pulse">
         REINICIAR SERIE
-        </button>
-    </ng-template>
+      </button>
+    }
+
+    <!-- Finished Controls -->
 
 
     <!-- Adjustments (Quick Add/Sub) -->
-    <div class="flex gap-4 mt-2" *ngIf="!isFinished">
-         <button (click)="adjustTime(-10)" class="text-xs px-3 py-1 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors">
-            - 10s
-         </button>
-         <button (click)="adjustTime(30)" class="text-xs px-3 py-1 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors">
-            + 30s
-         </button>
-    </div>
+    @if (!isFinished) {
+      <div class="flex gap-4 mt-2">
+        <button (click)="adjustTime(-10)" class="text-xs px-3 py-1 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors">
+          - 10s
+        </button>
+        <button (click)="adjustTime(30)" class="text-xs px-3 py-1 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors">
+          + 30s
+        </button>
+      </div>
+    }
 
   </div>
 </div>

@@ -1,16 +1,31 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { WorkoutSession } from '../models/workout-history.model';
+import { WorkoutSession, WorkoutExercise } from '../models/workout-history.model';
 import { StorageService } from './storage.service';
+import { LoggerService } from './logger.service';
+
+export interface HistoryStats {
+  total: number;
+  max: number;
+  avg: number;
+  count: number;
+  chartData: { label: string; value: number; date: Date }[];
+}
+
+export interface MuscleDistribution {
+  label: string;
+  value: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class TrainingHistoryService {
-  private storageService = inject(StorageService);
+  private readonly storageService = inject(StorageService);
+  private readonly logger = inject(LoggerService);
 
   // Recupera el historial almacenado en Firestore
   getHistory(): Observable<WorkoutSession[]> {
-    return this.storageService.getHistory(); // Returns any[], cast handled by consumer or service
+    return this.storageService.getHistory();
   }
 
   // Agrega una sesión finalizada al historial
@@ -18,25 +33,25 @@ export class TrainingHistoryService {
     // Ensure calories are calculated before saving
     if (!session.calories) {
         let durationMin = 0;
-        if(session.duration) {
+        if (session.duration) {
             durationMin = this.parseDurationToMinutes(session.duration);
         } else if (session.endTime && session.startTime) {
              const diff = new Date(session.endTime).getTime() - new Date(session.startTime).getTime();
              durationMin = diff / 1000 / 60;
         }
         const calculated = Math.round((durationMin * 5) + ((session.totalVolume || 0) * 0.0005));
-        console.log('Calculated Calories in Service:', calculated, 'DurationMin:', durationMin, 'Volume:', session.totalVolume);
+        this.logger.log('Calculated Calories in Service:', calculated, 'DurationMin:', durationMin, 'Volume:', session.totalVolume);
         session.calories = calculated;
     } else {
-        console.log('Calories already present:', session.calories);
+        this.logger.log('Calories already present:', session.calories);
     }
     await this.storageService.saveHistory(session);
   }
 
   private parseDurationToMinutes(durationStr: string): number {
-      if(!durationStr) return 0;
+      if (!durationStr) return 0;
       const parts = durationStr.split(':').map(Number);
-      if (parts.some(isNaN)) return 0;
+      if (parts.some(Number.isNaN)) return 0;
 
       if (parts.length === 3) {
           // HH:MM:SS
@@ -50,7 +65,7 @@ export class TrainingHistoryService {
 
   // --- STATS LOGIC ---
 
-  getStats(type: 'volume' | 'workouts' | 'sets' | 'calories', range: 'week' | 'month' | 'year' | 'total', muscleGroup: string = 'Todos'): Observable<any> { // Typing 'any' briefly to avoid circular dep issues with new model file in same step, will import next
+  getStats(type: 'volume' | 'workouts' | 'sets' | 'calories', range: 'week' | 'month' | 'year' | 'total', muscleGroup: string = 'Todos'): Observable<HistoryStats> {
       return this.storageService.getHistory().pipe(
           map(history => {
               const now = new Date();
@@ -63,7 +78,7 @@ export class TrainingHistoryService {
               // Filter by date and muscle group
               const filtered = history.filter(h => {
                   const date = new Date(h.endTime || h.startTime || h.fecha || '');
-                  let matchesDate = date >= startDate;
+                  const matchesDate = date >= startDate;
                   
                   let matchesMuscle = true;
                   if (muscleGroup !== 'Todos') {
@@ -71,7 +86,7 @@ export class TrainingHistoryService {
                      const matchesArr = muscles.some((m: string) => m.toLowerCase().includes(muscleGroup.toLowerCase()));
                      let matchesEx = false;
                      if (h.exercises) {
-                         matchesEx = h.exercises.some((ex: any) => ex.grupoMuscular && ex.grupoMuscular.toLowerCase().includes(muscleGroup.toLowerCase()));
+                         matchesEx = h.exercises.some((ex: WorkoutExercise) => ex.grupoMuscular?.toLowerCase().includes(muscleGroup.toLowerCase()));
                      }
                      matchesMuscle = matchesArr || matchesEx;
                   }
@@ -82,58 +97,17 @@ export class TrainingHistoryService {
               // Process based on type
               let total = 0;
               let max = 0;
-              let count = filtered.length;
-              let values: number[] = [];
-              let chartData: { label: string, value: number, date: Date }[] = [];
+              const count = filtered.length;
+              const chartData: { label: string, value: number, date: Date }[] = [];
 
               filtered.forEach(session => {
-                  let val = 0;
+                  const val = this.calculateSessionValue(session, type);
                   const date = new Date(session.endTime || session.startTime || '');
                   const label = range === 'week' ? this.formatDay(date) : this.formatDate(date);
 
-                  if (type === 'volume') {
-                      val = session.totalVolume || 0;
-                      // Fallback calculate if missing
-                      if (!val && session.exercises) {
-                           session.exercises.forEach((ex: any) => {
-                               ex.sets?.forEach((s: any) => {
-                                   if(s.completed) val += (s.weight * s.reps);
-                               });
-                           });
-                      }
-                  } else if (type === 'workouts') {
-                      val = 1; // Count
-                  } else if (type === 'sets') {
-                      session.exercises?.forEach((ex: any) => {
-                          val += ex.sets?.filter((s:any) => s.completed).length || 0;
-                      });
-                  } else if (type === 'calories') {
-                      if (session.calories !== undefined && session.calories !== null) {
-                          val = session.calories;
-                      } else {
-                          // Estimate logic fallback
-                          let durationMin = 45; 
-                          if (session.duration) {
-                              durationMin = this.parseDurationToMinutes(session.duration);
-                          } else if (session.startTime && session.endTime) {
-                              const diff = new Date(session.endTime).getTime() - new Date(session.startTime).getTime();
-                              durationMin = diff / 1000 / 60;
-                          }
-
-                          const vol = session.totalVolume || 0;
-                          val = Math.round((durationMin * 5) + (vol * 0.0005));
-                      }
-                      
-                      // Final safety check
-                      val = val || 0;
-                  }
-
                   total += val;
                   if (val > max) max = val;
-                  values.push(val);
 
-                  // Aggregation for chart (simplified: one point per session, can be improved to aggregate by day)
-                  // Check if label exists to aggregate same day
                   const existing = chartData.find(d => d.label === label);
                   if (existing) {
                       existing.value += val;
@@ -155,7 +129,56 @@ export class TrainingHistoryService {
       );
   }
 
-  getMuscleDistribution(): Observable<any[]> {
+  private calculateSessionValue(session: WorkoutSession, type: 'volume' | 'workouts' | 'sets' | 'calories'): number {
+      if (type === 'volume') return this.calculateSessionVolume(session);
+      if (type === 'workouts') return 1;
+      if (type === 'sets') return this.calculateSessionSets(session);
+      if (type === 'calories') return this.calculateSessionCalories(session);
+      return 0;
+  }
+
+  private calculateSessionVolume(session: WorkoutSession): number {
+      if (session.totalVolume) return session.totalVolume;
+      if (!session.exercises) return 0;
+      let vol = 0;
+      for (const ex of session.exercises as WorkoutExercise[]) {
+          if (!ex.sets) continue;
+          for (const s of ex.sets) {
+              if (s.completed) vol += ((s.weight || 0) * (s.reps || 0));
+          }
+      }
+      return vol;
+  }
+
+  private calculateSessionSets(session: WorkoutSession): number {
+      if (!session.exercises) return 0;
+      let count = 0;
+      for (const ex of session.exercises as WorkoutExercise[]) {
+          if (!ex.sets) continue;
+          for (const s of ex.sets) {
+              if (s.completed) count++;
+          }
+      }
+      return count;
+  }
+
+  private calculateSessionCalories(session: WorkoutSession): number {
+      if (session.calories !== undefined && session.calories !== null) {
+          return session.calories;
+      }
+      let durationMin = 45; 
+      if (session.duration) {
+          durationMin = this.parseDurationToMinutes(session.duration);
+      } else if (session.startTime && session.endTime) {
+          const diff = new Date(session.endTime).getTime() - new Date(session.startTime).getTime();
+          durationMin = diff / 1000 / 60;
+      }
+
+      const vol = session.totalVolume || 0;
+      return Math.round((durationMin * 5) + (vol * 0.0005));
+  }
+
+  getMuscleDistribution(): Observable<MuscleDistribution[]> {
       return this.storageService.getHistory().pipe(
           map(history => {
               const muscleCounts: Record<string, number> = {};
@@ -170,8 +193,8 @@ export class TrainingHistoryService {
 
                   // Check exercises if needed (fallback)
                   if (muscles.length === 0 && session.exercises) {
-                       session.exercises.forEach((ex: any) => {
-                           if(ex.grupoMuscular) {
+                       (session.exercises as WorkoutExercise[]).forEach(ex => {
+                           if (ex.grupoMuscular) {
                                const name = ex.grupoMuscular.trim();
                                muscleCounts[name] = (muscleCounts[name] || 0) + 1;
                            }

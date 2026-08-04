@@ -1,17 +1,27 @@
 import { inject } from '@angular/core';
-import { Router, type CanActivateFn } from '@angular/router';
+import { CanActivateFn, Router, UrlTree } from '@angular/router';
+import { Observable } from 'rxjs';
+import { map, take } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
-import { tap } from 'rxjs/operators';
 
-export const adminGuard: CanActivateFn = () => {
+const SUPER_ADMIN_EMAIL = 'cristiangarzon1231@gmail.com';
+
+/**
+ * Guard funcional que protege rutas exclusivas del Super Admin.
+ * Valida el email del usuario autenticado contra el email del admin.
+ * Si no coincide → redirige a /dashboard.
+ */
+export const adminGuard: CanActivateFn = (): Observable<boolean | UrlTree> => {
   const router = inject(Router);
   const authService = inject(AuthService);
 
-  return authService.isAdmin$.pipe(
-    tap((isAdmin) => {
-      if (!isAdmin) {
-        router.navigate(['/dashboard']);
+  return authService.authState$.pipe(
+    take(1),
+    map(user => {
+      if (user?.email === SUPER_ADMIN_EMAIL) {
+        return true;
       }
+      return router.createUrlTree(['/dashboard']);
     })
   );
 };

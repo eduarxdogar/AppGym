@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { StorageService } from './storage.service';
 import { UserProfileStateService } from './user-profile-state.service';
 import { WorkoutSession, RECOVERY_CONSTANTS, FATIGUE_SCORES, WorkoutExercise, WorkoutSet, MuscleStatus } from '../models/workout-history.model';
+import { LoggerService } from './logger.service';
 export type { MuscleStatus };
 
 @Injectable({
@@ -12,6 +13,7 @@ export type { MuscleStatus };
 })
 export class RecoveryService {
   private readonly userProfileState = inject(UserProfileStateService);
+  private readonly logger = inject(LoggerService);
 
   /**
    * Canonical list of tracked muscle groups.
@@ -63,7 +65,7 @@ export class RecoveryService {
   private readonly history = toSignal(
     inject(StorageService).getHistory().pipe(
       catchError(err => {
-        console.error('RecoveryService: Failed to fetch history', err);
+        this.logger.error('RecoveryService: Failed to fetch history', err);
         return of([] as WorkoutSession[]);
       })
     ),
@@ -105,7 +107,6 @@ export class RecoveryService {
       statusMap.set(muscle, {
         name: muscle,
         percentage: 100,
-        color: 'green',
         totalVolume: 0
       });
     });
@@ -140,7 +141,7 @@ export class RecoveryService {
       });
     };
 
-    console.log(`[RecoveryService] Processing ${sessions.length} sessions for fatigue/volume`);
+    this.logger.log(`[RecoveryService] Processing ${sessions.length} sessions for fatigue/volume`);
 
     sortedSessions.forEach(session => {
       const dateStr = session.endTime || session.startTime || session.fecha;
@@ -150,14 +151,14 @@ export class RecoveryService {
       const sessionStats = new Map<string, { fatigue: number, volume: number }>();
 
       const exercises: WorkoutExercise[] = session.exercises || session.ejercicios || [];
-      console.log(`[RecoveryService] Session date: ${dateStr}, Exercises: ${exercises.length}`);
+      this.logger.log(`[RecoveryService] Session date: ${dateStr}, Exercises: ${exercises.length}`);
 
       exercises.forEach((ex: WorkoutExercise) => {
         const group = ex.grupoMuscular || ex.groupMuscular || ex.muscleGroup;
         const target = findTargetMuscle(group);
 
         if (!target) {
-          if (group) console.warn(`[RecoveryService] Could not map group: "${group}"`);
+          if (group) this.logger.warn(`[RecoveryService] Could not map group: "${group}"`);
           return;
         }
 
@@ -240,7 +241,6 @@ export class RecoveryService {
         }
       }
       status.percentage = Math.round(status.percentage);
-      status.color = this.getColorForPercentage(status.percentage);
     });
 
     return statusMap;
@@ -287,10 +287,5 @@ export class RecoveryService {
       }
     }
   }
-
-  getColorForPercentage(percent: number): string {
-    if (percent <= 30) return 'red';
-    if (percent <= 75) return 'yellow';
-    return 'green';
-  }
 }
+

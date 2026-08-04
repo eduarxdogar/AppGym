@@ -4,10 +4,11 @@ import { UserProfileStateService } from '../user-profile-state.service';
 import { WorkoutService } from '../workout.service';
 import { MetricsService } from '../metrics.service';
 import { CardioSessionService } from '../cardio-session.service';
-import { StorageService, ChatMessage } from '../storage.service';
+import { StorageService } from '../storage.service';
+import { ChatMessage } from '../../models/ai-requests.model';
 import { ExerciseImageService } from '../exercise-image.service';
 import { RecoveryService } from '../recovery.service';
-import { Workout } from '../../../models/workout.model';
+import { Workout } from '../../models/workout.model';
 
 @Injectable({
   providedIn: 'root'
@@ -23,7 +24,7 @@ export class ChatAiService {
   private readonly recoveryService = inject(RecoveryService);
 
   /** Currently active workout context for the coach */
-  private activeWorkoutId = signal<string | null>(null);
+  private readonly activeWorkoutId = signal<string | null>(null);
   private chatHistory: { role: string; parts: { text: string }[] }[] = [];
 
   /** Persisted messages loaded from Firestore */
@@ -80,67 +81,7 @@ export class ChatAiService {
     try {
       // --- Inject context on first turn ---
       if (this.chatHistory.length === 0) {
-        const metrics     = this.metricsService.weeklyMetrics();
-        const userProfile = this.profileState.profile();
-
-        // Find the active / target workout for deep context
-        const allWorkouts = this.workoutService.workouts();
-        const activeWorkout: Workout | undefined = workoutId
-          ? allWorkouts.find(w => w.id === workoutId)
-          : allWorkouts.find(w => w.status === 'active');
-
-        const workoutContext = activeWorkout
-          ? `\nRUTINA ACTIVA AHORA MISMO:
-Nombre: "${activeWorkout.nombre}"
-Músculos objetivo: ${(activeWorkout.musculos || []).join(', ')}
-Ejercicios de HOY:
-${activeWorkout.ejercicios.map((e, i) => `  ${i+1}. ${e.nombre} - ${e.series}x${e.repeticiones} @ ${e.pesokg || 0}kg [${e.grupoMuscular}]`).join('\n')}
-ESTA RUTINA ES TU PRIORIDAD. Cuando el usuario pregunte "qué toca hoy" o "cómo hago X", responde SIEMPRE en el contexto de ESTA rutina.`
-          : `\nNo hay rutina activa ahora mismo. Historial de rutinas disponible.`;
-
-        // --- Build fatigue context from RecoveryService ---
-        const statusMap = this.recoveryService.getMuscleRecoveryStatus()();
-        const fatigueLines: string[] = [];
-        statusMap.forEach((status) => {
-          const icon = status.percentage <= 30 ? '🔴' : status.percentage <= 75 ? '🟡' : '🟢';
-          fatigueLines.push(`  ${icon} ${status.name}: ${status.percentage}% recuperado`);
-        });
-        const fatigueContext = fatigueLines.length > 0
-          ? fatigueLines.join('\n')
-          : '  Sin datos de sesiones previas (músculos al 100%)';
-
-        // --- Equipment context ---
-        const equipment: string[] = (userProfile as any)?.equipment || [];
-        const equipmentContext = equipment.length > 0
-          ? equipment.join(', ')
-          : 'No especificado';
-
-        const contextText = `Eres "Coach Tríada", un entrenador personal de Medellín con 15 años de experiencia. Hablas como un profe de gimnasio: directo, técnico y motivador. NUNCA digas "como IA" o "mi red neuronal". Si el usuario pregunta algo médico serio, remítelo a un profesional.
-
-REGLAS DE RESPUESTA:
-- Sé conciso (máximo 3-4 párrafos cortos).
-- Usa negritas para resaltar números clave.
-- Si explicas la técnica de un ejercicio, al FINAL siempre agrega: "Acordate que en la tarjeta del ejercicio tenés el botón ⓘ para ver el video de la técnica."
-- NUNCA inventes datos que no estén en el contexto.
-- Usa el estado de fatiga y el equipamiento para dar recomendaciones INTELIGENTES. No los menciones mecánicamente, úsalos solo para tomar decisiones sobre qué recomendar.
-
-PERFIL DEL ATLETA:
-- Peso: ${userProfile?.weight}kg | Altura: ${userProfile?.height}cm | Nivel: ${userProfile?.fitnessLevel} | Objetivo: ${userProfile?.goal}
-- InBody — Músculo: ${userProfile?.inbodyData?.muscleKg || 'N/A'}kg | Grasa: ${userProfile?.inbodyData?.fatPercent || 'N/A'}%
-
-EQUIPAMIENTO DISPONIBLE EN SU GIMNASIO:
-${equipmentContext}
-
-ESTADO DE FATIGA MUSCULAR (TIEMPO REAL):
-${fatigueContext}
-
-MÉTRICAS SEMANA ACTUAL:
-- Sesiones: ${metrics.workoutsCount} | Tonelaje: ${metrics.totalVolume}kg | Series totales: ${metrics.totalSets} | Calorías: ${metrics.estimatedCalories}kcal
-${workoutContext}
-
-HISTORIAL COMPLETO DE RUTINAS (para contexto de fatiga/progresión):
-${JSON.stringify(allWorkouts.map(w => ({ nombre: w.nombre, fecha: w.fecha, isCompleted: w.isCompleted, musculos: w.musculos })))}
-Cardio (7d): ${JSON.stringify(this.cardioService.cardioSessions())}`;
+        const contextText = this.buildInitialContext(workoutId);
 
         this.chatHistory.push(
             { role: 'user', parts: [{ text: contextText }] },
@@ -193,13 +134,79 @@ Cardio (7d): ${JSON.stringify(this.cardioService.cardioSessions())}`;
       }
 
       return responseText;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al chatear con Coach:', err);
-      const errorMessage = err?.message || '';
+      const errorMessage = err instanceof Error ? err.message : String(err);
       if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
         return 'Paciencia, fiera. Estoy recuperando el aliento. Intentá de nuevo en unos segundos.';
       }
       return '¡Ey fiera! Hubo un calambre en el sistema. Dame un respiro y volvé a intentar.';
     }
+  }
+
+  private buildInitialContext(workoutId: string | null): string {
+    const metrics     = this.metricsService.weeklyMetrics();
+    const userProfile = this.profileState.profile();
+
+    const allWorkouts = this.workoutService.workouts();
+    const activeWorkout: Workout | undefined = workoutId
+      ? allWorkouts.find(w => w.id === workoutId)
+      : allWorkouts.find(w => w.status === 'active');
+
+    const workoutContext = activeWorkout
+      ? `\nRUTINA ACTIVA AHORA MISMO:
+Nombre: "${activeWorkout.nombre}"
+Músculos objetivo: ${(activeWorkout.musculos || []).join(', ')}
+Ejercicios de HOY:
+${activeWorkout.ejercicios.map((e, i: number) => `  ${i+1}. ${e.nombre} - ${e.series}x${e.repeticiones} @ ${e.pesokg || 0}kg [${e.grupoMuscular}]`).join('\n')}
+ESTA RUTINA ES TU PRIORIDAD. Cuando el usuario pregunte "qué toca hoy" o "cómo hago X", responde SIEMPRE en el contexto de ESTA rutina.`
+      : `\nNo hay rutina activa ahora mismo. Historial de rutinas disponible.`;
+
+    const statusMap = this.recoveryService.getMuscleRecoveryStatus()();
+    const fatigueLines: string[] = [];
+    statusMap.forEach((status) => {
+      let icon = '🟢';
+      if (status.percentage <= 30) {
+        icon = '🔴';
+      } else if (status.percentage <= 75) {
+        icon = '🟡';
+      }
+      fatigueLines.push(`  ${icon} ${status.name}: ${status.percentage}% recuperado`);
+    });
+    const fatigueContext = fatigueLines.length > 0
+      ? fatigueLines.join('\n')
+      : '  Sin datos de sesiones previas (músculos al 100%)';
+
+    const equipment: string[] = userProfile?.equipment || [];
+    const equipmentContext = equipment.length > 0
+      ? equipment.join(', ')
+      : 'No especificado';
+
+    return `Eres "Coach Tríada", un entrenador personal de Medellín con 15 años de experiencia. Hablas como un profe de gimnasio: directo, técnico y motivador. NUNCA digas "como IA" o "mi red neuronal". Si el usuario pregunta algo médico serio, remítelo a un profesional.
+
+REGLAS DE RESPUESTA:
+- Sé conciso (máximo 3-4 párrafos cortos).
+- Usa negritas para resaltar números clave.
+- Si explicas la técnica de un ejercicio, al FINAL siempre agrega: "Acordate que en la tarjeta del ejercicio tenés el botón ⓘ para ver el video de la técnica."
+- NUNCA inventes datos que no estén en el contexto.
+- Usa el estado de fatiga y el equipamiento para dar recomendaciones INTELIGENTES. No los menciones mecánicamente, úsalos solo para tomar decisiones sobre qué recomendar.
+
+PERFIL DEL ATLETA:
+- Peso: ${userProfile?.weight}kg | Altura: ${userProfile?.height}cm | Nivel: ${userProfile?.fitnessLevel} | Objetivo: ${userProfile?.goal}
+- InBody — Músculo: ${userProfile?.inbodyData?.muscleKg || 'N/A'}kg | Grasa: ${userProfile?.inbodyData?.fatPercent || 'N/A'}%
+
+EQUIPAMIENTO DISPONIBLE EN SU GIMNASIO:
+${equipmentContext}
+
+ESTADO DE FATIGA MUSCULAR (TIEMPO REAL):
+${fatigueContext}
+
+MÉTRICAS SEMANA ACTUAL:
+- Sesiones: ${metrics.workoutsCount} | Tonelaje: ${metrics.totalVolume}kg | Series totales: ${metrics.totalSets} | Calorías: ${metrics.estimatedCalories}kcal
+${workoutContext}
+
+HISTORIAL COMPLETO DE RUTINAS (para contexto de fatiga/progresión):
+${JSON.stringify(allWorkouts.map(w => ({ nombre: w.nombre, fecha: w.fecha, isCompleted: w.isCompleted, musculos: w.musculos })))}
+Cardio (7d): ${JSON.stringify(this.cardioService.cardioSessions())}`;
   }
 }

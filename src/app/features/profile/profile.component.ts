@@ -4,12 +4,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
 import { Auth, updateProfile } from '@angular/fire/auth';
 import { Storage, ref, uploadBytes, getDownloadURL } from '@angular/fire/storage';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 
 import { AuthService } from '../../core/services/auth.service';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { GamificationService } from '../../core/services/gamification.service';
-import { DatabaseMigrationService, MigrationReport } from '../../core/services/database-migration.service';
+import { DatabaseMigrationService } from '../../core/services/database-migration.service';
+import { MigrationReport } from '../../core/models/admin.model';
+import { UserProfileSchema } from './schemas/user-profile.schema';
 
 @Component({
   selector: 'app-profile',
@@ -18,14 +21,15 @@ import { DatabaseMigrationService, MigrationReport } from '../../core/services/d
   templateUrl: './profile.component.html'
 })
 export class ProfileComponent {
-  private authService = inject(AuthService);
-  private auth = inject(Auth);
-  private storage = inject(Storage);
-  private router = inject(Router);
-  private userProfileState = inject(UserProfileStateService);
-  private userProfileService = inject(UserProfileService);
-  private gamificationService = inject(GamificationService);
-  private migrationService = inject(DatabaseMigrationService);
+  private readonly authService = inject(AuthService);
+  private readonly auth = inject(Auth);
+  private readonly storage = inject(Storage);
+  private readonly router = inject(Router);
+  private readonly userProfileState = inject(UserProfileStateService);
+  private readonly userProfileService = inject(UserProfileService);
+  private readonly gamificationService = inject(GamificationService);
+  private readonly migrationService = inject(DatabaseMigrationService);
+  private readonly functions = inject(Functions);
 
   /** True when running under `ng serve` (development mode). Controls dev-only UI. */
   readonly isDev = isDevMode();
@@ -49,6 +53,7 @@ export class ProfileComponent {
   selectedEquipment = signal<string[]>([]);
   isSaving = signal<boolean>(false);
   isUploading = signal<boolean>(false);
+  isBillingLoading = signal<boolean>(false);
 
   // ── Migration state (dev-only) ────────────────────────────────────────────
   isMigrating = signal<boolean>(false);
@@ -57,7 +62,7 @@ export class ProfileComponent {
   constructor() {
     effect(() => {
       const profile = this.userProfileState.profile();
-      if (profile && profile.equipment) {
+      if (profile?.equipment) {
         this.selectedEquipment.set([...profile.equipment]);
       }
     }, { allowSignalWrites: true });
@@ -75,14 +80,20 @@ export class ProfileComponent {
   async saveEquipment() {
      this.isSaving.set(true);
      try {
-        await this.userProfileService.updateEquipment(this.selectedEquipment());
-        await this.userProfileState.refreshProfile();
-     } catch (error) {
+        const validation = UserProfileSchema.shape.equipment.safeParse(this.selectedEquipment());
+        if (!validation.success) {
+           console.error('Validation error:', validation.error);
+           return;
+        }
+        await this.userProfileService.updateEquipment(validation.data);
+        this.userProfileState.refreshProfile();
+     } catch (error: unknown) {
         console.error('Error saving equipment:', error);
      } finally {
         this.isSaving.set(false);
      }
   }
+
 
   async uploadProfilePhoto(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
@@ -119,6 +130,24 @@ export class ProfileComponent {
 
   goBack() {
     this.router.navigate(['/dashboard']);
+  }
+
+  async renewSubscription() {
+    this.isBillingLoading.set(true);
+    try {
+      const checkout = httpsCallable<{ }, { init_point: string }>(this.functions, 'createCheckoutSession');
+      const result = await checkout();
+      
+      if (result.data?.init_point) {
+        globalThis.location.href = result.data.init_point;
+      } else {
+        throw new Error('No se recibió init_point desde el servidor');
+      }
+    } catch (error) {
+      console.error('Error al generar la sesión de pago:', error);
+    } finally {
+      this.isBillingLoading.set(false);
+    }
   }
 
   /**
