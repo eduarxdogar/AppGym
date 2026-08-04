@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { UiCardComponent } from '../../../shared/ui/ui-card/ui-card.component';
 import { UiButtonComponent } from '../../../shared/ui/ui-button/ui-button.component';
-import { RecoveryMonitorComponent } from '../..//dashboard/components/recovery-monitor/recovery-monitor.component';
+import { RecoveryMonitorComponent } from '../../metrics/dashboard/components/recovery-monitor/recovery-monitor.component';
 import { WorkoutCardComponent } from './ui/workout-card/workout-card.component';
 import { WorkoutListStore } from './store/workout-list.store';
 

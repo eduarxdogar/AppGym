@@ -1,10 +1,9 @@
-import { Component, computed, effect, input, OnDestroy, OnInit } from '@angular/core';
-
+import { Component, computed, effect, input, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { UiButtonComponent } from "../../shared/ui/ui-button/ui-button.component";
+import { UiButtonComponent } from '../../shared/ui/ui-button/ui-button.component';
 
 @Component({
   selector: 'app-exercise-timer',
@@ -15,10 +14,10 @@ import { UiButtonComponent } from "../../shared/ui/ui-button/ui-button.component
     MatFormFieldModule,
     MatSelectModule,
     UiButtonComponent
-],
+  ],
   templateUrl: './exercise-timer.component.html',
 })
-export class ExerciseTimerComponent implements OnInit, OnDestroy {
+export class ExerciseTimerComponent implements OnDestroy {
   
   // Input flexible: puede ser number (segundos) o string ("90s", "2 min")
   restTime = input<string | number | undefined>('90s');
@@ -40,9 +39,9 @@ export class ExerciseTimerComponent implements OnInit, OnDestroy {
     if (!val) return 90; // Default fallback
 
     const str = val.toString().toLowerCase().trim();
-    const num = parseFloat(str);
+    const num = Number.parseFloat(str);
 
-    if (isNaN(num)) return 90;
+    if (Number.isNaN(num)) return 90;
 
     if (str.includes('min')) {
       return Math.round(num * 60);
@@ -61,10 +60,6 @@ export class ExerciseTimerComponent implements OnInit, OnDestroy {
         this.timeLeft = seconds;
       }
     });
-  }
-
-  ngOnInit(): void {
-    // Inicialización explícita si es necesario
   }
 
   ngOnDestroy(): void {
@@ -109,7 +104,7 @@ export class ExerciseTimerComponent implements OnInit, OnDestroy {
   }
 
   onTimerComplete() {
-      console.log('Descanso finalizado para este ejercicio');
-      // Reproducir sonido o notificar
+    console.log('Descanso finalizado para este ejercicio');
+    // Reproducir sonido o notificar
   }
 }
