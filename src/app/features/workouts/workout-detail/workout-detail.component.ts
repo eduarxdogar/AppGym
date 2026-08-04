@@ -1,6 +1,6 @@
 import { Component, OnInit, input, effect, inject, computed, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { Ejercicio } from '../../../core/models/ejercicio.model';
+import { Ejercicio } from '../models/ejercicio.model';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';

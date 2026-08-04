@@ -4,7 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { BoxingAiService } from '../../core/services/ai/boxing-ai.service';
-import { BoxingRoutine } from '../../core/models/ai-requests.model';
+import { BoxingRoutine } from '../workouts/models/ai-requests.model';
 import { CardioSessionService } from '../../core/services/cardio-session.service';
 
 @Component({

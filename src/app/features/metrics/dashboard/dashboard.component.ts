@@ -9,7 +9,7 @@ import { UserProfileStateService } from '../../../core/services/user-profile-sta
 import { MetricsService } from '../../../core/services/metrics.service';
 import { UiButtonComponent } from '../../../shared/ui/ui-button/ui-button.component';
 import { StrengthTierWidgetComponent } from '../../../shared/components/strength-tier-widget/strength-tier-widget.component';
-import { Workout } from '../../../core/models/workout.model';
+import { Workout } from '../../workouts/models/workout.model';
 
 @Component({
   selector: 'app-dashboard',

@@ -3,7 +3,7 @@ import { Firestore, doc, setDoc, docData } from '@angular/fire/firestore';
 import { Auth, authState } from '@angular/fire/auth';
 import { Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
-import { WeeklyDietPlan } from '../../core/models/ai-requests.model';
+import { WeeklyDietPlan } from '../../features/workouts/models/ai-requests.model';
 
 export interface DailyNutritionLog {
   date: string; // YYYY-MM-DD

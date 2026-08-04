@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EjercicioSchema } from '../../exercise/schemas/exercise.schema';
+import { EjercicioSchema } from './exercise.schema';
 
 export const ActiveSetStateSchema = z.object({
   reps: z.number(),

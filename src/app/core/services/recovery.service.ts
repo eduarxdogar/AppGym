@@ -4,7 +4,7 @@ import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { StorageService } from './storage.service';
 import { UserProfileStateService } from './user-profile-state.service';
-import { WorkoutSession, RECOVERY_CONSTANTS, FATIGUE_SCORES, WorkoutExercise, WorkoutSet, MuscleStatus } from '../models/workout-history.model';
+import { WorkoutSession, RECOVERY_CONSTANTS, FATIGUE_SCORES, WorkoutExercise, WorkoutSet, MuscleStatus } from '../../features/workouts/models/workout-history.model';
 import { LoggerService } from './logger.service';
 export type { MuscleStatus };
 

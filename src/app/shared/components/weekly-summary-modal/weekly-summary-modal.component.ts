@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { MetricsService } from '../../../core/services/metrics.service';
-import { ProgressionOptions } from '../../../core/models/workout.model';
+import { ProgressionOptions } from '../../../features/workouts/models/workout.model';
 
 @Component({
   selector: 'app-weekly-summary-modal',

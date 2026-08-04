@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { NutritionAiService } from '../../core/services/ai/nutrition-ai.service';
-import { WeeklyDietPlan, DayDietPlan, MealPlan } from '../../core/models/ai-requests.model';
+import { WeeklyDietPlan, DayDietPlan, MealPlan } from '../workouts/models/ai-requests.model';
 import { NutritionService, DailyNutritionLog } from '../../core/services/nutrition.service';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { UserProfileService } from '../../core/services/user-profile.service';

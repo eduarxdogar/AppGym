@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { UiCardComponent } from '../../../../../shared/ui/ui-card/ui-card.component';
 import { UiButtonComponent } from '../../../../../shared/ui/ui-button/ui-button.component';
-import { Ejercicio } from '../../../../../core/models/ejercicio.model';
+import { Ejercicio } from '../../../models/ejercicio.model';
 
 @Component({
   selector: 'app-workout-form',

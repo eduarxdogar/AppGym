@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { WorkoutSession, WorkoutExercise } from '../models/workout-history.model';
+import { WorkoutSession, WorkoutExercise } from '../../features/workouts/models/workout-history.model';
 import { StorageService } from './storage.service';
 import { LoggerService } from './logger.service';
 

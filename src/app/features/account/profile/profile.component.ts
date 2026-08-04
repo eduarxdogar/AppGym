@@ -11,7 +11,7 @@ import { UserProfileStateService } from '../../../core/services/user-profile-sta
 import { UserProfileService } from '../../../core/services/user-profile.service';
 import { GamificationService } from '../../../core/services/gamification.service';
 import { DatabaseMigrationService } from '../../../core/services/database-migration.service';
-import { MigrationReport } from '../../../core/models/admin.model';
+import { MigrationReport } from '../../admin/models/admin.model';
 import { UserProfileSchema } from './schemas/user-profile.schema';
 
 @Component({

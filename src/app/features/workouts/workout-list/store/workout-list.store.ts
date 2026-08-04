@@ -2,7 +2,7 @@ import { Injectable, inject, Signal, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { WorkoutListQueries } from '../api/workout-list.queries';
 import { WorkoutListCommands } from '../api/workout-list.commands';
-import { Workout } from '../../../../core/models/workout.model';
+import { Workout } from '../../models/workout.model';
 
 @Injectable()
 export class WorkoutListStore {

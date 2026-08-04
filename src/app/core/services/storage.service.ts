@@ -3,9 +3,9 @@ import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, w
 import { Observable, of } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { Workout } from '../../core/models/workout.model';
-import { WorkoutSession } from '../models/workout-history.model';
-import { ChatMessage } from '../models/ai-requests.model';
+import { Workout } from '../../features/workouts/models/workout.model';
+import { WorkoutSession } from '../../features/workouts/models/workout-history.model';
+import { ChatMessage } from '../../features/workouts/models/ai-requests.model';
 import { LoggerService } from './logger.service';
 
 @Injectable({

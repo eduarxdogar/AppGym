@@ -2,7 +2,7 @@ import { Component, input, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Ejercicio } from '../../../core/models/ejercicio.model';
+import { Ejercicio } from '../models/ejercicio.model';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';

@@ -5,10 +5,10 @@ import { WorkoutService } from '../workout.service';
 import { MetricsService } from '../metrics.service';
 import { CardioSessionService } from '../cardio-session.service';
 import { StorageService } from '../storage.service';
-import { ChatMessage } from '../../models/ai-requests.model';
+import { ChatMessage } from '../../../features/workouts/models/ai-requests.model';
 import { ExerciseImageService } from '../exercise-image.service';
 import { RecoveryService } from '../recovery.service';
-import { Workout } from '../../models/workout.model';
+import { Workout } from '../../../features/workouts/models/workout.model';
 
 @Injectable({
   providedIn: 'root'

@@ -1,4 +1,4 @@
-import { UserProfile } from './user-profile.model';
+import { UserProfile } from '../../account/models/user-profile.model';
 
 export interface ChatMessage {
   id: string;

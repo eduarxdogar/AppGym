@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { BaseAiService } from './base-ai.service';
-import { BoxingRoutine } from '../../models/ai-requests.model';
+import { BoxingRoutine } from '../../../features/workouts/models/ai-requests.model';
 
 @Injectable({
   providedIn: 'root'

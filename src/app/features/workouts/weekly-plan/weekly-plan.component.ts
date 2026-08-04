@@ -7,16 +7,16 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 import { firstValueFrom } from 'rxjs';
 import { WorkoutService } from '../../../core/services/workout.service';
 import { TrainerAiService } from '../../../core/services/ai/trainer-ai.service';
-import { WeeklyPlanRequest } from '../../../core/models/ai-requests.model';
-import { UserProfile } from '../../../core/models/user-profile.model';
+import { WeeklyPlanRequest } from '../models/ai-requests.model';
+import { UserProfile } from '../../account/models/user-profile.model';
 import { UserProfileStateService } from '../../../core/services/user-profile-state.service';
 import { RecoveryService } from '../../../core/services/recovery.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { WeeklySummaryModalComponent } from '../../../shared/components/weekly-summary-modal/weekly-summary-modal.component';
 import { ProgressionEngineService } from '../../../core/services/progression-engine.service';
-import { ProgressionOptions } from '../../../core/models/workout.model';
+import { ProgressionOptions } from '../models/workout.model';
 import { TrainingHistoryService } from '../../../core/services/training-history.service';
-import { WorkoutSession } from '../../../core/models/workout-history.model';
+import { WorkoutSession } from '../models/workout-history.model';
 
 @Component({
   selector: 'app-weekly-plan',

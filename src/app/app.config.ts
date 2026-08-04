@@ -1,5 +1,5 @@
 // src/app/app.config.ts
-import { ApplicationConfig, provideZoneChangeDetection, LOCALE_ID, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, LOCALE_ID, importProvidersFrom, ErrorHandler } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import localeEsCo from '@angular/common/locales/es-CO';
 
@@ -10,7 +10,7 @@ import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 // Providers de Angular Material necesarios:
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore';
 import { provideAuth, getAuth } from '@angular/fire/auth';
@@ -29,12 +29,16 @@ import {
   ChevronLeft, ChevronDown, ChevronUp, Plus, Activity
 } from 'lucide-angular';
 
+import { GlobalErrorHandler } from './core/errors/global-error-handler';
+import { securityInterceptor } from './core/interceptors/security.interceptor';
+
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),
     provideAnimations(),                      // Necesario para Angular Material
-    provideHttpClient(),                      // Para peticiones HTTP
+    provideHttpClient(withInterceptors([securityInterceptor])),                      // Para peticiones HTTP
     importProvidersFrom(MatNativeDateModule), // Para el Datepicker
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideFirestore(() => getFirestore()),

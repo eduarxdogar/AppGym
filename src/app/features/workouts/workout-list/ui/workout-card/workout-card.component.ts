@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { UiCardComponent } from '../../../../../shared/ui/ui-card/ui-card.component';
 import { UiButtonComponent } from '../../../../../shared/ui/ui-button/ui-button.component';
-import { Workout } from '../../../../../core/models/workout.model';
+import { Workout } from '../../../models/workout.model';
 
 @Component({
   selector: 'app-workout-card',

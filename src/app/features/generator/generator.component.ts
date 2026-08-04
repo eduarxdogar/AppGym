@@ -3,9 +3,9 @@ import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@a
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { TrainerAiService } from '../../core/services/ai/trainer-ai.service';
-import { UserProfile } from '../../core/models/user-profile.model';
+import { UserProfile } from '../account/models/user-profile.model';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
-import { Workout } from '../../core/models/workout.model';
+import { Workout } from '../workouts/models/workout.model';
 import { WorkoutService } from '../../core/services/workout.service';
 import { RecoveryService } from '../../core/services/recovery.service';
 import { ProfessionalBodyMapComponent } from '../../shared/components/professional-body-map/professional-body-map.component';

@@ -3,7 +3,7 @@ import { Firestore, doc, setDoc, updateDoc, getDoc, deleteDoc, collectionGroup, 
 import { Auth, authState, User, signOut } from '@angular/fire/auth';
 import { from, Observable, of } from 'rxjs';
 import { switchMap, map } from 'rxjs/operators';
-import { UserProfile } from '../../core/models/user-profile.model';
+import { UserProfile } from '../../features/account/models/user-profile.model';
 
 @Injectable({ providedIn: 'root' })
 export class UserProfileService {

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Workout } from '../../../../core/models/workout.model';
+import { Workout } from '../../models/workout.model';
 import { StorageService } from '../../../../core/services/storage.service';
 
 @Injectable({ providedIn: 'root' })

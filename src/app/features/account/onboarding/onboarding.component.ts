@@ -5,7 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { UserProfileService } from '../../../core/services/user-profile.service';
 import { UserProfileStateService } from '../../../core/services/user-profile-state.service';
-import { UserProfile } from '../../../core/models/user-profile.model';
+import { UserProfile } from '../models/user-profile.model';
 import { InbodyAiService } from '../../../core/services/ai/inbody-ai.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { UserProfileSchema } from '../profile/schemas/user-profile.schema';

@@ -10,9 +10,9 @@ import {
   UpdateData,
 } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
-import { WorkoutSession, MIGRATION_SENTINELS } from '../models/workout-history.model';
+import { WorkoutSession, MIGRATION_SENTINELS } from '../../features/workouts/models/workout-history.model';
 
-import { MigrationReport } from '../models/admin.model';
+import { MigrationReport } from '../../features/admin/models/admin.model';
 
 /** Maximum Firestore writes per batch (hard limit: 500). We use 450 for safety. */
 const BATCH_SIZE = 450;

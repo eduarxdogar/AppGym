@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { CdkDragHandle } from '@angular/cdk/drag-drop';
-import { Ejercicio } from '../../../../../core/models/ejercicio.model';
+import { Ejercicio } from '../../../models/ejercicio.model';
 import { ExerciseImageService } from '../../../../../core/services/exercise-image.service';
 
 @Component({

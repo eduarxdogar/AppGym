@@ -1,10 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { BaseAiService } from './base-ai.service';
 import { ToastService } from '../toast.service';
-import { Workout } from '../../models/workout.model';
-import { UserProfile } from '../../models/user-profile.model';
-import { WeeklyPlanRequest } from '../../models/ai-requests.model';
-import { WorkoutSchema } from '../../models/workout/schemas/workout.schema';
+import { Workout } from '../../../features/workouts/models/workout.model';
+import { UserProfile } from '../../../features/account/models/user-profile.model';
+import { WeeklyPlanRequest } from '../../../features/workouts/models/ai-requests.model';
+import { WorkoutSchema } from '../../../features/workouts/models/schemas/workout.schema';
 import { z } from 'zod';
 
 const SYSTEM_PROMPT = `

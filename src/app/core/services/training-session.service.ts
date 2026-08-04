@@ -1,8 +1,8 @@
 // src/app/core/services/training-session.service.ts
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Workout } from '../../core/models/workout.model';
-import { TrainingSession } from '../../core/models/training-session.model';
+import { Workout } from '../../features/workouts/models/workout.model';
+import { TrainingSession } from '../../features/workouts/models/training-session.model';
 
 
 
