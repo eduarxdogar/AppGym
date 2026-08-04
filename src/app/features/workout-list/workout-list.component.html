@@ -35,68 +35,28 @@
           (clicked)="generateAiRoutine()"
           variant="primary"
           customClass="shadow-[0_0_20px_rgba(204,252,126,0.4)] animate-pulse hover:animate-none"
-          [disabled]="isGenerating"
+          [disabled]="store.isGenerating()"
           >
           <mat-icon class="mr-2">{{
-            isGenerating ? "hourglass_empty" : "auto_awesome"
+            store.isGenerating() ? "hourglass_empty" : "auto_awesome"
           }}</mat-icon>
           {{
-          isGenerating ? "Diseñando Rutina..." : "Generar Rutina Inteligente"
+          store.isGenerating() ? "Diseñando Rutina..." : "Generar Rutina Inteligente"
           }}
         </app-ui-button>
       </div>
     </div>
 
     <!-- Lista de rutinas -->
-    @if (workouts().length > 0) {
+    @if (store.workouts().length > 0) {
       <div class="grid gap-6">
-        @for (workout of workouts(); track workout) {
-          <app-ui-card
-            [title]="workout.nombre"
-            [description]="'Ejercicios: ' + workout.ejercicios.length"
-            customClass="bg-white/5 backdrop-blur-sm border-none shadow-md hover:shadow-xl transition duration-300"
-            [hasFooter]="true"
-            >
-            <!-- Body Content (Description or details could go here) -->
-            <div class="text-gray-300">
-              <!-- Placeholder for more details if needed -->
-              <p>Nivel: {{ workout.nivelDificultad }}</p>
-            </div>
-            <!-- Footer Actions -->
-            <div footer class="flex flex-wrap gap-3 justify-end">
-              <app-ui-button
-                variant="primary"
-                customClass="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
-                (clicked)="editWorkout(workout.id)"
-                >
-                <!-- Reusing editWorkout as navigation wrapper? Or separate -->
-                <!-- The original used routerLink directly. app-button emits click.
-                I need to handle navigation in component or pass routerLink if supported.
-                My app-button doesn't support routerLink.
-                I will use (clicked) and methods in TS or keep <a> for links and style them like buttons?
-                The user wants reusable components.
-                I will wrap the <a> with the button style classes from the shared component or use the click handler.
-                Ideally a ButtonComponent should support "as link".
-                For now I'll use the click handler integration.
-                -->
-                <mat-icon>visibility</mat-icon> Ver
-              </app-ui-button>
-              <app-ui-button
-                variant="secondary"
-                customClass="flex items-center gap-1 bg-yellow-500 hover:bg-yellow-600"
-                (clicked)="router.navigate(['/workout', workout.id, 'edit'])"
-                >
-                <mat-icon>edit</mat-icon> Editar
-              </app-ui-button>
-              <app-ui-button
-                variant="danger"
-                customClass="flex items-center gap-1 bg-red-600 hover:bg-red-700"
-                (clicked)="deleteWorkout(workout.id)"
-                >
-                <mat-icon>delete</mat-icon> Eliminar
-              </app-ui-button>
-            </div>
-          </app-ui-card>
+        @for (workout of store.workouts(); track workout) {
+          <app-workout-card
+            [workout]="workout"
+            (view)="viewWorkout($event)"
+            (edit)="editWorkout($event)"
+            (delete)="store.deleteWorkout($event)">
+          </app-workout-card>
         }
       </div>
     } @else {
@@ -112,14 +72,12 @@
       </div>
     }
 
-    <!-- Si no hay rutinas -->
-
     <!-- Botón agregar rutina -->
     <div class="mt-10 text-center">
       <app-ui-button
         variant="primary"
         customClass="bg-green-600 hover:bg-green-700 rounded-full px-6 py-3 text-lg"
-        (clicked)="addWorkout()"
+        (clicked)="store.addWorkout()"
         >
         <mat-icon>add_circle</mat-icon> Nueva Rutina
       </app-ui-button>
