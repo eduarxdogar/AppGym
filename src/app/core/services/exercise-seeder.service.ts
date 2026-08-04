@@ -1,12 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, doc, setDoc, getDocs } from '@angular/fire/firestore';
 import { ExerciseData } from '../models/exercise-catalog';
+import { LoggerService } from './logger.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ExerciseSeederService {
   private readonly firestore = inject(Firestore);
+  private readonly logger = inject(LoggerService);
 
   async runSeeder(): Promise<void> {
     try {
@@ -15,19 +17,19 @@ export class ExerciseSeederService {
       // 1. Verify if empty
       const snapshot = await getDocs(collectionRef);
       if (!snapshot.empty) {
-        console.log('Catálogo de ejercicios ya existe en Firestore. (' + snapshot.size + ' ejercicios)');
+        this.logger.log('Catálogo de ejercicios ya existe en Firestore. (' + snapshot.size + ' ejercicios)');
         return;
       }
 
       // 2. Fetch external JSON
-      console.log('Descargando catálogo de ejercicios desde assets...');
+      this.logger.log('Descargando catálogo de ejercicios desde assets...');
       const response = await fetch('/assets/data/exercises-seed.json');
       if (!response.ok) {
         throw new Error(`Error HTTP: ${response.status}`);
       }
       const exercises: ExerciseData[] = await response.json();
 
-      console.log('Iniciando carga masiva de catálogo (' + exercises.length + ' ejercicios)...');
+      this.logger.log('Iniciando carga masiva de catálogo (' + exercises.length + ' ejercicios)...');
       
       // 3. Upload catalog
       const promises = exercises.map(exercise => {
@@ -38,9 +40,9 @@ export class ExerciseSeederService {
       });
 
       await Promise.all(promises);
-      console.log('✅ Catálogo de ejercicios cargado exitosamente.');
+      this.logger.log('✅ Catálogo de ejercicios cargado exitosamente.');
     } catch (error) {
-      console.error('Error poblando el catálogo:', error);
+      this.logger.error('Error poblando el catálogo:', error);
     }
   }
 }

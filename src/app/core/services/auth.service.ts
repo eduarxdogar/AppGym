@@ -4,6 +4,7 @@ import { Firestore, doc, setDoc } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { LoggerService } from './logger.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +13,7 @@ export class AuthService {
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
   private readonly firestore = inject(Firestore);
+  private readonly logger = inject(LoggerService);
 
   // Private writable signal initialized as undefined to represent 'loading' state
   private readonly _currentUser = signal<User | null | undefined>(undefined);
@@ -31,7 +33,7 @@ export class AuthService {
     // Sync signal with Firebase Auth state
     onAuthStateChanged(this.auth, (user) => {
         this._currentUser.set(user);
-        console.log("Auth State Changed:", user ? user.displayName : 'Logged out');
+        this.logger.log("Auth State Changed:", user ? user.displayName : 'Logged out');
     });
   }
 
@@ -56,7 +58,7 @@ export class AuthService {
       // onAuthStateChanged will update the signal
       this.router.navigate(['/']); // Redirect to home/dashboard
     } catch (error) {
-      console.error('Google Sign-In Error:', error);
+      this.logger.error('Google Sign-In Error:', error);
       throw error;
     }
   }
@@ -66,7 +68,7 @@ export class AuthService {
       await signOut(this.auth);
       this.router.navigate(['/']); // Redirect to home/login
     } catch (error) {
-      console.error('Logout Error:', error);
+      this.logger.error('Logout Error:', error);
       throw error;
     }
   }

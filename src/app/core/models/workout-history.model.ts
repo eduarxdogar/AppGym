@@ -21,7 +21,6 @@ export const MIGRATION_SENTINELS = {
 export interface MuscleStatus {
   name: string;
   percentage: number;
-  color: string;
   lastWorkoutDate?: Date;
   totalVolume?: number;
 }

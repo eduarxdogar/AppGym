@@ -1,12 +1,27 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { WorkoutSession } from '../models/workout-history.model';
+import { WorkoutSession, WorkoutExercise } from '../models/workout-history.model';
 import { StorageService } from './storage.service';
+import { LoggerService } from './logger.service';
+
+export interface HistoryStats {
+  total: number;
+  max: number;
+  avg: number;
+  count: number;
+  chartData: { label: string; value: number; date: Date }[];
+}
+
+export interface MuscleDistribution {
+  label: string;
+  value: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class TrainingHistoryService {
   private readonly storageService = inject(StorageService);
+  private readonly logger = inject(LoggerService);
 
   // Recupera el historial almacenado en Firestore
   getHistory(): Observable<WorkoutSession[]> {
@@ -25,10 +40,10 @@ export class TrainingHistoryService {
              durationMin = diff / 1000 / 60;
         }
         const calculated = Math.round((durationMin * 5) + ((session.totalVolume || 0) * 0.0005));
-        console.log('Calculated Calories in Service:', calculated, 'DurationMin:', durationMin, 'Volume:', session.totalVolume);
+        this.logger.log('Calculated Calories in Service:', calculated, 'DurationMin:', durationMin, 'Volume:', session.totalVolume);
         session.calories = calculated;
     } else {
-        console.log('Calories already present:', session.calories);
+        this.logger.log('Calories already present:', session.calories);
     }
     await this.storageService.saveHistory(session);
   }
@@ -50,7 +65,7 @@ export class TrainingHistoryService {
 
   // --- STATS LOGIC ---
 
-  getStats(type: 'volume' | 'workouts' | 'sets' | 'calories', range: 'week' | 'month' | 'year' | 'total', muscleGroup: string = 'Todos'): Observable<any> {
+  getStats(type: 'volume' | 'workouts' | 'sets' | 'calories', range: 'week' | 'month' | 'year' | 'total', muscleGroup: string = 'Todos'): Observable<HistoryStats> {
       return this.storageService.getHistory().pipe(
           map(history => {
               const now = new Date();
@@ -71,7 +86,7 @@ export class TrainingHistoryService {
                      const matchesArr = muscles.some((m: string) => m.toLowerCase().includes(muscleGroup.toLowerCase()));
                      let matchesEx = false;
                      if (h.exercises) {
-                         matchesEx = h.exercises.some((ex: any) => ex.grupoMuscular?.toLowerCase().includes(muscleGroup.toLowerCase()));
+                         matchesEx = h.exercises.some((ex: WorkoutExercise) => ex.grupoMuscular?.toLowerCase().includes(muscleGroup.toLowerCase()));
                      }
                      matchesMuscle = matchesArr || matchesEx;
                   }
@@ -126,10 +141,10 @@ export class TrainingHistoryService {
       if (session.totalVolume) return session.totalVolume;
       if (!session.exercises) return 0;
       let vol = 0;
-      for (const ex of session.exercises as any[]) {
+      for (const ex of session.exercises as WorkoutExercise[]) {
           if (!ex.sets) continue;
           for (const s of ex.sets) {
-              if (s.completed) vol += (s.weight * s.reps);
+              if (s.completed) vol += ((s.weight || 0) * (s.reps || 0));
           }
       }
       return vol;
@@ -138,7 +153,7 @@ export class TrainingHistoryService {
   private calculateSessionSets(session: WorkoutSession): number {
       if (!session.exercises) return 0;
       let count = 0;
-      for (const ex of session.exercises as any[]) {
+      for (const ex of session.exercises as WorkoutExercise[]) {
           if (!ex.sets) continue;
           for (const s of ex.sets) {
               if (s.completed) count++;
@@ -163,7 +178,7 @@ export class TrainingHistoryService {
       return Math.round((durationMin * 5) + (vol * 0.0005));
   }
 
-  getMuscleDistribution(): Observable<any[]> {
+  getMuscleDistribution(): Observable<MuscleDistribution[]> {
       return this.storageService.getHistory().pipe(
           map(history => {
               const muscleCounts: Record<string, number> = {};
@@ -178,7 +193,7 @@ export class TrainingHistoryService {
 
                   // Check exercises if needed (fallback)
                   if (muscles.length === 0 && session.exercises) {
-                       session.exercises.forEach((ex: any) => {
+                       (session.exercises as WorkoutExercise[]).forEach(ex => {
                            if (ex.grupoMuscular) {
                                const name = ex.grupoMuscular.trim();
                                muscleCounts[name] = (muscleCounts[name] || 0) + 1;

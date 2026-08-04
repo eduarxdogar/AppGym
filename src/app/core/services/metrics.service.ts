@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 import { WorkoutService } from './workout.service';
 import { StorageService } from './storage.service';
 import { CardioSessionService } from './cardio-session.service';
-import { WorkoutSession } from '../models/workout-history.model';
+import { WorkoutSession, WorkoutExercise, WorkoutSet } from '../models/workout-history.model';
 import { WeeklyMetrics } from '../models/stats-data.model';
 
 const DEFAULT_USER_WEIGHT_KG = 75;
@@ -89,9 +89,9 @@ export class MetricsService {
   readonly totalSets = computed<number>(() =>
     this.last7DaysSessions().reduce((total, session) => {
       const exercises = session.exercises || session.ejercicios || [];
-      return total + exercises.reduce((acc: number, ex: any) => {
+      return total + (exercises as WorkoutExercise[]).reduce((acc: number, ex: WorkoutExercise) => {
         const sets = ex.sets || ex.series || [];
-        return acc + sets.filter((s: any) => s.completed !== false).length;
+        return acc + sets.filter((s: WorkoutSet) => s.completed !== false).length;
       }, 0);
     }, 0)
   );
@@ -140,16 +140,6 @@ export class MetricsService {
     totalSets: this.totalSets(),
     cardioSessionsCount: this.cardioSessionsCount(),
   }));
-
-  // ─── Helpers ─────────────────────────────────────────────────────────
-
-  formatVolume(kg: number): string {
-    return kg >= 1000 ? `${(kg / 1000).toFixed(1)}t` : `${kg.toLocaleString('es-ES')} kg`;
-  }
-
-  formatCalories(kcal: number): string {
-    return `${kcal.toLocaleString('es-ES')} kcal`;
-  }
 }
 
 
