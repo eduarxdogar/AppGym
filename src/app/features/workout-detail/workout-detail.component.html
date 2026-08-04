@@ -1,41 +1,28 @@
 <div class="min-h-screen bg-[#0B0E14] text-white font-sans animate-fadeIn pb-24 relative">
 
-  <!-- Loading State -->
-
   @if (workout(); as workout) {
     <div class="relative z-10 mx-auto" [class.max-w-lg]="!isActive()" [class.max-w-xl]="isActive()">
-      <!-- ========================================== -->
-      <!-- VIEW: OVERVIEW (Initial State)             -->
-      <!-- ========================================== -->
+      <!-- OVERVIEW -->
       @if (!isActive()) {
-        <!-- Top Background Ambient -->
         <div class="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-blue-900/10 to-[#0B0E14] pointer-events-none"></div>
-        <!-- 1. Header Navigation -->
         <div class="px-4 py-4 flex items-center justify-between sticky top-0 bg-[#0B0E14]/80 backdrop-blur-md z-50 border-b border-white/5">
           <button (click)="goBack()" class="flex items-center gap-1 text-[#CCFF00] font-medium text-sm hover:text-white transition-colors">
             <mat-icon class="text-lg">arrow_back_ios</mat-icon>
             {{ workout.fecha | date:'EEEE' | titlecase }}
           </button>
-          <button class="text-white">
-            <mat-icon>more_horiz</mat-icon>
-          </button>
+          <button class="text-white"><mat-icon>more_horiz</mat-icon></button>
         </div>
         <div class="px-5 pt-2 pb-6 space-y-8">
-          <!-- 2. Trainer Banner -->
           <button type="button" class="w-full text-left bg-[#151921] rounded-2xl p-5 border border-zinc-800 flex items-center gap-4 relative overflow-hidden group cursor-pointer hover:border-zinc-700 transition-all">
             <div class="absolute -right-10 -top-10 w-32 h-32 bg-blue-500/10 blur-[50px] rounded-full pointer-events-none"></div>
-            <div class="h-10 w-10 rounded-lg bg-white/10 flex items-center justify-center text-white">
-              <mat-icon>sports_gymnastics</mat-icon>
-            </div>
+            <div class="h-10 w-10 rounded-lg bg-white/10 flex items-center justify-center text-white"><mat-icon>sports_gymnastics</mat-icon></div>
             <div class="flex-1">
               <h3 class="text-white font-bold text-sm">Entrenador</h3>
-              <p class="text-zinc-400 text-xs leading-relaxed mt-1">
-                ¡Eleva tu estado físico! Descubre los secretos detrás de la selección de ejercicios.
-              </p>
+              <p class="text-zinc-400 text-xs leading-relaxed mt-1">¡Eleva tu estado físico! Descubre los secretos detrás de la selección de ejercicios.</p>
             </div>
             <mat-icon class="text-zinc-600 group-hover:text-white transition-colors">chevron_right</mat-icon>
           </button>
-          <!-- 3. Muscles Horizontal List -->
+          
           <div>
             <h3 class="text-lg font-bold text-white mb-4">Músculos a entrenar</h3>
             <div class="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x">
@@ -55,685 +42,257 @@
             </div>
           </div>
     
-            <!-- 4. Exercise List (Cards) -->
-            <div class="space-y-4">
-                <div class="flex items-center justify-between border-b border-zinc-800 pb-2 mb-4">
-                    <h3 class="text-xl font-bold text-white">{{ workout.ejercicios.length }} ejercicios</h3>
-                </div>
-                
-                @for (ex of workout.ejercicios; track ex.nombre; let i = $index) {
-                  <button type="button" class="w-full text-left bg-[#151921] p-3 rounded-2xl flex items-center gap-4 relative group hover:bg-[#1a1f29] transition-colors cursor-pointer border border-transparent hover:border-zinc-800"
-                       (click)="toggleExpand(i)">
-                      
-                      <div class="h-20 w-20 flex-shrink-0 rounded-xl bg-zinc-800 overflow-hidden relative border border-zinc-700">
-                          <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" alt="Exercise" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
-                      </div>
-                      <div class="flex-1 min-w-0 pr-8">
-                           <h4 class="text-white font-bold text-base mb-1 truncate leading-tight">{{ ex.nombre }}</h4>
-                           <p class="text-zinc-400 text-xs font-medium">
-                               {{ ex.series }} series - {{ ex.repeticiones }} reps @if (ex.pesokg) {
-<span>- {{ ex.pesokg }} kg</span>
-}
-                           </p>
-                      </div>
-                      <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                          <mat-icon class="text-zinc-600">favorite_border</mat-icon>
-                      </div>
-                  </button>
-                }
-            </div>
-    
-            <!-- Start Button Sticky -->
-            <div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-sm px-6 z-40">
-                <button (click)="iniciarRutina()" 
-                        class="w-full py-4 bg-[#CCFF00] hover:bg-[#bce600] text-black font-extrabold text-sm uppercase tracking-widest rounded-2xl shadow-[0_0_20px_rgba(204,255,0,0.4)] transition-all hover:scale-[1.02] flex items-center justify-center gap-2">
-                    <mat-icon>play_arrow</mat-icon> COMENZAR RUTINA
+          <div class="space-y-4">
+              <div class="flex items-center justify-between border-b border-zinc-800 pb-2 mb-4">
+                  <h3 class="text-xl font-bold text-white">{{ workout.ejercicios.length }} ejercicios</h3>
+              </div>
+              @for (ex of workout.ejercicios; track ex.nombre; let i = $index) {
+                <button type="button" class="w-full text-left bg-[#151921] p-3 rounded-2xl flex items-center gap-4 relative group hover:bg-[#1a1f29] transition-colors cursor-pointer border border-transparent hover:border-zinc-800"
+                     (click)="toggleExpand(i)">
+                    <div class="h-20 w-20 flex-shrink-0 rounded-xl bg-zinc-800 overflow-hidden relative border border-zinc-700">
+                        <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" alt="Exercise" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                    </div>
+                    <div class="flex-1 min-w-0 pr-8">
+                         <h4 class="text-white font-bold text-base mb-1 truncate leading-tight">{{ ex.nombre }}</h4>
+                         <p class="text-zinc-400 text-xs font-medium">{{ ex.series }} series - {{ ex.repeticiones }} reps @if (ex.pesokg) { <span>- {{ ex.pesokg }} kg</span> }</p>
+                    </div>
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1"><mat-icon class="text-zinc-600">favorite_border</mat-icon></div>
                 </button>
-            </div>
-        </div>
+              }
+          </div>
     
-}
-
-
-    <!-- ========================================== -->
-    <!-- VIEW: ACTIVE MODE (Execution)              -->
-    <!-- ========================================== -->
-    @if (isActive()) {
-
-
-        <!-- REST TIMER OVERLAY (Delegated to Service) -->
-        @if (showRestModal()) {
-          <div class="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center animate-fadeIn"
-               (click)="closeRestModal()"
-               (keydown.escape)="closeRestModal()">
-               <div class="relative bg-[#151921] border border-zinc-800 p-8 rounded-3xl flex flex-col items-center gap-6 shadow-2xl w-full max-w-xs mx-4"
-                    (click)="$event.stopPropagation()"
-                    (keydown.escape)="closeRestModal()">
-                 <button (click)="closeRestModal()" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors">
-                     <mat-icon>close</mat-icon>
-                 </button>
-                 <h3 class="text-xl font-bold text-white uppercase tracking-widest">Descanso</h3>
-                 
-                 <!-- Timer Display -->
-                 <div class="text-6xl font-mono font-bold tracking-tighter"
-                      [ngClass]="restTimer.remaining() <= 5 ? 'text-red-500 animate-pulse' : 'text-[#CCFF00]'">
-                     {{ restTimer.formatted() }}
-                 </div>
-                 
-                 <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                     <div class="h-full bg-[#CCFF00] transition-all duration-1000 ease-linear"
-                          [style.width.%]="restTimer.progress() * 100"></div>
-                 </div>
-
-                 <!-- Presets -->
-                 <div class="grid grid-cols-4 gap-2 w-full mt-2">
-                     @for (p of restPresets; track p) {
-                       <button (click)="restTimer.quickStart(p)"
-                               class="py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-bold transition">
-                           {{ p }}s
-                       </button>
-                     }
-                 </div>
-                 
-                 <button (click)="restTimer.stop(); closeRestModal()" class="mt-2 text-red-500/80 hover:text-red-500 font-bold uppercase text-xs tracking-widest hover:underline">
-                     Detener y Cerrar
-                 </button>
-             </div>
+          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-sm px-6 z-40">
+              <button (click)="iniciarRutina()" 
+                      class="w-full py-4 bg-[#CCFF00] hover:bg-[#bce600] text-black font-extrabold text-sm uppercase tracking-widest rounded-2xl shadow-[0_0_20px_rgba(204,255,0,0.4)] transition-all hover:scale-[1.02] flex items-center justify-center gap-2">
+                  <mat-icon>play_arrow</mat-icon> COMENZAR RUTINA
+              </button>
+          </div>
         </div>
-}
+      }
+
+      <!-- ACTIVE MODE -->
+      @if (isActive()) {
+        <app-rest-timer></app-rest-timer>
         
-        <!-- FAB to open Rest Timer (Floating Action Button) -->
-        @if (!showRestModal()) {
-<button (click)="openRestModal()" 
-                class="fixed bottom-24 right-4 h-12 w-12 rounded-full bg-[#151921] border border-zinc-700 text-[#CCFF00] shadow-[0_0_15px_rgba(204,255,0,0.15)] flex items-center justify-center z-40 hover:scale-105 transition-transform">
-            @if (!restTimer.isRunning()) {
-<mat-icon>timer</mat-icon>
-}
-            @if (restTimer.isRunning()) {
-<span class="text-xs font-mono font-bold">{{ restTimer.formatted() }}</span>
-}
-        </button>
-}
-
-        <!-- Active Header / Timer -->
-        <div class="bg-[#0B0E14] sticky top-0 z-50 border-b border-zinc-800 pb-4 pt-4 px-4 shadow-xl">
-             <div class="flex justify-between items-center mb-4">
-                 <button (click)="cancelActiveSession()" class="text-zinc-400 hover:text-zinc-200 bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase flex items-center gap-1 transition-colors border border-zinc-700">
-                     <mat-icon class="text-sm">close</mat-icon> Cancelar
-                 </button>
-                 <div class="flex flex-col items-center">
-                     <span class="text-[10px] uppercase tracking-widest text-[#CCFF00] font-bold">Tiempo Transcurrido</span>
-                     <span class="text-3xl font-mono font-bold text-white">{{ sessionTimeFormatted() }}</span>
-                 </div>
-                 <button (click)="finalizarRutina()" class="bg-[#CCFF00] text-black hover:bg-[#bce600] px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-[0_0_10px_rgba(204,255,0,0.3)]">
-                     Guardar
-                 </button>
-             </div>
-             
-             <!-- Progress Bar -->
-             <div class="w-full h-1 bg-zinc-800 rounded-full overflow-hidden" [ngClass]="{'animate-pulse': sessionSeconds() >= 3600}">
-                 <div class="h-full bg-[#CCFF00] transition-all duration-1000 ease-linear shadow-[0_0_10px_rgba(204,255,0,0.5)]"
-                      [style.width.%]="timerProgress()"></div>
-             </div>
-        </div>
+        <app-workout-header
+          [sessionTimeFormatted]="sessionService.sessionTimeFormatted()"
+          [timerProgress]="sessionService.timerProgress()"
+          (cancel)="cancelActiveSession()"
+          (save)="finalizarRutina()">
+        </app-workout-header>
 
         <div class="p-4 space-y-6 pb-32 no-scrollbar" cdkDropList (cdkDropListDropped)="drop($event)">
-            
             @for (ex of workout.ejercicios; track ex.nombre; let i = $index) {
               <div cdkDrag class="bg-[#151921]/50 p-2 sm:p-4 rounded-2xl border border-transparent hover:border-zinc-800 transition-all">
                 
-                <!-- Main Exercise Header -->
-                <div class="flex items-center gap-2 sm:gap-4 mb-4 relative">
-                    <!-- Drag Handle -->
-                    <div cdkDragHandle class="text-zinc-600 hover:text-white cursor-grab active:cursor-grabbing flex items-center justify-center -ml-1 sm:ml-0 p-1">
-                        <mat-icon>drag_indicator</mat-icon>
-                    </div>
-                    <div class="h-14 w-14 rounded-lg bg-zinc-800 overflow-hidden border border-zinc-700 relative z-10 flex-shrink-0">
-                        <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" alt="Exercise" class="w-full h-full object-cover">
-                    </div>
-                    <div class="flex-1 pr-10">
-                        <div class="flex items-center gap-2">
-                            <h3 class="text-xl font-bold text-white leading-tight">{{ ex.nombre }}</h3>
-                            <button (click)="openExerciseDetail(ex)" class="text-zinc-500 hover:text-[#CCFF00] min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors">
-                                <mat-icon class="text-xl">info</mat-icon>
-                            </button>
-                        </div>
-                        <p class="text-xs text-[#CCFF00] mt-1">{{ ex.series }} Sets Objetivo</p>
-                    </div>
-                    <button (click)="deleteExercise(i)" class="absolute right-0 top-0 text-zinc-600 hover:text-red-500 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors">
-                        <mat-icon>delete</mat-icon>
-                    </button>
-                </div>
+                <app-exercise-card
+                  [ex]="ex"
+                  [exIndex]="i"
+                  (openDetail)="openExerciseDetail($event)"
+                  (delete)="deleteExercise($event)"
+                  (updateSupersetField)="updateSupersetField($event)"
+                  (unlinkSuperset)="unlinkSuperset($event)">
+                </app-exercise-card>
 
-                <!-- Superset Connector & Secondary Exercise -->
-                @if (ex.superSetEjercicio) {
-<div class="flex flex-col relative pl-7 mb-4 -mt-2">
-                    <!-- Visual Connector Line -->
-                    <div class="absolute left-[27px] top-[-10px] bottom-6 w-0.5 bg-purple-500/50"></div>
-                    
-                    <div class="flex items-center gap-4 relative z-10 mt-2">
-                        <div class="h-12 w-12 rounded-lg bg-zinc-800 overflow-hidden border-2 border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.3)] flex-shrink-0">
-                            <img [src]="exerciseImgService.getExerciseThumbnail(ex.superSetEjercicio.nombre)" alt="Superset Exercise" class="w-full h-full object-cover">
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <span class="bg-purple-500/20 text-purple-400 text-[8px] font-black uppercase px-2 py-0.5 rounded tracking-widest border border-purple-500/30">Super</span>
-                                <h3 class="text-base font-bold text-zinc-300 leading-tight truncate">{{ ex.superSetEjercicio.nombre }}</h3>
-                                <!-- INLINE GOAL EDITING -->
-                                <div class="flex items-center gap-1 text-[10px] text-zinc-500 ml-1">
-                                    <input type="number" [id]="'superset-series-' + i" [ngModel]="ex.superSetEjercicio.series" (ngModelChange)="updateSupersetField(i, 'series', $event)" aria-label="Series de superserie" class="w-8 bg-transparent text-center border-b border-zinc-700 focus:border-purple-500 outline-none text-purple-400 font-bold transition-colors" />
-                                    <span>x</span>
-                                    <input type="number" [id]="'superset-reps-' + i" [ngModel]="ex.superSetEjercicio.repeticiones" (ngModelChange)="updateSupersetField(i, 'repeticiones', $event)" aria-label="Repeticiones de superserie" class="w-8 bg-transparent text-center border-b border-zinc-700 focus:border-purple-500 outline-none text-purple-400 font-bold transition-colors" />
-                                </div>
-                                <button (click)="openExerciseDetail(ex.superSetEjercicio)" class="text-zinc-500 hover:text-purple-400 min-w-[36px] min-h-[36px] flex items-center justify-center transition-colors flex-shrink-0">
-                                    <mat-icon class="text-lg">info</mat-icon>
-                                </button>
-                            </div>
-                        </div>
-                        <!-- Unlink Button -->
-                        <button (click)="unlinkSuperset(i, $event)"
-                                class="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-lg bg-purple-900/30 border border-purple-500/30 text-purple-400 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-400 transition-all text-[10px] font-bold uppercase tracking-wider">
-                            <mat-icon class="text-sm">link_off</mat-icon>
-                            <span class="hidden sm:inline">Quitar</span>
-                        </button>
-                    </div>
-                </div>
-}
+                <app-set-tracker
+                  [ex]="ex"
+                  [exIndex]="i"
+                  [sets]="sessionService.getSetsForExercise(i)"
+                  (toggleType)="sessionService.toggleSetType($event.exIndex, $event.setIndex)"
+                  (toggleSuperset)="sessionService.toggleSupersetForSet($event.exIndex, $event.setIndex)"
+                  (toggleComplete)="sessionService.toggleSetComplete($event.exIndex, $event.setIndex, sessionService.restTimer.quickStart.bind(sessionService.restTimer))"
+                  (deleteSet)="sessionService.deleteSet($event.exIndex, $event.setIndex)"
+                  (updateWeight)="sessionService.updateSetWeight($event.exIndex, $event.setIndex, $event.weight)"
+                  (updateReps)="sessionService.updateSetReps($event.exIndex, $event.setIndex, $event.reps)"
+                  (clearSuperset)="sessionService.clearSupersetData($event.exIndex, $event.setIndex)"
+                  (updateDropSet)="sessionService.updateDropSet($event.exIndex, $event.setIndex, $event.dropIndex, $event.weight, $event.reps)"
+                  (deleteDropSet)="sessionService.deleteDropSet($event.exIndex, $event.setIndex, $event.dropIndex)"
+                  (clearDropSetSuperset)="sessionService.clearDropSetSupersetData($event.exIndex, $event.setIndex, $event.dropIndex)"
+                  (addSet)="sessionService.addSet($event)"
+                  (addDropSet)="sessionService.addDropSet($event)"
+                  (openSuperserieModal)="openSuperserieModal($event)">
+                </app-set-tracker>
 
-                <!-- Sets Table -->
-                <div class="bg-[#151921] rounded-2xl border border-zinc-800 overflow-hidden">
-                    
-                    <!-- Table Header -->
-                    <div class="grid grid-cols-10 gap-1 sm:gap-2 px-1 sm:px-4 py-3 bg-zinc-900/50 border-b border-zinc-800 text-[9px] sm:text-[10px] uppercase font-bold text-zinc-500 tracking-wider text-center">
-                        <div class="col-span-1">Set</div>
-                        <div class="col-span-3">KG</div>
-                        <div class="col-span-3">Reps</div>
-                        <div class="col-span-2">Check</div>
-                        <div class="col-span-1"></div>
-                    </div>
+              </div>
+            }
+            
+            <button (click)="openAddExerciseModal()" class="w-full mt-6 py-4 border-2 border-dashed border-zinc-700 hover:border-[#CCFF00] hover:bg-zinc-800/50 rounded-2xl flex items-center justify-center gap-3 text-zinc-400 hover:text-[#CCFF00] transition-all font-bold text-sm tracking-widest uppercase outline-none focus:ring-2 focus:ring-[#CCFF00]">
+              <mat-icon>add_circle_outline</mat-icon> Añadir Ejercicio Manual
+            </button>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="flex flex-col items-center justify-center min-h-screen">
+      <div class="h-10 w-10 border-4 border-zinc-800 border-t-[#CCFF00] rounded-full animate-spin mb-4"></div>
+      <p class="text-zinc-500 text-xs tracking-widest uppercase">Cargando Rutina...</p>
+    </div>
+  }
 
-                    <!-- Rows -->
-                    @for (set of getSetsForExercise(i); track $index; let sIndex = $index) {
-                      <div class="border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-colors">
-                        
-                        <!-- Parent Row -->
-                        <div [id]="'set-row-' + i + '-' + sIndex" class="grid grid-cols-10 gap-1 sm:gap-2 px-1 sm:px-4 py-2 sm:py-2.5 items-center"
-                             [ngClass]="{'opacity-50': set.completed, 'bg-green-900/10': set.completed}">
-                    <!-- Set Number / Badge -->
-                    <div class="col-span-1 flex flex-col items-center justify-center relative">
-                      <div class="flex items-center flex-col sm:flex-row gap-1">
-                        @if (set.type === 'warmup') {
-                          <button (click)="toggleSetType(i, sIndex)" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/50 hover:bg-blue-500/40 transition-colors" title="Warm-up (Click to change)">W</button>
-                        }
-                        @if (set.type === 'effective' || !set.type) {
-                          <button (click)="toggleSetType(i, sIndex)" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-[#CCFF00]/20 text-[#CCFF00] border border-[#CCFF00]/50 hover:bg-[#CCFF00]/40 transition-colors" title="Effective (Click to change)">E</button>
-                        }
-                        @if (set.type === 'topset') {
-                          <button (click)="toggleSetType(i, sIndex)" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-red-500/20 text-red-500 border border-red-500/50 hover:bg-red-500/40 transition-colors" title="Top Set (Click to change)">T</button>
-                        }
-                        @if (set.type === 'backoff') {
-                          <button (click)="toggleSetType(i, sIndex)" class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-yellow-500/20 text-yellow-500 border border-yellow-500/50 hover:bg-yellow-500/40 transition-colors" title="Back-off Set (Click to change)">B</button>
-                        }
-                        <div class="text-xs font-bold text-zinc-300 w-4 text-center">{{ sIndex + 1 }}</div>
-                        <!-- Link Toggle (Superset) -->
-                        @if (ex.superSetEjercicio && set.type !== 'warmup') {
-                          <button
-                            (click)="toggleSupersetForSet(i, sIndex)"
-                            [ngClass]="(set.superWeight !== undefined || set.superReps !== undefined) ? 'text-purple-400 bg-purple-500/20 border-purple-500/50' : 'text-zinc-600 bg-zinc-800/50 border-zinc-700 hover:text-purple-400'"
-                            class="w-4 h-4 rounded flex-shrink-0 flex items-center justify-center text-[10px] border transition-colors"
-                            title="Vincular/Desvincular Superserie">
-                            <mat-icon class="text-[12px] w-[12px] h-[12px] leading-[12px]">link</mat-icon>
-                          </button>
-                        }
-                      </div>
-                    </div>
-                    <!-- KG Input -->
-                    <div class="col-span-3">
-                      <input type="number" [id]="'set-weight-' + i + '-' + sIndex" [(ngModel)]="set.weight" aria-label="Peso en kilogramos"
-                        class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none"
-                        placeholder="0">
-                      </div>
-                      <!-- Reps Input -->
-                      <div class="col-span-3">
-                        <input type="number" [id]="'set-reps-' + i + '-' + sIndex" [(ngModel)]="set.reps" aria-label="Número de repeticiones"
-                          class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none"
-                          placeholder="0">
-                        </div>
-                        <!-- Checkbox -->
-                        <div class="col-span-2 flex justify-center">
-                          <button (click)="toggleSetComplete(i, sIndex)"
-                            [class.bg-[#CCFF00]]="set.completed"
-                            [class.text-black]="set.completed"
-                            [class.bg-zinc-700]="!set.completed"
-                            [class.text-zinc-500]="!set.completed"
-                            class="h-6 sm:h-8 w-8 sm:w-12 rounded-lg flex items-center justify-center transition-all active:scale-95">
-                            @if (set.completed) {
-                              <mat-icon>check</mat-icon>
-                            }
-                            @if (!set.completed) {
-                              <mat-icon>check_box_outline_blank</mat-icon>
-                            }
-                          </button>
-                        </div>
-                        <!-- Delete Button -->
-                        <div class="col-span-1 flex justify-center">
-                          @if (getSetsForExercise(i).length > 1) {
-                            <button
-                              (click)="deleteSet(i, sIndex)"
-                              class="text-zinc-600 hover:text-red-500 transition-colors">
-                              <mat-icon class="text-lg">delete</mat-icon>
-                            </button>
-                          }
-                        </div>
-                      </div>
-                      <!-- Superset Row (Double Entry) -->
-                      @if (ex.superSetEjercicio && (set.superWeight !== undefined || set.superReps !== undefined)) {
-                        <div
-                          class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c212a] border-l-2 border-purple-500 ml-4 sm:ml-6 mb-2 rounded-r-lg animate-in fade-in slide-in-from-top-2 duration-200"
-                          [ngClass]="{'opacity-50': set.completed}">
-                          <div class="col-span-1 flex justify-center">
-                            <mat-icon class="text-purple-500 text-sm">subdirectory_arrow_right</mat-icon>
-                          </div>
-                          <!-- KG Input Child -->
-                          <div class="col-span-3">
-                            <input type="number" [id]="'set-superweight-' + i + '-' + sIndex" [(ngModel)]="set.superWeight" aria-label="Peso en kilogramos para superserie"
-                              class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
-                              placeholder="0">
-                            </div>
-                            <!-- Reps Input Child -->
-                            <div class="col-span-3">
-                              <input type="number" [id]="'set-superreps-' + i + '-' + sIndex" [(ngModel)]="set.superReps" aria-label="Repeticiones para superserie"
-                                class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
-                                placeholder="0">
-                              </div>
-                              <div class="col-span-2"></div> <!-- Empty space under check -->
-                              <!-- Delete Button Superset Child -->
-                              <div class="col-span-1 flex justify-center">
-                                @if (set.superWeight !== undefined || set.superReps !== undefined) {
-                                  <button
-                                    (click)="clearSupersetData(i, sIndex)"
-                                    class="text-zinc-600 hover:text-red-500 transition-colors">
-                                    <mat-icon class="text-[16px] leading-[16px] w-[16px] h-[16px]">delete</mat-icon>
-                                  </button>
-                                }
-                              </div>
-                            </div>
-                          }
-                          <!-- Nested Drop Sets -->
-                          @if (set.dropSets && set.dropSets.length > 0) {
-                            @for (dropSet of set.dropSets; track $index; let dIndex = $index) {
-                              <div class="mt-1">
-                                <!-- Drop Set Row -->
-                                <div class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c1815] border-l-2 border-orange-500 ml-4 sm:ml-6 rounded-r-lg mb-1 animate-in fade-in slide-in-from-top-2 duration-200"
-                                  [ngClass]="{'opacity-50': set.completed}">
-                                  <div class="col-span-1 flex justify-center items-center gap-1">
-                                    <div class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black bg-orange-500/20 text-orange-500 border border-orange-500/50">D</div>
-                                  </div>
-                                  <!-- KG Input DropSet -->
-                                  <div class="col-span-3">
-                                    <input type="number" [id]="'dropset-weight-' + i + '-' + sIndex + '-' + dIndex" [(ngModel)]="dropSet.weight" aria-label="Peso en kilogramos para drop set"
-                                      class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
-                                      placeholder="0">
-                                    </div>
-                                    <!-- Reps Input DropSet -->
-                                    <div class="col-span-3">
-                                      <input type="number" [id]="'dropset-reps-' + i + '-' + sIndex + '-' + dIndex" [(ngModel)]="dropSet.reps" aria-label="Repeticiones para drop set"
-                                        class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
-                                        placeholder="0">
-                                      </div>
-                                      <div class="col-span-2"></div> <!-- Empty space under check -->
-                                      <!-- Delete Button DropSet -->
-                                      <div class="col-span-1 flex justify-center">
-                                        <button (click)="deleteDropSet(i, sIndex, dIndex)"
-                                          class="text-zinc-600 hover:text-red-500 transition-colors">
-                                          <mat-icon class="text-[16px] leading-[16px] w-[16px] h-[16px]">delete</mat-icon>
-                                        </button>
-                                      </div>
-                                    </div>
-                                    <!-- Drop Set Superset Row (If parent exercise is a superset) -->
-                                    @if (ex.superSetEjercicio && (dropSet.superWeight !== undefined || dropSet.superReps !== undefined)) {
-                                      <div
-                                        class="grid grid-cols-10 gap-1 sm:gap-2 px-3 sm:px-4 py-2 items-center bg-[#1c212a] border-l-2 border-purple-500 ml-8 sm:ml-10 rounded-r-lg mb-2 animate-in fade-in slide-in-from-top-2 duration-200"
-                                        [ngClass]="{'opacity-50': set.completed}">
-                                        <div class="col-span-1 flex justify-center">
-                                          <mat-icon class="text-purple-500 text-sm">subdirectory_arrow_right</mat-icon>
-                                        </div>
-                                        <div class="col-span-3">
-                                          <input type="number" [id]="'dropset-superweight-' + i + '-' + sIndex + '-' + dIndex" [(ngModel)]="dropSet.superWeight" aria-label="Peso en kilogramos para superserie de drop set"
-                                            class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
-                                            placeholder="0">
-                                          </div>
-                                          <div class="col-span-3">
-                                            <input type="number" [id]="'dropset-superreps-' + i + '-' + sIndex + '-' + dIndex" [(ngModel)]="dropSet.superReps" aria-label="Repeticiones para superserie de drop set"
-                                              class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
-                                              placeholder="0">
-                                            </div>
-                                            <div class="col-span-2"></div> <!-- Empty space under check -->
-                                            <!-- Delete Button DropSet Superset Child -->
-                                            <div class="col-span-1 flex justify-center">
-                                              @if (dropSet.superWeight !== undefined || dropSet.superReps !== undefined) {
-                                                <button
-                                                  (click)="clearDropSetSupersetData(i, sIndex, dIndex)"
-                                                  class="text-zinc-600 hover:text-red-500 transition-colors">
-                                                  <mat-icon class="text-[16px] leading-[16px] w-[16px] h-[16px]">delete</mat-icon>
-                                                </button>
-                                              }
-                                            </div>
-                                          </div>
-                                        }
-                                      </div>
-                                    }
-                                  }
-                                </div>
-                              }
-                            </div>
-                            <!-- Actions Footer -->
-                            <div class="flex flex-wrap items-center justify-center gap-1 sm:gap-2 p-1.5 sm:p-2 border-t border-zinc-800">
-                              <button (click)="addSet(i)" class="flex-1 min-w-[30%] py-2 sm:py-3 bg-zinc-800/30 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-[#CCFF00] text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[36px] sm:min-h-[44px]">
-                                <mat-icon class="text-sm">add</mat-icon> Set
-                              </button>
-                              <button (click)="addDropSet(i)" class="flex-1 min-w-[30%] py-2 sm:py-3 bg-zinc-800/30 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[36px] sm:min-h-[44px]">
-                                <mat-icon class="text-sm">trending_down</mat-icon> Drop
-                              </button>
-                              <button (click)="openSuperserieModal(i)" class="flex-1 min-w-[30%] py-2 sm:py-3 bg-zinc-800/30 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-purple-400 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1 transition-colors min-h-[36px] sm:min-h-[44px]">
-                                <mat-icon class="text-sm">link</mat-icon> Super
-                              </button>
-                            </div>
-                          </div>
-                        }
-                        <!-- Botón Añadir Ejercicio Manual -->
-                        <button (click)="openAddExerciseModal()" class="w-full mt-6 py-4 border-2 border-dashed border-zinc-700 hover:border-[#CCFF00] hover:bg-zinc-800/50 rounded-2xl flex items-center justify-center gap-3 text-zinc-400 hover:text-[#CCFF00] transition-all font-bold text-sm tracking-widest uppercase outline-none focus:ring-2 focus:ring-[#CCFF00]">
-                          <mat-icon>add_circle_outline</mat-icon> Añadir Ejercicio Manual
-                        </button>
-                      </div>
-                    }
-                    <!-- PRO SUPERSERIE MODAL (inline anchor, replaced below) -->
-                    <!-- Modal: Fatigue Warning -->
-                    @if (showFatigueWarning()) {
-                      <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div class="bg-[#151921] border border-orange-500/50 rounded-2xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
-                          <div class="flex items-center gap-3 text-orange-500 mb-4">
-                            <div class="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
-                              <mat-icon>health_and_safety</mat-icon>
-                            </div>
-                            <h3 class="text-lg font-bold text-white tracking-wide">Alerta de Fatiga</h3>
-                          </div>
-                          <p class="text-sm text-zinc-400 mb-4">
-                            Tus músculos objetivo promedio (<span class="font-bold text-white">{{ fatiguedAverage() }}% de recuperación</span>) se encuentran muy fatigados.
-                            <br><br>
-                            Músculos en riesgo: <span class="text-orange-400 font-bold">{{ fatiguedMusclesDesc() }}</span>.
-                          </p>
-                          <div class="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 mb-6">
-                            <p class="text-[10px] text-orange-400 uppercase tracking-widest font-bold">Riesgo de Sobre-entrenamiento</p>
-                            <p class="text-xs text-orange-500/80 mt-1">Recomendamos descansar o enfocar otro grupo muscular para evitar lesiones y optimizar resultados.</p>
-                          </div>
-                          <div class="flex gap-3 justify-end mt-4">
-                            <button (click)="cancelFatigueWarning()" class="px-5 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 font-bold tracking-wider text-xs hover:bg-zinc-800 transition">
-                              CANCELAR
-                            </button>
-                            <button (click)="confirmStartRoutine()" class="px-5 py-2.5 rounded-xl bg-orange-500/20 text-orange-500 border border-orange-500/30 font-bold tracking-wider text-xs hover:bg-orange-500 hover:text-white transition shadow-[0_0_15px_rgba(249,115,22,0.2)] hover:shadow-[0_0_20px_rgba(249,115,22,0.4)]">
-                              ENTRENAR IGUAL
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    }
-                    <!-- Modal: Confirmation (Exit/Save) -->
-                    @if (showExitModal()) {
-                      <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div class="bg-[#151921] border border-zinc-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
-                          <div class="flex items-center gap-3 text-red-500 mb-4">
-                            <div class="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20">
-                              <mat-icon>warning</mat-icon>
-                            </div>
-                            <h3 class="text-lg font-bold text-white tracking-wide">
-                              {{ pendingExitAction() === 'save' ? 'Finalizar Sesión' : (pendingExitAction() === 'cancel' ? 'Cancelar Sesión' : 'Salir del Entrenamiento') }}
-                            </h3>
-                          </div>
-                          <p class="text-sm text-zinc-400 mb-8">
-                            {{ pendingExitAction() === 'save' ? '¿Estás seguro que deseas guardar este entrenamiento y finalizar la sesión activa?' : (pendingExitAction() === 'cancel' ? '¿Deseas cancelar la sesión activa? Se perderá el progreso no guardado.' : '¿Seguro que deseas salir sin guardar? Perderás el progreso de esta sesión.') }}
-                          </p>
-                          <div class="flex gap-3 justify-end mt-4">
-                            <button (click)="cancelExitModal()" class="px-5 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 font-bold tracking-wider text-xs hover:bg-zinc-800 transition">
-                              CANCELAR
-                            </button>
-                            <button (click)="confirmExitModal()" class="px-5 py-2.5 rounded-xl bg-red-500/20 text-red-500 border border-red-500/30 font-bold tracking-wider text-xs hover:bg-red-500 hover:text-white transition shadow-[0_0_15px_rgba(239,68,68,0.2)] hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]">
-                              CONFIRMAR
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    }
-                    <!-- Modal: Exercise Detail -->
-                    @if (showExerciseModal() && selectedExercise(); as ex) {
-                      <div
-                        class="fixed inset-0 z-[130] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
-                        (click)="closeExerciseModal()"
-                        (keydown.escape)="closeExerciseModal()">
-                        <div class="bg-[#151921] border border-zinc-700 rounded-t-3xl sm:rounded-2xl w-full max-w-lg flex flex-col shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300"
-                          style="max-height: 90dvh"
-                          (click)="$event.stopPropagation()"
-                          (keydown.escape)="closeExerciseModal()">
-                          <!-- Media Header: Video OR Image (Fixed) -->
-                          <div class="relative w-full bg-zinc-900 rounded-t-3xl sm:rounded-t-2xl overflow-hidden flex-none" style="aspect-ratio: 16/9">
-                            @if (ex.videoUrl) {
-                              <iframe [src]="ex.videoUrl | safeYoutube"
-                                class="w-full h-full border-0"
-                                title="Video de técnica de ejercicio"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen>
-                              </iframe>
-                            } @else {
-                              <img [src]="ex.imageUrl || exerciseImgService.getExerciseThumbnail(ex.nombre)"
-                                [alt]="ex.nombre"
-                                class="w-full h-full object-cover opacity-70"
-                         (error)="$any($event.target).src='https://placehold.co/640x360/0B0E14/CCFF00?text=' + ex.nombre">
-                    <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/40 to-transparent">
-                        <div class="h-14 w-14 rounded-full bg-black/60 border border-white/20 flex items-center justify-center">
-                            <mat-icon class="text-white text-3xl">fitness_center</mat-icon>
-                        </div>
-                    </div>
-                }
-                <!-- Close button -->
-                <button (click)="closeExerciseModal()"
-                        class="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/60 border border-white/20 flex items-center justify-center text-white hover:bg-black/80 transition">
-                    <mat-icon class="text-sm">close</mat-icon>
-                </button>
+  <!-- MODALS -->
+
+  <!-- Fatigue Warning Modal -->
+  @if (showFatigueWarning()) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
+      <div class="bg-[#151921] border border-orange-500/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95">
+        <div class="h-16 w-16 bg-orange-500/10 rounded-full flex items-center justify-center mb-4">
+          <mat-icon class="text-orange-500 text-3xl">warning_amber</mat-icon>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">Fatiga Detectada</h3>
+        <p class="text-zinc-400 text-sm mb-6">
+          Los músculos objetivos (<span class="text-orange-400 font-bold">{{ fatiguedMusclesDesc() }}</span>) tienen una recuperación estimada del <span class="text-orange-400 font-bold">{{ fatiguedAverage() }}%</span>.
+          Entrenar con alta fatiga puede ser contraproducente.
+        </p>
+        <div class="w-full flex gap-3">
+          <button (click)="cancelFatigueWarning()" class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl text-sm transition-colors">Cancelar</button>
+          <button (click)="confirmStartRoutine()" class="flex-1 py-3 bg-orange-500/20 hover:bg-orange-500/30 text-orange-500 border border-orange-500/50 font-bold rounded-xl text-sm transition-colors">Forzar Inicio</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Exit / Save Modal -->
+  @if (showExitModal()) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
+      <div class="bg-[#151921] border border-zinc-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl flex flex-col items-center text-center">
+        <mat-icon class="text-[#CCFF00] text-4xl mb-4">
+          {{ pendingExitAction() === 'save' ? 'save' : (pendingExitAction() === 'cancel' ? 'cancel' : 'exit_to_app') }}
+        </mat-icon>
+        <h3 class="text-lg font-bold text-white mb-2">
+          {{ pendingExitAction() === 'save' ? '¿Finalizar Rutina?' : (pendingExitAction() === 'cancel' ? '¿Cancelar Sesión?' : '¿Salir?') }}
+        </h3>
+        <p class="text-zinc-400 text-sm mb-6">
+          {{ pendingExitAction() === 'save' ? 'Se guardarán tus progresos en el historial y se ajustará el volumen.' : (pendingExitAction() === 'cancel' ? 'Se perderá todo el progreso de esta sesión.' : 'La rutina quedará en estado activo.') }}
+        </p>
+        <div class="w-full flex gap-3">
+          <button (click)="cancelExitModal()" class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl text-sm transition-colors">No, volver</button>
+          <button (click)="confirmExitModal()" class="flex-1 py-3 bg-[#CCFF00]/20 hover:bg-[#CCFF00]/30 text-[#CCFF00] border border-[#CCFF00]/50 font-bold rounded-xl text-sm transition-colors">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Exercise Detail Modal -->
+  @if (showExerciseModal()) {
+    <div class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm"
+      (click)="closeExerciseModal()"
+      (keydown.escape)="closeExerciseModal()">
+      <div class="bg-[#151921] w-full max-w-md sm:rounded-2xl rounded-t-3xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh]"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()">
+        @if (selectedExercise(); as ex) {
+          <div class="relative w-full aspect-video bg-black flex-shrink-0">
+            @if (getVideoEmbedUrl(ex.videoUrl); as videoUrl) {
+              <iframe
+                [src]="videoUrl | safeYoutube"
+                [title]="ex.nombre || 'Video de ejercicio'"
+                class="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+              </iframe>
+            } @else {
+              <div class="w-full h-full flex flex-col items-center justify-center text-zinc-600 bg-zinc-900 border-b border-zinc-800">
+                <mat-icon class="text-4xl mb-2 opacity-50">videocam_off</mat-icon>
+                <p class="text-xs font-bold uppercase tracking-widest">Video no disponible</p>
+              </div>
+            }
+          </div>
+          <div class="flex-1 overflow-y-auto p-5 custom-scroll space-y-6">
+            <div>
+              <div class="flex items-start justify-between gap-4 mb-2">
+                <h2 class="text-2xl font-black text-white leading-tight uppercase tracking-wide">{{ ex.nombre }}</h2>
+              </div>
+              <div class="flex flex-wrap gap-2 mt-3">
+                <span class="px-3 py-1 bg-zinc-800 border border-zinc-700 text-zinc-300 text-[10px] font-bold uppercase tracking-wider rounded-lg">{{ ex.tipo || 'Aislado' }}</span>
+                <span class="px-3 py-1 bg-[#CCFF00]/10 border border-[#CCFF00]/20 text-[#CCFF00] text-[10px] font-bold uppercase tracking-wider rounded-lg">{{ ex.dificultad || 'Intermedio' }}</span>
+              </div>
             </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex items-center gap-3 bg-zinc-900 rounded-xl p-3 border border-zinc-800/50">
+                <mat-icon class="text-[#CCFF00]">fitness_center</mat-icon>
+                <div><p class="text-[10px] text-zinc-500 uppercase tracking-widest">Equipamiento</p><p class="text-white font-bold text-sm leading-tight">{{ ex.equipmentRequired?.join(', ') || 'N/A' }}</p></div>
+              </div>
+              @if (ex.descanso) {
+                <div class="flex items-center gap-3 bg-zinc-900 rounded-xl p-3 border border-zinc-800/50">
+                  <mat-icon class="text-zinc-400">timer</mat-icon>
+                  <div><p class="text-[10px] text-zinc-500 uppercase tracking-widest">Descanso</p><p class="text-white font-bold text-sm leading-tight">{{ ex.descanso }}</p></div>
+                </div>
+              }
+            </div>
+            @if (ex.notas) {
+              <div class="bg-[#CCFF00]/5 border border-[#CCFF00]/20 rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-2"><mat-icon class="text-[#CCFF00] text-sm">tips_and_updates</mat-icon><span class="text-xs font-bold text-[#CCFF00] uppercase tracking-wider">Técnica del Coach</span></div>
+                <p class="text-zinc-300 text-sm leading-relaxed">{{ ex.notas }}</p>
+              </div>
+            }
+            <div class="flex items-center gap-4 bg-zinc-900 rounded-xl p-4 border border-zinc-800/50">
+              <img [src]="exerciseImgService.getMuscleImage(ex.grupoMuscular)" [alt]="ex.grupoMuscular" class="h-16 w-16 object-contain opacity-80" (error)="$any($event.target).style.display='none'">
+              <div><p class="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Músculo objetivo</p><p class="text-white font-bold">{{ ex.grupoMuscular }}</p></div>
+            </div>
+          </div>
+          <div class="flex-none p-4 border-t border-zinc-800 bg-[#0D1017]">
+            <button (click)="closeExerciseModal()" class="w-full py-3.5 rounded-xl bg-zinc-800 text-white hover:bg-zinc-700 font-bold text-sm uppercase tracking-wider transition border border-zinc-700 active:scale-95">Cerrar</button>
+          </div>
+        }
+      </div>
+    </div>
+  }
 
-            <!-- Content (Scrollable) -->
-            @if (selectedExercise(); as ex) {
-<div class="flex-1 overflow-y-auto p-5 space-y-6 custom-scroll bg-[#151921] min-h-0">
+  <!-- Catalog Modal -->
+  @if (showCatalogModal()) {
+    <div class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm"
+      (click)="closeCatalogModal()"
+      (keydown.escape)="closeCatalogModal()">
+      <div class="bg-[#151921] border border-purple-500/30 rounded-t-3xl sm:rounded-2xl w-full max-w-lg shadow-2xl flex flex-col" style="max-height: 85dvh" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+        <div class="p-5 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50 rounded-t-2xl">
+          <div>
+            <h3 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+              <mat-icon [ngClass]="catalogModalMode() === 'superset' ? 'text-purple-500' : 'text-[#CCFF00]'">{{ catalogModalMode() === 'superset' ? 'link' : 'add_circle' }}</mat-icon>
+              {{ catalogModalMode() === 'superset' ? 'Vincular Superserie' : 'Añadir Ejercicio' }}
+            </h3>
+            <p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Busca o filtra por músculo</p>
+          </div>
+          <button (click)="closeCatalogModal()" class="text-zinc-500 hover:text-white transition-colors"><mat-icon>close</mat-icon></button>
+        </div>
+        <div class="p-4 border-b border-zinc-800 relative bg-[#0B0E14] flex-none">
+          <mat-icon class="absolute left-7 top-1/2 -translate-y-1/2 text-zinc-500 text-lg">search</mat-icon>
+          <input id="superset-search-input" aria-label="Buscar ejercicio específico" type="text" [(ngModel)]="supersetSearchQuery" class="w-full bg-[#151921] border border-zinc-700 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-purple-500 outline-none" placeholder="Buscar ejercicio específico...">
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 custom-scroll">
+          @if (!supersetSelectedMuscle() && !supersetSearchQuery()) {
+            <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 no-scrollbar">
+              @for (m of supersetMuscleGroups(); track m) {
+                <button (click)="supersetSelectedMuscle.set(m)" class="bg-zinc-900 border border-zinc-800 hover:border-purple-500 hover:bg-purple-500/10 rounded-xl p-3 flex flex-col items-center gap-2 group">
+                  <div class="h-12 w-12 rounded-lg bg-[#151921] p-1"><img [src]="exerciseImgService.getMuscleImage(m)" class="w-full h-full object-contain opacity-80 group-hover:opacity-100" [alt]="m"></div>
+                  <span class="text-[10px] font-bold text-zinc-400 group-hover:text-purple-400 uppercase tracking-wider text-center line-clamp-1">{{ m }}</span>
+                </button>
+              }
+            </div>
+          }
+          @if (supersetSelectedMuscle() || supersetSearchQuery()) {
+            <div class="space-y-2">
+              @if (supersetSelectedMuscle()) {
+                <div class="flex items-center gap-2 mb-4 bg-purple-500/10 p-2 rounded-lg border border-purple-500/20">
+                  <button (click)="supersetSelectedMuscle.set(null)" class="text-purple-400 hover:text-purple-300 p-1 bg-[#151921] rounded-md border border-purple-500/30"><mat-icon class="text-sm">arrow_back</mat-icon></button>
+                  <span class="text-xs font-bold text-purple-400 uppercase tracking-widest">{{ supersetSelectedMuscle() }}</span>
+                </div>
+              }
+              @for (ex of filteredSupersetExercises(); track ex) {
+                <button (click)="selectExerciseFromCatalog(ex)" class="w-full bg-[#151921] border border-zinc-800 hover:border-[#CCFF00]/50 rounded-xl p-3 flex items-center gap-4 text-left group" [ngClass]="{'opacity-50': !hasRequiredEquipment(ex)}">
+                  <div class="h-10 w-10 rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden flex-shrink-0">
+                    <img [src]="ex.imageUrl || exerciseImgService.getExerciseThumbnail(ex.nombre)" class="w-full h-full object-cover opacity-70 group-hover:opacity-100" [alt]="ex.nombre">
+                  </div>
+                  <div><p class="text-sm font-bold text-zinc-300 group-hover:text-white">{{ ex.nombre }}</p><p class="text-[10px] text-zinc-600 uppercase tracking-widest">{{ ex.grupoMuscular }}</p></div>
+                  <mat-icon class="ml-auto text-zinc-600 group-hover:text-[#CCFF00]">
+                    {{ catalogModalMode() === 'superset' ? 'add_link' : 'add' }}
+                  </mat-icon>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
 
-                <!-- Title + Badge -->
-                <div class="flex items-start justify-between gap-3">
-                    <div>
-                        <h2 class="text-xl font-bold text-white leading-tight">{{ ex.nombre }}</h2>
-                        <p class="text-xs text-zinc-500 mt-1 uppercase tracking-widest">{{ ex.grupoMuscular }}</p>
-                    </div>
-                    <span class="flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
-                          [ngClass]="ex.tipo === 'compuesto'
-                            ? 'bg-[#CCFF00]/10 text-[#CCFF00] border-[#CCFF00]/30'
-                                    : 'bg-blue-500/10 text-blue-400 border-blue-500/30'">
-                                    {{ ex.tipo || 'ejercicio' }}
-                                  </span>
-                                </div>
-                                <div class="grid grid-cols-4 gap-3 mb-6">
-                                  @if (isActive() && activeModalMetrics()) {
-                                    <div class="bg-zinc-900 rounded-xl p-3 text-center">
-                                      <span class="block text-lg font-black text-[#CCFF00]">{{ activeModalMetrics()!.seriesCompletadas }}/{{ activeModalMetrics()!.totalSeries }}</span>
-                                      <span class="block text-[10px] text-zinc-500 uppercase mt-0.5">Series</span>
-                                    </div>
-                                    <div class="bg-zinc-900 rounded-xl p-3 text-center">
-                                      <span class="block text-lg font-black text-white">{{ activeModalMetrics()!.currentReps }}</span>
-                                      <span class="block text-[10px] text-zinc-500 uppercase mt-0.5">Reps</span>
-                                    </div>
-                                    <div class="bg-zinc-900 rounded-xl p-3 text-center">
-                                      <span class="block text-lg font-black text-white">{{ activeModalMetrics()!.currentKg }}</span>
-                                      <span class="block text-[10px] text-zinc-500 uppercase mt-0.5">KG</span>
-                                    </div>
-                                    <div class="bg-zinc-900 rounded-xl p-3 text-center">
-                                      <span class="block text-lg font-black text-white">{{ ex.rir ?? '-' }}</span>
-                                      <span class="block text-[10px] text-zinc-500 uppercase mt-0.5">RIR</span>
-                                    </div>
-                                  } @else {
-                                    <div class="bg-zinc-900 rounded-xl p-3 text-center">
-                                      <span class="block text-lg font-black text-[#CCFF00]">{{ ex.series || '-' }}</span>
-                                      <span class="block text-[10px] text-zinc-500 uppercase mt-0.5">Series</span>
-                                    </div>
-                                    <div class="bg-zinc-900 rounded-xl p-3 text-center">
-                                      <span class="block text-lg font-black text-white">{{ ex.repeticiones || '-' }}</span>
-                                      <span class="block text-[10px] text-zinc-500 uppercase mt-0.5">Reps</span>
-                                    </div>
-                                    <div class="bg-zinc-900 rounded-xl p-3 text-center">
-                                      <span class="block text-lg font-black text-white">{{ ex.pesokg || '-' }}</span>
-                                      <span class="block text-[10px] text-zinc-500 uppercase mt-0.5">KG</span>
-                                    </div>
-                                    <div class="bg-zinc-900 rounded-xl p-3 text-center">
-                                      <span class="block text-lg font-black text-white">{{ ex.rir ?? '-' }}</span>
-                                      <span class="block text-[10px] text-zinc-500 uppercase mt-0.5">RIR</span>
-                                    </div>
-                                  }
-                                </div>
-                                <!-- Rest Time -->
-                                @if (ex.descanso) {
-                                  <div class="flex items-center gap-3 bg-zinc-900 rounded-xl p-3">
-                                    <mat-icon class="text-zinc-400">timer</mat-icon>
-                                    <div>
-                                      <p class="text-xs text-zinc-500 uppercase tracking-wider">Descanso entre series</p>
-                                      <p class="text-white font-bold text-sm">{{ ex.descanso }}</p>
-                                    </div>
-                                  </div>
-                                }
-                                <!-- Technical Notes -->
-                                @if (ex.notas) {
-                                  <div class="bg-[#CCFF00]/5 border border-[#CCFF00]/20 rounded-xl p-4">
-                                    <div class="flex items-center gap-2 mb-2">
-                                      <mat-icon class="text-[#CCFF00] text-sm">tips_and_updates</mat-icon>
-                                      <span class="text-xs font-bold text-[#CCFF00] uppercase tracking-wider">Técnica del Coach</span>
-                                    </div>
-                                    <p class="text-zinc-300 text-sm leading-relaxed">{{ ex.notas }}</p>
-                                  </div>
-                                }
-                                <!-- Muscle Image -->
-                                <div class="flex items-center gap-4 bg-zinc-900 rounded-xl p-4">
-                                  <img [src]="exerciseImgService.getMuscleImage(ex.grupoMuscular)"
-                                    [alt]="ex.grupoMuscular"
-                                    class="h-20 w-20 object-contain opacity-80"
-                                    (error)="$any($event.target).style.display='none'">
-                                    <div>
-                                      <p class="text-xs text-zinc-500 uppercase tracking-wider mb-1">Músculo objetivo</p>
-                                      <p class="text-white font-bold">{{ ex.grupoMuscular }}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              }
-                              <!-- Footer (Fixed) -->
-                              <div class="flex-none p-4 border-t border-zinc-800 bg-[#0D1017]">
-                                <button (click)="closeExerciseModal()"
-                                  class="w-full py-3.5 rounded-xl bg-zinc-800 text-white hover:bg-zinc-700 font-bold text-sm uppercase tracking-wider transition border border-zinc-700 active:scale-95">
-                                  Cerrar
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        }
-                        <!-- PRO CATALOG MODAL (Superset / Add Manual) -->
-                        @if (showCatalogModal()) {
-                          <div
-                            class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
-                            (click)="closeCatalogModal()"
-                            (keydown.escape)="closeCatalogModal()">
-                            <div class="bg-[#151921] border border-purple-500/30 rounded-t-3xl sm:rounded-2xl w-full max-w-lg shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 flex flex-col"
-                              style="max-height: 85dvh"
-                              (click)="$event.stopPropagation()"
-                              (keydown.escape)="closeCatalogModal()">
-                              <!-- Header -->
-                              <div class="p-5 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50 rounded-t-2xl">
-                                <div>
-                                  <h3 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
-                                    <mat-icon [ngClass]="catalogModalMode() === 'superset' ? 'text-purple-500' : 'text-[#CCFF00]'">
-                                      {{ catalogModalMode() === 'superset' ? 'link' : 'add_circle' }}
-                                    </mat-icon>
-                                    {{ catalogModalMode() === 'superset' ? 'Vincular Superserie' : 'Añadir Ejercicio' }}
-                                  </h3>
-                                  <p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Busca o filtra por músculo</p>
-                                </div>
-                                <button (click)="closeCatalogModal()" class="text-zinc-500 hover:text-white transition-colors">
-                                  <mat-icon>close</mat-icon>
-                                </button>
-                              </div>
-                              <!-- Search Bar (Fixed) -->
-                              <div class="p-4 border-b border-zinc-800 relative bg-[#0B0E14] flex-none">
-                                <mat-icon class="absolute left-7 top-1/2 -translate-y-1/2 text-zinc-500 text-lg">search</mat-icon>
-                                <input type="text" id="catalog-exercise-search" [(ngModel)]="supersetSearchQuery"
-                                  class="w-full bg-[#151921] border border-zinc-700 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition outline-none placeholder:text-zinc-600"
-                                  placeholder="Buscar ejercicio específico..."
-                                  aria-label="Buscar ejercicio específico">
-                                </div>
-                                <!-- Content Area (Scrollable) -->
-                                <div class="flex-1 overflow-y-auto p-4 custom-scroll">
-                                  <!-- STEP 1: Muscle Grid (if no muscle selected and no search) -->
-                                  @if (!supersetSelectedMuscle() && !supersetSearchQuery()) {
-                                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 animate-in fade-in no-scrollbar">
-                                      @for (m of supersetMuscleGroups(); track m) {
-                                        <button
-                                          (click)="supersetSelectedMuscle.set(m)"
-                                          class="bg-zinc-900 border border-zinc-800 hover:border-purple-500 hover:bg-purple-500/10 rounded-xl p-3 flex flex-col items-center gap-2 transition-all group">
-                                          <div class="h-12 w-12 rounded-lg bg-[#151921] p-1 group-hover:scale-110 transition-transform">
-                                            <img [src]="exerciseImgService.getMuscleImage(m)" class="w-full h-full object-contain opacity-80 group-hover:opacity-100" [alt]="m">
-                                          </div>
-                                          <span class="text-[10px] font-bold text-zinc-400 group-hover:text-purple-400 uppercase tracking-wider text-center line-clamp-1">{{ m }}</span>
-                                        </button>
-                                      }
-                                    </div>
-                                  }
-                                  <!-- STEP 2: Exercise List -->
-                                  @if (supersetSelectedMuscle() || supersetSearchQuery()) {
-                                    <div class="space-y-2 animate-in slide-in-from-right-4">
-                                      @if (supersetSelectedMuscle()) {
-                                        <div class="flex items-center gap-2 mb-4 bg-purple-500/10 p-2 rounded-lg border border-purple-500/20">
-                                          <button (click)="supersetSelectedMuscle.set(null)" class="text-purple-400 hover:text-purple-300 flex items-center justify-center p-1 bg-[#151921] rounded-md border border-purple-500/30">
-                                            <mat-icon class="text-sm">arrow_back</mat-icon>
-                                          </button>
-                                          <span class="text-xs font-bold text-purple-400 uppercase tracking-widest">{{ supersetSelectedMuscle() }}</span>
-                                        </div>
-                                      }
-                                      @if (filteredSupersetExercises().length === 0) {
-                                        <div class="text-center text-zinc-500 text-sm py-8 font-mono flex flex-col items-center gap-2">
-                                          <mat-icon class="text-zinc-700 text-4xl mb-2">construction</mat-icon>
-                                          <p>No se encontraron ejercicios.</p>
-                                          <p class="text-xs">Pronto añadiremos más ejercicios de esta disciplina.</p>
-                                        </div>
-                                      }
-                                      @for (ex of filteredSupersetExercises(); track ex) {
-                                        <button
-                                          (click)="selectExerciseFromCatalog(ex)"
-                                          class="w-full bg-[#151921] border border-zinc-800 hover:border-[#CCFF00]/50 rounded-xl p-3 flex items-center gap-4 transition-all text-left group relative"
-                                          [ngClass]="{'opacity-50': !hasRequiredEquipment(ex)}">
-                                          <div class="h-10 w-10 rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden flex-shrink-0 relative">
-                                            <img [src]="ex.imageUrl || exerciseImgService.getExerciseThumbnail(ex.nombre)" class="w-full h-full object-cover opacity-70 group-hover:opacity-100" [alt]="ex.nombre">
-                                          </div>
-                                          <div>
-                                            <p class="text-sm font-bold text-zinc-300 group-hover:text-white">{{ ex.nombre }}</p>
-                                            <p class="text-[10px] text-zinc-600 uppercase tracking-widest">{{ ex.grupoMuscular }}</p>
-                                          </div>
-                                          <mat-icon class="ml-auto text-zinc-600 group-hover:text-[#CCFF00] transition-colors">
-                                            {{ catalogModalMode() === 'superset' ? 'add_link' : 'add' }}
-                                          </mat-icon>
-                                        </button>
-                                      }
-                                    </div>
-                                  }
-                                </div>
-                              </div>
-                            </div>
-                          }
-                        </div>
-                      } @else {
-                        <div class="flex flex-col items-center justify-center min-h-screen">
-                          <div class="h-10 w-10 border-4 border-zinc-800 border-t-[#CCFF00] rounded-full animate-spin mb-4"></div>
-                          <p class="text-zinc-500 text-xs tracking-widest uppercase">Cargando Rutina...</p>
-                        </div>
-                      }
-                    </div>
+</div>
