@@ -1,10 +1,13 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { AdminExercisesApi, AdminExercise } from '../services/admin-exercises.api';
+import { AdminExercisesQueries } from '../api/admin-exercises.queries';
+import { AdminExercisesCommands } from '../api/admin-exercises.commands';
+import { AdminExercise } from '../models/admin-exercises.models';
 import { ToastService } from '../../../core/services/toast.service';
 
 @Injectable()
 export class AdminExercisesStore {
-  private readonly api = inject(AdminExercisesApi);
+  private readonly queries = inject(AdminExercisesQueries);
+  private readonly commands = inject(AdminExercisesCommands);
   private readonly toastService = inject(ToastService);
 
   // States
@@ -37,7 +40,7 @@ export class AdminExercisesStore {
   async loadExercises(): Promise<void> {
     try {
       this.isLoading.set(true);
-      const list = await this.api.getExercises();
+      const list = await this.queries.getExercises();
       list.sort((a: AdminExercise, b: AdminExercise) => 
         (a.name || '').localeCompare(b.name || '')
       );
@@ -61,11 +64,11 @@ export class AdminExercisesStore {
       };
 
       if (currentId) {
-        await this.api.updateExercise(currentId, payload);
+        await this.commands.updateExercise(currentId, payload);
         this.toastService.showSuccess('¡Ejercicio actualizado con éxito!');
       } else {
         const docId = this.generateDocId(payload.name || '');
-        await this.api.createExercise(docId, payload);
+        await this.commands.createExercise(docId, payload);
         this.toastService.showSuccess('¡Ejercicio guardado con éxito!');
       }
       this.closeSideSheet();

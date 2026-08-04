@@ -1,22 +1,25 @@
-import { Component, inject, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  ReactiveFormsModule,
-  FormBuilder,
-  Validators,
-  FormsModule,
-} from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminExercisesStore } from './store/admin-exercises.store';
-import { AdminExercise } from './services/admin-exercises.api';
-import { UiTableComponent } from '../../shared/ui/ui-table/ui-table.component';
+import { AdminExercise } from './models/admin-exercises.models';
+import { MUSCLE_GROUPS } from './constants/admin-exercises.constants';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
-import { createColumnHelper, ColumnDef } from '@tanstack/angular-table';
+import { ExerciseTableComponent } from './ui/exercise-table/exercise-table.component';
+import { ExerciseFormComponent } from './ui/exercise-form/exercise-form.component';
 
 @Component({
   selector: 'app-admin-exercises',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, UiTableComponent, UiIconComponent],
+  imports: [
+    CommonModule, 
+    ReactiveFormsModule, 
+    FormsModule, 
+    UiIconComponent,
+    ExerciseTableComponent,
+    ExerciseFormComponent
+  ],
   templateUrl: './admin-exercises.component.html',
   providers: [AdminExercisesStore],
 })
@@ -25,29 +28,11 @@ export class AdminExercisesComponent implements OnInit {
   private readonly router = inject(Router);
   public store = inject(AdminExercisesStore);
 
-  muscleGroups = [
-    'pecho',
-    'espalda',
-    'hombros',
-    'bíceps',
-    'tríceps',
-    'cuádriceps',
-    'isquios',
-    'glúteos',
-    'gemelos',
-    'core',
-  ];
-  equipmentOptions = [
-    'Polea',
-    'Máquina Smith',
-    'Máquinas',
-    'Mancuernas',
-    'Barra',
-    'Kettlebells',
-    'Bandas',
-    'Calistenia',
-  ];
-
+  muscleGroups = MUSCLE_GROUPS;
+  
+  // Local state for the form (could also be pushed to store, but fine here for the Smart component)
+  equipmentRequired: string[] = [];
+  
   exerciseForm = this.fb.group({
     name: ['', Validators.required],
     discipline: ['gym', Validators.required],
@@ -59,90 +44,45 @@ export class AdminExercisesComponent implements OnInit {
     videoUrl: [''],
   });
 
-  equipmentRequired: string[] = [];
-
-  @ViewChild('nameCell', { static: true }) nameCell!: TemplateRef<any>;
-  @ViewChild('tagsCell', { static: true }) tagsCell!: TemplateRef<any>;
-  @ViewChild('actionCell', { static: true }) actionCell!: TemplateRef<any>;
-
-  columns: ColumnDef<AdminExercise, any>[] = [];
-
   ngOnInit(): void {
     this.store.loadExercises();
-    
-    const helper = createColumnHelper<AdminExercise>();
-    this.columns = [
-      helper.accessor('name', {
-        header: 'Ejercicio',
-        cell: this.nameCell as any,
-      }),
-      helper.accessor('muscleGroup', {
-        header: 'Músculo',
-      }),
-      helper.accessor('discipline', {
-        header: 'Disciplina',
-      }),
-      helper.accessor('type', {
-        header: 'Detalles',
-        cell: this.tagsCell as any,
-      }),
-      helper.display({
-        id: 'actions',
-        header: 'Acción',
-        cell: this.actionCell as any,
-      })
-    ];
   }
 
-  openSideSheet(mode: 'create' | 'edit', ex?: AdminExercise): void {
-    this.store.openSideSheet(mode, ex);
-    if (mode === 'edit' && ex) {
-      this.equipmentRequired = ex.equipmentRequired || [];
-      this.exerciseForm.patchValue({
-        name: ex.name || '',
-        discipline: ex.discipline || 'gym',
-        muscleGroup: ex.muscleGroup || 'pecho',
-        type: ex.type || 'compound',
-        difficulty: ex.difficulty || 'intermediate',
-        instructions: Array.isArray(ex.instructions)
-          ? ex.instructions.join('; ')
-          : '',
-        imageUrl: ex.imageUrl || 'assets/default-exercise.png',
-        videoUrl: ex.videoUrl || '',
-      });
-    } else {
-      this.equipmentRequired = [];
-      this.exerciseForm.reset({
-        discipline: 'gym',
-        muscleGroup: 'pecho',
-        type: 'compound',
-        difficulty: 'intermediate',
-        imageUrl: 'assets/default-exercise.png',
-        videoUrl: '',
-      });
-    }
+  openCreate(): void {
+    this.equipmentRequired = [];
+    this.exerciseForm.reset({
+      discipline: 'gym',
+      muscleGroup: 'pecho',
+      type: 'compound',
+      difficulty: 'intermediate',
+      imageUrl: 'assets/default-exercise.png',
+      videoUrl: '',
+    });
+    this.store.openSideSheet('create');
+  }
+
+  openEdit(ex: AdminExercise): void {
+    this.equipmentRequired = ex.equipmentRequired || [];
+    this.exerciseForm.patchValue({
+      name: ex.name || '',
+      discipline: ex.discipline || 'gym',
+      muscleGroup: ex.muscleGroup || 'pecho',
+      type: ex.type || 'compound',
+      difficulty: ex.difficulty || 'intermediate',
+      instructions: Array.isArray(ex.instructions) ? ex.instructions.join('; ') : '',
+      imageUrl: ex.imageUrl || 'assets/default-exercise.png',
+      videoUrl: ex.videoUrl || '',
+    });
+    this.store.openSideSheet('edit', ex);
   }
 
   closeSideSheet(): void {
     this.store.closeSideSheet();
-    setTimeout(() => {
-      this.equipmentRequired = [];
-      this.exerciseForm.reset({
-        discipline: 'gym',
-        muscleGroup: 'pecho',
-        type: 'compound',
-        difficulty: 'intermediate',
-        imageUrl: 'assets/default-exercise.png',
-        videoUrl: '',
-      });
-    }, 300); // Wait for transition
   }
 
   toggleEquipment(item: string): void {
     if (this.equipmentRequired.includes(item)) {
-      this.equipmentRequired = this.equipmentRequired.filter(
-        (eq) => eq !== item,
-      );
+      this.equipmentRequired = this.equipmentRequired.filter(eq => eq !== item);
     } else {
       this.equipmentRequired.push(item);
     }
@@ -155,12 +95,8 @@ export class AdminExercisesComponent implements OnInit {
     }
 
     const formValue = this.exerciseForm.value;
-
     const instructionsArray = formValue.instructions
-      ? formValue.instructions
-          .split(';')
-          .map((s: string) => s.trim())
-          .filter((s: string) => s.length > 0)
+      ? formValue.instructions.split(';').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
       : [];
 
     const dataToSave: Partial<AdminExercise> = {
