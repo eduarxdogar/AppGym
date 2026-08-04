@@ -1,10 +1,10 @@
 import { Component, inject, computed, signal, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { RecoveryService } from '../../../../../core/services/recovery.service';
-import { UserProfileStateService } from '../../../../../core/services/user-profile-state.service';
-import { UserProfileService } from '../../../../../core/services/user-profile.service';
-import { InbodyAiService } from '../../../../../core/services/ai/inbody-ai.service';
+import { RecoveryService } from '../../../services/recovery.service';
+import { UserProfileStateService } from '../../../../account/services/user-profile-state.service';
+import { UserProfileService } from '../../../../account/services/user-profile.service';
+import { InbodyAiService } from '../../../services/inbody-ai.service';
 import { NgtCanvas } from 'angular-three/dom';
 import { BiometricModelComponent } from '../../../../../shared/components/biometric-model/biometric-model.component';
 

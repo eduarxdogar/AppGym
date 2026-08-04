@@ -4,14 +4,14 @@ import { Ejercicio } from '../models/ejercicio.model';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
-import { ExerciseImageService } from '../../../core/services/exercise-image.service';
-import { ExerciseService } from '../../../core/services/exercise.service';
+import { ExerciseImageService } from '../services/exercise-image.service';
+import { ExerciseService } from '../services/exercise.service';
 import { SafeYoutubePipe } from '../../../shared/pipes/safe-youtube.pipe';
 import { ChatAiService } from '../../../core/services/ai/chat-ai.service';
-import { RecoveryService } from '../../../core/services/recovery.service';
+import { RecoveryService } from '../../metrics/services/recovery.service';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ToastService } from '../../../core/services/toast.service';
-import { UserProfileStateService } from '../../../core/services/user-profile-state.service';
+import { UserProfileStateService } from '../../account/services/user-profile-state.service';
 import { WorkoutSessionService, WorkoutSet } from './services/workout-session.service';
 
 import { WorkoutHeaderComponent } from './components/workout-header/workout-header.component';

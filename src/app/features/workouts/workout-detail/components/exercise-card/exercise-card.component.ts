@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { CdkDragHandle } from '@angular/cdk/drag-drop';
 import { Ejercicio } from '../../../models/ejercicio.model';
-import { ExerciseImageService } from '../../../../../core/services/exercise-image.service';
+import { ExerciseImageService } from '../../../services/exercise-image.service';
 
 @Component({
   selector: 'app-exercise-card',

@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { RestTimerService, REST_PRESETS_SECONDS } from '../../../../../core/services/rest-timer.service';
+import { RestTimerService, REST_PRESETS_SECONDS } from '../../../services/rest-timer.service';
 import { WorkoutSessionService } from '../../services/workout-session.service';
 
 @Component({

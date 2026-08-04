@@ -1,7 +1,7 @@
 import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { GamificationService } from '../../../core/services/gamification.service';
+import { GamificationService } from '../../../features/metrics/services/gamification.service';
 import { GAMIFICATION_RANKS } from '../../../features/account/models/user-profile.model';
 
 @Component({

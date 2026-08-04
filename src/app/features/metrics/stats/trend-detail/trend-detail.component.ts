@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, Chart, registerables } from 'chart.js';
-import { TrainingHistoryService } from '../../../../core/services/training-history.service';
+import { TrainingHistoryService } from '../../../workouts/services/training-history.service';
 import { StatsData } from '../../models/stats-data.model';
 
 export type TimeRange = 'week' | 'month' | 'year' | 'total';

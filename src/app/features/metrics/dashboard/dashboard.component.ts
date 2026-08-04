@@ -2,11 +2,11 @@ import { Component, computed, inject, ChangeDetectionStrategy, Signal } from '@a
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { WorkoutService } from '../../../core/services/workout.service';
-import { RecoveryService } from '../../../core/services/recovery.service';
+import { WorkoutService } from '../../workouts/services/workout.service';
+import { RecoveryService } from '../services/recovery.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { UserProfileStateService } from '../../../core/services/user-profile-state.service';
-import { MetricsService } from '../../../core/services/metrics.service';
+import { UserProfileStateService } from '../../account/services/user-profile-state.service';
+import { MetricsService } from '../services/metrics.service';
 import { UiButtonComponent } from '../../../shared/ui/ui-button/ui-button.component';
 import { StrengthTierWidgetComponent } from '../../../shared/components/strength-tier-widget/strength-tier-widget.component';
 import { Workout } from '../../workouts/models/workout.model';

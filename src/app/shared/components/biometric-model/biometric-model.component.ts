@@ -12,8 +12,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 import { extend, beforeRender, NgtRenderState, NgtThreeEvent, NgtArgs, injectStore, injectLoader } from 'angular-three';
 import { MatIconModule } from '@angular/material/icon';
-import { RecoveryService } from '../../../core/services/recovery.service';
-import { UserProfileStateService } from '../../../core/services/user-profile-state.service';
+import { RecoveryService } from '../../../features/metrics/services/recovery.service';
+import { UserProfileStateService } from '../../../features/account/services/user-profile-state.service';
 
 extend(THREE);
 

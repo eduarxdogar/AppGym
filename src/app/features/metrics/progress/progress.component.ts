@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TrainingHistoryService } from '../../../core/services/training-history.service';
+import { TrainingHistoryService } from '../../workouts/services/training-history.service';
 import { TrainingSession } from '../../workouts/models/training-session.model';
 import { MatIconModule } from '@angular/material/icon';
 

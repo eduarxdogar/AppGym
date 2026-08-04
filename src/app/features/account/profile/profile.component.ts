@@ -7,9 +7,9 @@ import { Storage, ref, uploadBytes, getDownloadURL } from '@angular/fire/storage
 import { Functions, httpsCallable } from '@angular/fire/functions';
 
 import { AuthService } from '../../../core/services/auth.service';
-import { UserProfileStateService } from '../../../core/services/user-profile-state.service';
-import { UserProfileService } from '../../../core/services/user-profile.service';
-import { GamificationService } from '../../../core/services/gamification.service';
+import { UserProfileStateService } from '../services/user-profile-state.service';
+import { UserProfileService } from '../services/user-profile.service';
+import { GamificationService } from '../../metrics/services/gamification.service';
 import { DatabaseMigrationService } from '../../../core/services/database-migration.service';
 import { MigrationReport } from '../../admin/models/admin.model';
 import { UserProfileSchema } from './schemas/user-profile.schema';

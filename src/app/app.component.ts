@@ -6,7 +6,7 @@ import { AiCoachDrawerComponent } from './shared/components/ai-coach-drawer/ai-c
 import { UiStateService } from './core/services/ui-state.service';
 import { MatIconModule } from '@angular/material/icon';
 import { DragDropModule } from '@angular/cdk/drag-drop';
-import { ExerciseSeederService } from './core/services/exercise-seeder.service';
+import { ExerciseSeederService } from './features/workouts/services/exercise-seeder.service';
 
 @Component({
   selector: 'app-root',

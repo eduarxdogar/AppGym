@@ -1,8 +1,8 @@
 import { Injectable, inject, signal, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { UserProfileService } from './user-profile.service';
-import { AuthService } from './auth.service';
-import { UserProfile } from '../../features/account/models/user-profile.model';
+import { AuthService } from '../../../core/services/auth.service';
+import { UserProfile } from '../models/user-profile.model';
 
 @Injectable({
   providedIn: 'root'

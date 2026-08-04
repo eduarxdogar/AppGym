@@ -5,17 +5,17 @@ import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { firstValueFrom } from 'rxjs';
-import { WorkoutService } from '../../../core/services/workout.service';
-import { TrainerAiService } from '../../../core/services/ai/trainer-ai.service';
+import { WorkoutService } from '../services/workout.service';
+import { TrainerAiService } from '../services/trainer-ai.service';
 import { WeeklyPlanRequest } from '../models/ai-requests.model';
 import { UserProfile } from '../../account/models/user-profile.model';
-import { UserProfileStateService } from '../../../core/services/user-profile-state.service';
-import { RecoveryService } from '../../../core/services/recovery.service';
+import { UserProfileStateService } from '../../account/services/user-profile-state.service';
+import { RecoveryService } from '../../metrics/services/recovery.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { WeeklySummaryModalComponent } from '../../../shared/components/weekly-summary-modal/weekly-summary-modal.component';
-import { ProgressionEngineService } from '../../../core/services/progression-engine.service';
+import { ProgressionEngineService } from '../services/progression-engine.service';
 import { ProgressionOptions } from '../models/workout.model';
-import { TrainingHistoryService } from '../../../core/services/training-history.service';
+import { TrainingHistoryService } from '../services/training-history.service';
 import { WorkoutSession } from '../models/workout-history.model';
 
 @Component({

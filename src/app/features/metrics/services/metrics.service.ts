@@ -2,11 +2,11 @@ import { Injectable, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
-import { WorkoutService } from './workout.service';
-import { StorageService } from './storage.service';
-import { CardioSessionService } from './cardio-session.service';
-import { WorkoutSession, WorkoutExercise, WorkoutSet } from '../../features/workouts/models/workout-history.model';
-import { WeeklyMetrics } from '../../features/metrics/models/stats-data.model';
+import { WorkoutService } from '../../workouts/services/workout.service';
+import { StorageService } from '../../../core/services/storage.service';
+import { CardioSessionService } from '../../cardio/services/cardio-session.service';
+import { WorkoutSession, WorkoutExercise, WorkoutSet } from '../../workouts/models/workout-history.model';
+import { WeeklyMetrics } from '../models/stats-data.model';
 
 const DEFAULT_USER_WEIGHT_KG = 75;
 const RESISTANCE_MET = 6;

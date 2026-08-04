@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Workout } from '../../models/workout.model';
 import { Ejercicio } from '../../models/ejercicio.model';
-import { WorkoutService } from '../../../../core/services/workout.service';
+import { WorkoutService } from '../../services/workout.service';
 
 @Injectable()
 export class WorkoutEditStore {

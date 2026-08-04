@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Workout, ProgressionOptions } from '../../features/workouts/models/workout.model';
-import { Ejercicio } from '../../features/workouts/models/ejercicio.model';
-import { WorkoutSession, WorkoutExercise } from '../../features/workouts/models/workout-history.model';
+import { Workout, ProgressionOptions } from '../models/workout.model';
+import { Ejercicio } from '../models/ejercicio.model';
+import { WorkoutSession, WorkoutExercise } from '../models/workout-history.model';
 
 const DEFAULT_PROGRESSION_OPTIONS: ProgressionOptions = { focus: 'weight', frequencyAdjustment: 0 };
 

@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output, computed, inject, signal } from
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
-import { MetricsService } from '../../../core/services/metrics.service';
+import { MetricsService } from '../../../features/metrics/services/metrics.service';
 import { ProgressionOptions } from '../../../features/workouts/models/workout.model';
 
 @Component({

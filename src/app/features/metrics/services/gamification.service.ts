@@ -2,9 +2,9 @@ import { Injectable, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
-import { TrainingHistoryService } from './training-history.service';
-import { WorkoutSession, WorkoutExercise, WorkoutSet } from '../../features/workouts/models/workout-history.model';
-import { GAMIFICATION_RANKS, GamificationState } from '../../features/account/models/user-profile.model';
+import { TrainingHistoryService } from '../../workouts/services/training-history.service';
+import { WorkoutSession, WorkoutExercise, WorkoutSet } from '../../workouts/models/workout-history.model';
+import { GAMIFICATION_RANKS, GamificationState } from '../../account/models/user-profile.model';
 
 @Injectable({ providedIn: 'root' })
 export class GamificationService {

@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Firestore, collection, getDocs } from '@angular/fire/firestore';
-import { EXERCISES_CATALOG } from '../../features/workouts/models/exercise-catalog';
-import { Ejercicio } from '../../features/workouts/models/workout.model';
+import { EXERCISES_CATALOG } from '../models/exercise-catalog';
+import { Ejercicio } from '../models/workout.model';
 
 @Injectable({ providedIn: 'root' })
 export class ExerciseService {

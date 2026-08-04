@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { BoxingAiService } from '../../core/services/ai/boxing-ai.service';
+import { BoxingAiService } from '../workouts/services/boxing-ai.service';
 import { BoxingRoutine } from '../workouts/models/ai-requests.model';
-import { CardioSessionService } from '../../core/services/cardio-session.service';
+import { CardioSessionService } from './services/cardio-session.service';
 
 @Component({
   selector: 'app-cardio-boxing',

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, doc, setDoc, getDocs } from '@angular/fire/firestore';
-import { ExerciseData } from '../../features/workouts/models/exercise-catalog';
-import { LoggerService } from './logger.service';
+import { ExerciseData } from '../models/exercise-catalog';
+import { LoggerService } from '../../../core/services/logger.service';
 
 @Injectable({
   providedIn: 'root'

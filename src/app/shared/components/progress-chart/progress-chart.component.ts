@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartOptions } from 'chart.js';
-import { TrainingHistoryService } from '../../../core/services/training-history.service';
+import { TrainingHistoryService } from '../../../features/workouts/services/training-history.service';
 import { WorkoutSession } from '../../../features/workouts/models/workout-history.model';
 
 @Component({

@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { ExerciseService } from '../../../core/services/exercise.service';
-import { WorkoutService } from '../../../core/services/workout.service';
+import { ExerciseService } from '../services/exercise.service';
+import { WorkoutService } from '../services/workout.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Workout, Ejercicio } from '../models/workout.model';
 

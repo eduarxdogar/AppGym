@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 import { Auth, authState } from '@angular/fire/auth';
-import { UserProfileService } from '../services/user-profile.service';
+import { UserProfileService } from '../../features/account/services/user-profile.service';
 import { switchMap, map, take } from 'rxjs/operators';
 import { from } from 'rxjs';
 

@@ -1,9 +1,9 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { Workout } from '../../models/workout.model';
-import { WorkoutService } from '../../../../core/services/workout.service';
-import { TrainingSessionService } from '../../../../core/services/training-session.service';
-import { TrainingHistoryService } from '../../../../core/services/training-history.service';
-import { RestTimerService } from '../../../../core/services/rest-timer.service';
+import { WorkoutService } from '../../services/workout.service';
+import { TrainingSessionService } from '../../services/training-session.service';
+import { TrainingHistoryService } from '../../services/training-history.service';
+import { RestTimerService } from '../../services/rest-timer.service';
 import { WorkoutSession, WorkoutSessionExercise } from '../../models/workout-session.model';
 import { Firestore, collection, doc, deleteField } from '@angular/fire/firestore';
 import { Router } from '@angular/router';

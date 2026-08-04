@@ -1,7 +1,7 @@
 import { Injectable, inject, computed } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
-import { UserProfileStateService } from './user-profile-state.service';
+import { UserProfileStateService } from '../../features/account/services/user-profile-state.service';
 
 /** Posibles estados de suscripción evaluados en tiempo real. */
 export type SubscriptionState = 'active' | 'trialing' | 'expired' | 'loading';
@@ -10,7 +10,7 @@ export type SubscriptionState = 'active' | 'trialing' | 'expired' | 'loading';
   providedIn: 'root'
 })
 export class SubscriptionService {
-  private profileState = inject(UserProfileStateService);
+  private readonly profileState = inject(UserProfileStateService);
 
   /**
    * Máquina de estados computada en tiempo real.

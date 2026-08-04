@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, DestroyRef, Injector, runInInjectionContext } from '@angular/core';
 import { Firestore, collection, collectionData, doc, setDoc, query, where } from '@angular/fire/firestore';
-import { AuthService } from './auth.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';

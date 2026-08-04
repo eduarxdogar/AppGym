@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { BaseAiService } from './base-ai.service';
-import { ToastService } from '../toast.service';
-import { WeeklyDietPlanSchema, NutritionLabelSchema, WeeklyDietPlan } from '../../../features/nutrition/schemas/nutrition.schema';
+import { BaseAiService } from '../../../core/services/ai/base-ai.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { WeeklyDietPlanSchema, NutritionLabelSchema, WeeklyDietPlan } from '../schemas/nutrition.schema';
 
 @Injectable({
   providedIn: 'root'

@@ -1,6 +1,6 @@
 import { Component, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MuscleStatus } from '../../../core/services/recovery.service';
+import { MuscleStatus } from '../../../features/metrics/services/recovery.service';
 
 @Component({
   selector: 'app-professional-body-map',

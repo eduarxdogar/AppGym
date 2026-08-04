@@ -2,10 +2,10 @@ import { Injectable, inject, Signal, computed, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
-import { StorageService } from './storage.service';
-import { UserProfileStateService } from './user-profile-state.service';
-import { WorkoutSession, RECOVERY_CONSTANTS, FATIGUE_SCORES, WorkoutExercise, WorkoutSet, MuscleStatus } from '../../features/workouts/models/workout-history.model';
-import { LoggerService } from './logger.service';
+import { StorageService } from '../../../core/services/storage.service';
+import { UserProfileStateService } from '../../account/services/user-profile-state.service';
+import { WorkoutSession, RECOVERY_CONSTANTS, FATIGUE_SCORES, WorkoutExercise, WorkoutSet, MuscleStatus } from '../../workouts/models/workout-history.model';
+import { LoggerService } from '../../../core/services/logger.service';
 export type { MuscleStatus };
 
 @Injectable({

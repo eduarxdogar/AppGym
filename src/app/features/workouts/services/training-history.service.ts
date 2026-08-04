@@ -1,9 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { WorkoutSession, WorkoutExercise } from '../../features/workouts/models/workout-history.model';
-import { StorageService } from './storage.service';
-import { LoggerService } from './logger.service';
+import { WorkoutSession, WorkoutExercise } from '../models/workout-history.model';
+import { StorageService } from '../../../core/services/storage.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 export interface HistoryStats {
   total: number;

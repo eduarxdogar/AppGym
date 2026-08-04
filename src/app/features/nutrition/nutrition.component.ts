@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { NutritionAiService } from '../../core/services/ai/nutrition-ai.service';
+import { NutritionAiService } from './services/nutrition-ai.service';
 import { WeeklyDietPlan, DayDietPlan, MealPlan } from '../workouts/models/ai-requests.model';
-import { NutritionService, DailyNutritionLog } from '../../core/services/nutrition.service';
-import { UserProfileStateService } from '../../core/services/user-profile-state.service';
-import { UserProfileService } from '../../core/services/user-profile.service';
-import { GamificationService } from '../../core/services/gamification.service';
+import { NutritionService, DailyNutritionLog } from './services/nutrition.service';
+import { UserProfileStateService } from '../account/services/user-profile-state.service';
+import { UserProfileService } from '../account/services/user-profile.service';
+import { GamificationService } from '../metrics/services/gamification.service';
 
 @Component({
   selector: 'app-nutrition',

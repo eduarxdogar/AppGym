@@ -1,13 +1,13 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { BaseAiService } from './base-ai.service';
-import { UserProfileStateService } from '../user-profile-state.service';
-import { WorkoutService } from '../workout.service';
-import { MetricsService } from '../metrics.service';
-import { CardioSessionService } from '../cardio-session.service';
+import { UserProfileStateService } from '../../../features/account/services/user-profile-state.service';
+import { WorkoutService } from '../../../features/workouts/services/workout.service';
+import { MetricsService } from '../../../features/metrics/services/metrics.service';
+import { CardioSessionService } from '../../../features/cardio/services/cardio-session.service';
 import { StorageService } from '../storage.service';
 import { ChatMessage } from '../../../features/workouts/models/ai-requests.model';
-import { ExerciseImageService } from '../exercise-image.service';
-import { RecoveryService } from '../recovery.service';
+import { ExerciseImageService } from '../../../features/workouts/services/exercise-image.service';
+import { RecoveryService } from '../../../features/metrics/services/recovery.service';
 import { Workout } from '../../../features/workouts/models/workout.model';
 
 @Injectable({

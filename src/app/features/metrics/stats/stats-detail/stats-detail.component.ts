@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, Chart, registerables } from 'chart.js';
-import { TrainingHistoryService } from '../../../../core/services/training-history.service';
+import { TrainingHistoryService } from '../../../workouts/services/training-history.service';
 import { ProgressChartComponent } from '../../../../shared/components/progress-chart/progress-chart.component';
 
 @Component({

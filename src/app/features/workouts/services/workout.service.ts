@@ -1,9 +1,9 @@
 import { Injectable, computed, inject, Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
-import { Workout } from '../../features/workouts/models/workout.model';
-import { Ejercicio } from '../../features/workouts/models/ejercicio.model'; 
-import { StorageService } from './storage.service';
+import { Workout } from '../models/workout.model';
+import { Ejercicio } from '../models/ejercicio.model'; 
+import { StorageService } from '../../../core/services/storage.service';
 
 @Injectable({
   providedIn: 'root'
