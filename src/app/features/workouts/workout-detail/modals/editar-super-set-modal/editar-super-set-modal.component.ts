@@ -1,0 +1,35 @@
+import { Component, Inject } from '@angular/core';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { Ejercicio } from '../../../../../core/models/ejercicio.model'; 
+
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { FormsModule } from '@angular/forms';
+import { MatOptionModule } from '@angular/material/core';
+import { MatIconModule } from '@angular/material/icon';
+import { UiButtonComponent } from '../../../../../shared/ui/ui-button/ui-button.component';
+import { UiInputComponent } from '../../../../../shared/ui/ui-input/ui-input.component';
+
+@Component({
+  selector: 'app-editar-super-set-modal',
+  standalone: true,
+  imports: [FormsModule, MatDialogModule, MatFormFieldModule, MatOptionModule, MatIconModule, UiButtonComponent, UiInputComponent],
+  templateUrl: './editar-super-set-modal.component.html',
+})
+export class EditarSuperSetModalComponent {
+  ejercicio: Ejercicio;
+
+  constructor(
+    public dialogRef: MatDialogRef<EditarSuperSetModalComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: Ejercicio
+  ) {
+    this.ejercicio = { ...data }; // Creamos copia para no modificar directamente
+  }
+
+  guardar(): void {
+    this.dialogRef.close(this.ejercicio);
+  }
+
+  cancelar(): void {
+    this.dialogRef.close(null);
+  }
+}
