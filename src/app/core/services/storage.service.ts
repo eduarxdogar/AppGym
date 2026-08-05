@@ -1,5 +1,5 @@
 import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
-import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, where, orderBy } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, where, orderBy, limit } from '@angular/fire/firestore';
 import { Observable, of } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
@@ -94,7 +94,12 @@ export class StorageService {
         if (!user) return of([]);
         return runInInjectionContext(this.injector, () => {
              const historyCol = collection(this.firestore, 'workout_history');
-             const q = query(historyCol, where('userId', '==', user.uid));
+             const q = query(
+               historyCol, 
+               where('userId', '==', user.uid),
+               orderBy('fecha', 'desc'),
+               limit(50)
+             );
              return collectionData(q, { idField: 'id' }) as Observable<WorkoutSession[]>;
         });
       }),

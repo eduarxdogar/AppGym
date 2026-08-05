@@ -11,6 +11,7 @@ export const EjercicioSchema: z.ZodType<any> = z.lazy(() =>
     repeticiones: z.number(),
     descanso: z.string().optional(),
     pesokg: z.number().optional(),
+    reasoning: z.string().describe("Escribe aquí el cálculo matemático. Ej: 115 * 1.025 = 117.8, redondeado a 117.5").optional(),
     serieCalentamiento: z.number().optional(),
     repeticionesCalentamiento: z.number().optional(),
     dificultad: z.enum(['baja', 'media', 'alta']).optional(),

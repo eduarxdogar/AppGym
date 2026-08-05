@@ -31,6 +31,14 @@ export class WeeklySummaryModalComponent {
   selectedFocus = signal<'weight' | 'volume'>('weight');
   frequencyAdj = signal<number>(0);
   direction = signal<'increment' | 'maintain' | 'deload'>('increment');
+  isDropdownOpen = signal<boolean>(false);
+
+  frequencyLabel = computed(() => {
+    const val = this.frequencyAdj();
+    if (val === 1) return 'Agregar un día más (+1)';
+    if (val === -1) return 'Quitar un día de entrenamiento (-1)';
+    return 'Mantener frecuencia actual';
+  });
 
   // ── Microcycle-scoped metrics ─────────────────────────────────────────────
 
@@ -102,10 +110,28 @@ export class WeeklySummaryModalComponent {
 
   submitRollover() {
     this.isGenerating.set(true);
+    const actionMap: Record<'increment' | 'maintain' | 'deload', 'IA_SOBRECARGA' | 'IA_CONSOLIDAR' | 'IA_DESCARGA'> = {
+      increment: 'IA_SOBRECARGA',
+      maintain: 'IA_CONSOLIDAR',
+      deload: 'IA_DESCARGA'
+    };
+    const actionStr = actionMap[this.direction()];
+
     this.rollover.emit({
       focus: this.selectedFocus(),
       frequencyAdjustment: this.frequencyAdj(),
-      direction: this.direction()
+      direction: this.direction(),
+      action: actionStr
+    });
+  }
+
+  maintainPlan() {
+    this.isGenerating.set(true);
+    this.rollover.emit({
+      focus: 'weight',
+      frequencyAdjustment: 0,
+      direction: 'maintain',
+      action: 'MANTENER_PLAN'
     });
   }
 }

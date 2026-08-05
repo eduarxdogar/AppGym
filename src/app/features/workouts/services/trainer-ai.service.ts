@@ -48,7 +48,7 @@ REGLAS DE ORO INTRANSABLES:
 2. GESTIÓN DE FATIGA: Si un músculo está fatigado (>70%), PROHIBIDO entrenarlo pesado. Se trabajan antagonistas o se prescribe descanso activo estilo culturista.
 3. COHESIÓN SEMANAL: Distribuye el volumen total de forma inteligente para evitar sobreentrenamiento y maximizar la supercompensación.
 4. SOBRECARGA (MATEMÁTICA ESTRICTA): 
-- Cuando la directiva sea SOBRECARGA (+2.5%) y la prioridad sea PESO (KG): Debes leer el peso del historial enviado. Multiplica ese peso por 1.025 y redondea el resultado al múltiplo de 2.5 más cercano. (Ejemplo: si levantó 140kg, el nuevo peso debe ser 142.5kg o 145kg). Mantén las repeticiones iguales. Debes aplicar el incremento matemático estrictamente a CADA UNO de los ejercicios compuestos del día leyendo su peso real en el historial.
+- REGLA CRÍTICA DE SOBRECARGA: Si la directiva es SOBRECARGA (+2.5%) y la prioridad es PESO (KG), es estrictamente PROHIBIDO devolver el mismo peso del historial. DEBES realizar el cálculo matemático en el campo 'reasoning', multiplicar el peso histórico por 1.025 y asignar el nuevo valor redondeado al campo 'pesokg'. Si el historial dice 115kg, el nuevo pesokg DEBE ser mayor (ej. 117.5kg). Mantén las repeticiones iguales. Debes aplicar el incremento matemático estrictamente a CADA UNO de los ejercicios compuestos del día leyendo su peso real en el historial.
 - Cuando la directiva sea SOBRECARGA y la prioridad sea REPETICIONES: Mantén el peso exacto del historial, pero suma de 1 a 2 repeticiones a las series de trabajo efectivo.
 5. COACH NOTES OBLIGATORIAS: Genera un mensaje corto, directo y en tono motivador (máximo 2 líneas) en el campo 'coachNotes' explicando exactamente qué ajustaste y por qué (Ej: 'Sobrecarga aplicada: Aumentamos 2.5kg en tu peso muerto para seguir forzando la adaptación. ¡A romperla!').
 `;
@@ -143,24 +143,30 @@ export class TrainerAiService {
     }
   }
 
+  private getExerciseMaxWeight(ex: any): number {
+    const sets = ex.series || ex.sets || [];
+    const completedSets = sets.filter((s: any) => s.completed === true || s.isCompleted === true);
+    if (completedSets.length === 0) return 0;
+    return Math.max(...completedSets.map((s: any) => Number(s.weight || s.peso || s.pesokg || 0)));
+  }
+
+  private summarizeExercise(ex: any): string | null {
+    const maxWeight = this.getExerciseMaxWeight(ex);
+    if (maxWeight <= 0) return null;
+    const name = ex.nombre || ex.name;
+    return name ? `[Historial] ${name}: ${maxWeight}kg` : null;
+  }
+
   private summarizeHistory(history: any[]): string {
-    if (!history || history.length === 0) return 'Sin historial previo.';
-    const recent = history.slice(0, 3); // Take last 3 to keep prompt size reasonable
-    let summary = '';
-    for (const session of recent) {
-      summary += `[${session.workoutName || 'Rutina'}]: `;
-      const exSummaries = [];
-      if (session.ejercicios) {
-        for (const ex of session.ejercicios) {
-          if (ex.series && ex.series.length > 0) {
-            const maxWeight = Math.max(...ex.series.map((s: any) => s.weight || 0));
-            exSummaries.push(`${ex.nombre} (Max: ${maxWeight}kg)`);
-          }
-        }
-      }
-      summary += exSummaries.join(', ') + '\n';
-    }
-    return summary || 'Sin datos específicos.';
+    if (!history?.length) return 'Sin historial previo.';
+
+    const summaries = history
+      .slice(0, 3)
+      .flatMap((session: any) => session.ejercicios || session.exercises || [])
+      .map((ex: any) => this.summarizeExercise(ex))
+      .filter((s): s is string => s !== null);
+
+    return summaries.join('\n') || 'Sin datos específicos.';
   }
 
   private buildPrompt(userPrompt: string, profile: UserProfile, mode: 'single' | 'weekly', daysToGenerate: number = 1, fatigueSummary?: string, historySummary?: string): string {
@@ -213,6 +219,7 @@ export class TrainerAiService {
             "repeticiones": number,
             "descanso": "string (ej: '90s')",
             "pesokg": number (Estimado para el nivel ${profile.fitnessLevel}),
+            "reasoning": "string (OBLIGATORIO si la directiva es subir peso: escribe el cálculo. Ej: 115 * 1.025 = 117.8, redondeado a 117.5)",
             "rir": number (OBLIGATORIO para avanzado: Indicar RPE/RIR objetivo),
             "notas": "string (Instrucciones de nivel ELITE: Top Sets, Back-offs, Tempo 3-0-1-0)"
           }

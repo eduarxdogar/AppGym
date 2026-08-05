@@ -11,6 +11,8 @@ export const ActiveSetStateSchema = z.object({
 export const ProgressionOptionsSchema = z.object({
   focus: z.enum(['weight', 'volume']),
   frequencyAdjustment: z.number(),
+  direction: z.enum(['increment', 'maintain', 'deload']).optional(),
+  action: z.enum(['IA_SOBRECARGA', 'IA_CONSOLIDAR', 'IA_DESCARGA', 'MANTENER_PLAN']).optional(),
 }).strict();
 
 export const WorkoutSchema = z.object({

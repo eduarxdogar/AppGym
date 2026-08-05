@@ -11,6 +11,7 @@ export interface ProgressionOptions {
   focus: 'weight' | 'volume';
   frequencyAdjustment: number; // 0, 1, or -1
   direction: 'increment' | 'maintain' | 'deload';
+  action?: 'IA_SOBRECARGA' | 'IA_CONSOLIDAR' | 'IA_DESCARGA' | 'MANTENER_PLAN';
 }
 
 export interface Workout {

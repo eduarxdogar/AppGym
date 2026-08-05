@@ -4,7 +4,6 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { firstValueFrom } from 'rxjs';
 import { WorkoutService } from '../services/workout.service';
 import { TrainerAiService } from '../services/trainer-ai.service';
 import { WeeklyPlanRequest } from '../models/ai-requests.model';
@@ -14,9 +13,8 @@ import { RecoveryService } from '../../metrics/services/recovery.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { WeeklySummaryModalComponent } from '../../../shared/components/weekly-summary-modal/weekly-summary-modal.component';
 import { ProgressionEngineService } from '../services/progression-engine.service';
-import { ProgressionOptions } from '../models/workout.model';
+import { ProgressionOptions, Workout } from '../models/workout.model';
 import { TrainingHistoryService } from '../services/training-history.service';
-import { WorkoutSession } from '../models/workout-history.model';
 
 @Component({
   selector: 'app-weekly-plan',
@@ -280,56 +278,86 @@ export class WeeklyPlanComponent {
   }
 
   async doRollover(options: ProgressionOptions) {
-    // Artificial delay to simulate AI processing
-    await new Promise(resolve => setTimeout(resolve, 1800));
-
     this.showSummaryModal.set(false);
+    this.isLoading.set(true);
 
-    const previousWeekWorkouts = this.weekWorkouts();
-
-    // ── Build history map: workoutName → sessions[], sorted newest first ────
-    // This is the source of truth for the progression engine.
-    // One async call here; the engine itself stays pure.
-    let historyMap: Map<string, WorkoutSession[]> = new Map();
     try {
-      const allSessions = await firstValueFrom(this.historyService.getHistory());
-      allSessions.forEach(session => {
-        if (!session.nombre) return;
-        const key = session.nombre.trim();
-        const existing = historyMap.get(key) ?? [];
-        existing.push(session);
-        historyMap.set(key, existing);
+      const previousWeekWorkouts = this.weekWorkouts();
+      let newMicrocycle: Workout[] = [];
+
+      switch (options.action) {
+        case 'IA_SOBRECARGA':
+        case 'IA_CONSOLIDAR':
+        case 'IA_DESCARGA': {
+          const userProfile = this.profileState.profile();
+          const fatigueRecord: Record<string, number> = {};
+          this.recoveryService.muscleRecoveryStatus().forEach((val, key) => fatigueRecord[key] = val.percentage);
+
+          let promptStr = '';
+          if (options.action === 'IA_SOBRECARGA') promptStr = `Aplica SOBRECARGA (+2.5%) priorizando ${options.focus === 'weight' ? 'PESO (KG)' : 'REPETICIONES'}.`;
+          else if (options.action === 'IA_DESCARGA') promptStr = `Aplica DESCARGA (-10%). Reduce cargas para recuperación.`;
+          else promptStr = `CONSOLIDAR. Mantén los pesos exactos del historial para mejorar técnica.`;
+
+          const request: WeeklyPlanRequest = {
+            userPrompt: promptStr,
+            daysToGenerate: previousWeekWorkouts.length,
+            profile: {
+              ...(userProfile || { weight: 75, height: 180, equipment: ['Gym Completo'], fitnessLevel: 'Intermedio', goal: 'volumen' }),
+              availableDays: userProfile?.availableDays || [],
+              fatigueLevels: fatigueRecord
+            }
+          };
+
+          newMicrocycle = await this.aiService.generateWeeklyPlan(request);
+          break;
+        }
+        case 'MANTENER_PLAN': {
+          const today = new Date();
+          newMicrocycle = previousWeekWorkouts.map((w, index) => {
+            const workoutDate = new Date(today);
+            workoutDate.setDate(today.getDate() + index);
+            return structuredClone({ ...w, id: crypto.randomUUID(), fecha: workoutDate.toISOString() });
+          });
+          break;
+        }
+        default:
+          throw new Error('Acción no válida');
+      }
+
+      // Purificación del Estado de Series (Nueva Semana Limpia)
+      newMicrocycle.forEach(workout => {
+        workout.isCompleted = false;
+        workout.completedAt = undefined;
+        workout.status = 'idle';
+        if (workout.ejercicios) {
+          workout.ejercicios.forEach((ex: any) => {
+            if (Array.isArray(ex.series)) {
+              ex.series.forEach((s: any) => s.completed = false);
+            }
+            if (Array.isArray(ex.sets)) {
+              ex.sets.forEach((s: any) => s.completed = false);
+            }
+          });
+        }
       });
-      // Sort each group newest first (by endTime or startTime)
-      historyMap.forEach((sessions, key) => {
-        const sorted = [...sessions].sort((a: WorkoutSession, b: WorkoutSession) => {
-          const ta = new Date(a.endTime ?? a.startTime ?? a.fecha ?? 0).getTime();
-          const tb = new Date(b.endTime ?? b.startTime ?? b.fecha ?? 0).getTime();
-          return tb - ta; // descending
-        });
-        historyMap.set(key, sorted);
-      });
-    } catch (err) {
-      console.warn('[WeeklyPlan] Could not load history for progression. Using plan template.', err);
+
+      // Delete old week
+      for (const w of previousWeekWorkouts) {
+        if (w.id) await this.workoutService.deleteWorkout(w.id);
+      }
+
+      // Save new week
+      for (const newW of newMicrocycle) {
+        await this.workoutService.addWorkout(newW);
+      }
+
+      this.toastService.showSuccess('¡Siguiente microciclo planificado y purificado!');
+    } catch (err: any) {
+      console.error(err);
+      this.toastService.showError('Error al procesar el cambio de semana.');
+    } finally {
+      this.isLoading.set(false);
     }
-
-    const newMicrocycle = this.progressionEngine.generateNextMicrocycle(
-      previousWeekWorkouts,
-      options,
-      historyMap
-    );
-
-    // Delete old week
-    for (const w of previousWeekWorkouts) {
-      if (w.id) await this.workoutService.deleteWorkout(w.id);
-    }
-
-    // Save new week
-    for (const newW of newMicrocycle) {
-      await this.workoutService.addWorkout(newW);
-    }
-
-    this.toastService.showSuccess('¡Nueva semana planificada con IA Coach! Cargas ajustadas.');
   }
 
   async addDayWithAI() {

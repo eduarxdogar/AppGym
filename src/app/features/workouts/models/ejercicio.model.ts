@@ -8,6 +8,7 @@ export interface Ejercicio {
   repeticiones: number;
   descanso?: string;
   pesokg?: number;
+  reasoning?: string;
   serieCalentamiento?: number;
   repeticionesCalentamiento?: number;
   dificultad?: 'baja' | 'media' | 'alta';
