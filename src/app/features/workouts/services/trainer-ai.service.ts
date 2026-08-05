@@ -45,6 +45,7 @@ REGLAS DE ORO INTRANSABLES:
 1. BIOMECÁNICA PRIMERO: Siempre la seguridad articular y el torque en el músculo objetivo sobre el ego del peso.
 2. GESTIÓN DE FATIGA: Si un músculo está fatigado (>70%), PROHIBIDO entrenarlo pesado. Se trabajan antagonistas o se prescribe descanso activo estilo culturista.
 3. COHESIÓN SEMANAL: Distribuye el volumen total de forma inteligente para evitar sobreentrenamiento y maximizar la supercompensación.
+4. SOBRECARGA (REPS vs KG): Si la directiva o el foco del usuario es SOBRECARGA (+2.5%) o subir peso, tu prioridad absoluta es AUMENTAR EL PESO (KG) de los ejercicios compuestos. Solo incrementa repeticiones si el usuario lo solicita explícitamente o el peso ya es máximo. Mantén los mismos ejercicios, solo altera las cargas.
 `;
 
 @Injectable({
@@ -96,7 +97,7 @@ export class TrainerAiService {
 
     console.log('AI Coach: Generating weekly plan...', request);
 
-    const prompt = this.buildPrompt(request.userPrompt, request.profile, 'weekly', request.daysToGenerate);
+    const prompt = this.buildPrompt(request.userPrompt, request.profile, 'weekly', request.daysToGenerate, request.fatigueSummary);
 
     try {
       const text = await this.baseAi.generateContent(prompt, true);
@@ -132,7 +133,7 @@ export class TrainerAiService {
     }
   }
 
-  private buildPrompt(userPrompt: string, profile: UserProfile, mode: 'single' | 'weekly', daysToGenerate: number = 1): string {
+  private buildPrompt(userPrompt: string, profile: UserProfile, mode: 'single' | 'weekly', daysToGenerate: number = 1, fatigueSummary?: string): string {
     const isWeekly = mode === 'weekly';
     const outputStructure = isWeekly 
       ? `UN ARRAY JSON de ${daysToGenerate} objetos Workout: [ {WORKOUT_1}, {WORKOUT_2}... ]`
@@ -143,6 +144,11 @@ export class TrainerAiService {
     const currentDayName = days[now.getDay()];
     const formattedDate = now.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' });
 
+    let extraTaskInstruction = isWeekly ? `Genera un plan de ${daysToGenerate} días. REGLA ESTRICTA: El Día 1 DEBE ser asignado a HOY (${currentDayName}) si es uno de los días disponibles del usuario, o al primer día disponible a partir de mañana. NO saltes días innecesariamente.` : 'Genera una rutina única.';
+    if (fatigueSummary) {
+      extraTaskInstruction += `\nINSTRUCCIÓN ESTRICTA POR FATIGA: No repitas rutinas de días anteriores. Analiza la fatiga y genera el día extra priorizando los grupos musculares más recuperados.`;
+    }
+
     return `
       ${SYSTEM_PROMPT}
       
@@ -152,10 +158,10 @@ export class TrainerAiService {
       - Nivel Fitness: ${profile.fitnessLevel || 'Intermedio'}
       - Equipamiento: ${profile.equipment?.join(', ') || 'Gimnasio completo'}
       - Días disponibles (Cronológico): ${profile.availableDays?.join(', ') || 'Cualquiera'}
-      - Fatiga Muscular Reciente: ${JSON.stringify(profile.fatigueLevels || {})}
+      - Fatiga Muscular Reciente: ${fatigueSummary || JSON.stringify(profile.fatigueLevels || {})}
       - Solicitud específica del usuario: "${userPrompt}"
 
-      TAREA: ${isWeekly ? `Genera un plan de ${daysToGenerate} días. REGLA ESTRICTA: El Día 1 DEBE ser asignado a HOY (${currentDayName}) si es uno de los días disponibles del usuario, o al primer día disponible a partir de mañana. NO saltes días innecesariamente.` : 'Genera una rutina única.'}
+      TAREA: ${extraTaskInstruction}
 
       REGLA DE ORO: Debes responder EXCLUSIVAMENTE con un JSON válido. No incluyas markdown, solo el JSON raw.
       Tu respuesta debe ser: ${outputStructure}.

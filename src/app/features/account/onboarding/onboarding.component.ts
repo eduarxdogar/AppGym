@@ -9,6 +9,7 @@ import { UserProfile } from '../models/user-profile.model';
 import { InbodyAiService } from '../../metrics/services/inbody-ai.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { UserProfileSchema } from '../profile/schemas/user-profile.schema';
+import { OnboardingSchema } from '../models/schemas/onboarding.schema';
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const EQUIPMENT = ['Mancuernas', 'Barra', 'Máquinas', 'Bandas', 'Polea', 'Kettlebells', 'Calistenia'];
@@ -134,7 +135,14 @@ export class OnboardingComponent {
         };
       } catch (err: unknown) {
         console.error('InBody Scan failed:', err);
-        const errorMsg = err instanceof Error ? err.message : String(err);
+        let errorMsg = 'Error desconocido';
+        if (err instanceof Error) {
+          errorMsg = err.message;
+        } else if (typeof err === 'string') {
+          errorMsg = err;
+        } else if (err !== null && typeof err === 'object') {
+          errorMsg = JSON.stringify(err);
+        }
         if (errorMsg.includes('resource-exhausted') || errorMsg.includes('429')) {
           this.toastService.showWarning('Límite de IA alcanzado. Por favor, intenta de nuevo en unos minutos.');
         } else {
@@ -181,9 +189,20 @@ export class OnboardingComponent {
         };
       }
 
+      const onboardingValidation = OnboardingSchema.safeParse(finalProfile);
+      if (!onboardingValidation.success) {
+        console.error('Onboarding validation error:', onboardingValidation.error);
+        const errorMsg = onboardingValidation.error.issues[0]?.message || 'Campos inválidos en el formulario de onboarding.';
+        this.toastService.showError(`Error en formulario: ${errorMsg}`);
+        this.error.set('Datos de perfil inválidos. Revisa el formulario.');
+        this.isSaving.set(false);
+        return;
+      }
+
       const validation = UserProfileSchema.safeParse(finalProfile);
       if (!validation.success) {
         console.error('Validation error:', validation.error);
+        this.toastService.showError('Error de formato en los datos del perfil.');
         this.error.set('Datos de perfil inválidos. Revisa el formulario.');
         this.isSaving.set(false);
         return;

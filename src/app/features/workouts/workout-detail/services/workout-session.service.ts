@@ -8,7 +8,7 @@ import { WorkoutSession, WorkoutSessionExercise } from '../../models/workout-ses
 import { Firestore, collection, doc, deleteField } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { ToastService } from '../../../../core/services/toast.service';
-
+import { StrictSessionValidationSchema } from '../../models/schemas/session.schema';
 export interface DropSet {
   reps: number;
   weight: number;
@@ -401,7 +401,7 @@ export class WorkoutSessionService {
         name: ex.nombre,
         grupoMuscular: ex.grupoMuscular || '',
         targetSets: ex.series || 0,
-        sets: sets.map(s => ({
+        sets: sets.filter(s => s.completed).map(s => ({
           weight: s.weight,
           reps: s.reps,
           completed: s.completed,
@@ -409,6 +409,12 @@ export class WorkoutSessionService {
         }))
       };
     });
+
+    const validationResult = StrictSessionValidationSchema.safeParse({ exercises: sessionExercises });
+    if (!validationResult.success) {
+      this.toastService.showError('Faltan campos por llenar. Asegúrate de ingresar KG y Repeticiones (> 0) en todas las series.');
+      return;
+    }
 
     const muscles = new Set<string>();
     workout.musculos?.forEach(m => muscles.add(m));

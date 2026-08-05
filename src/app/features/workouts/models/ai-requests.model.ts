@@ -12,6 +12,7 @@ export interface WeeklyPlanRequest {
   userPrompt: string;
   profile: UserProfile;
   daysToGenerate: number;
+  fatigueSummary?: string;
 }
 
 export interface MealFood {

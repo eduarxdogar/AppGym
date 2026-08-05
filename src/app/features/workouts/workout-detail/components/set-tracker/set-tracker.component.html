@@ -48,18 +48,20 @@
     <!-- KG Input -->
     <div class="col-span-3">
       <input type="number" [id]="'set-weight-' + exIndex() + '-' + sIndex" [ngModel]="set.weight" (ngModelChange)="updateWeight.emit({exIndex: exIndex(), setIndex: sIndex, weight: $event})" aria-label="Peso en kilogramos"
-        class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none"
+        [disabled]="set.completed"
+        class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none disabled:opacity-50"
         placeholder="0">
       </div>
       <!-- Reps Input -->
       <div class="col-span-3">
         <input type="number" [id]="'set-reps-' + exIndex() + '-' + sIndex" [ngModel]="set.reps" (ngModelChange)="updateReps.emit({exIndex: exIndex(), setIndex: sIndex, reps: $event})" aria-label="Número de repeticiones"
-          class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none"
+          [disabled]="set.completed"
+          class="w-full bg-[#2C2C2E] border border-transparent focus:border-[#CCFF00] rounded-lg text-center text-white font-mono text-xs sm:text-sm py-1.5 sm:py-2 transition-colors outline-none disabled:opacity-50"
           placeholder="0">
         </div>
         <!-- Checkbox -->
         <div class="col-span-2 flex justify-center">
-          <button (click)="toggleComplete.emit({exIndex: exIndex(), setIndex: sIndex})"
+          <button (click)="set.completed ? markAsIncomplete(exIndex(), sIndex) : markAsComplete(exIndex(), sIndex)"
             [class.bg-[#CCFF00]]="set.completed"
             [class.text-black]="set.completed"
             [class.bg-zinc-700]="!set.completed"
@@ -95,13 +97,15 @@
           <!-- KG Input Child -->
           <div class="col-span-3">
             <input type="number" [id]="'set-superweight-' + exIndex() + '-' + sIndex" [(ngModel)]="set.superWeight" aria-label="Peso en kilogramos para superserie"
-              class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+              [disabled]="set.completed"
+              class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner disabled:opacity-50"
               placeholder="0">
             </div>
             <!-- Reps Input Child -->
             <div class="col-span-3">
               <input type="number" [id]="'set-superreps-' + exIndex() + '-' + sIndex" [(ngModel)]="set.superReps" aria-label="Repeticiones para superserie"
-                class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                [disabled]="set.completed"
+                class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner disabled:opacity-50"
                 placeholder="0">
               </div>
               <div class="col-span-2"></div> <!-- Empty space under check -->
@@ -130,13 +134,15 @@
                   <!-- KG Input DropSet -->
                   <div class="col-span-3">
                     <input type="number" [id]="'dropset-weight-' + exIndex() + '-' + sIndex + '-' + dIndex" [ngModel]="dropSet.weight" (ngModelChange)="updateDropSet.emit({exIndex: exIndex(), setIndex: sIndex, dropIndex: dIndex, weight: $event, reps: dropSet.reps})" aria-label="Peso en kilogramos para drop set"
-                      class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                      [disabled]="set.completed"
+                      class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner disabled:opacity-50"
                       placeholder="0">
                     </div>
                     <!-- Reps Input DropSet -->
                     <div class="col-span-3">
                       <input type="number" [id]="'dropset-reps-' + exIndex() + '-' + sIndex + '-' + dIndex" [ngModel]="dropSet.reps" (ngModelChange)="updateDropSet.emit({exIndex: exIndex(), setIndex: sIndex, dropIndex: dIndex, weight: dropSet.weight, reps: $event})" aria-label="Repeticiones para drop set"
-                        class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                        [disabled]="set.completed"
+                        class="w-full bg-[#151921] border border-transparent focus:border-orange-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner disabled:opacity-50"
                         placeholder="0">
                       </div>
                       <div class="col-span-2"></div> <!-- Empty space under check -->
@@ -158,12 +164,14 @@
                         </div>
                         <div class="col-span-3">
                           <input type="number" [id]="'dropset-superweight-' + exIndex() + '-' + sIndex + '-' + dIndex" [(ngModel)]="dropSet.superWeight" aria-label="Peso en kilogramos para superserie de drop set"
-                            class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                            [disabled]="set.completed"
+                            class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner disabled:opacity-50"
                             placeholder="0">
                           </div>
                           <div class="col-span-3">
                             <input type="number" [id]="'dropset-superreps-' + exIndex() + '-' + sIndex + '-' + dIndex" [(ngModel)]="dropSet.superReps" aria-label="Repeticiones para superserie de drop set"
-                              class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner"
+                              [disabled]="set.completed"
+                              class="w-full bg-[#151921] border border-transparent focus:border-purple-500 rounded-lg text-center text-zinc-300 font-mono text-xs py-1 transition-colors outline-none shadow-inner disabled:opacity-50"
                               placeholder="0">
                             </div>
                             <div class="col-span-2"></div> <!-- Empty space under check -->

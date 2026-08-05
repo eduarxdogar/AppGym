@@ -3,7 +3,7 @@ import { Workout, ProgressionOptions } from '../models/workout.model';
 import { Ejercicio } from '../models/ejercicio.model';
 import { WorkoutSession, WorkoutExercise } from '../models/workout-history.model';
 
-const DEFAULT_PROGRESSION_OPTIONS: ProgressionOptions = { focus: 'weight', frequencyAdjustment: 0 };
+const DEFAULT_PROGRESSION_OPTIONS: ProgressionOptions = { focus: 'weight', frequencyAdjustment: 0, direction: 'increment' };
 
 @Injectable({ providedIn: 'root' })
 export class ProgressionEngineService {

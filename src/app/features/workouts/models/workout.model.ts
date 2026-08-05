@@ -10,6 +10,7 @@ export interface ActiveSetState {
 export interface ProgressionOptions {
   focus: 'weight' | 'volume';
   frequencyAdjustment: number; // 0, 1, or -1
+  direction: 'increment' | 'maintain' | 'deload';
 }
 
 export interface Workout {

@@ -104,7 +104,8 @@ export class WeeklySummaryModalComponent {
     this.isGenerating.set(true);
     this.rollover.emit({
       focus: this.selectedFocus(),
-      frequencyAdjustment: this.frequencyAdj()
+      frequencyAdjustment: this.frequencyAdj(),
+      direction: this.direction()
     });
   }
 }

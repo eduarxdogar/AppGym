@@ -94,22 +94,53 @@
           <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block">Dirección de Carga</p>
           <div class="grid grid-cols-3 gap-2">
             <button (click)="direction.set('increment')"
-              [class.bg-[#CCFF00]]="direction() === 'increment'" [class.text-black]="direction() === 'increment'"
+              [class.bg-[#CCFF00]]="direction() === 'increment'"
+              [class.bg-opacity-10]="direction() === 'increment'"
+              [class.border-[#CCFF00]]="direction() === 'increment'"
+              [class.text-[#CCFF00]]="direction() === 'increment'"
+              [class.shadow-[0_0_15px_rgba(204,255,0,0.3)]]="direction() === 'increment'"
               class="py-3 px-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-400 text-xs font-bold uppercase tracking-wider hover:border-zinc-700 transition text-center">
               ▲ Sobrecarga (+2.5%)
             </button>
             <button (click)="direction.set('maintain')"
-              [class.bg-[#CCFF00]]="direction() === 'maintain'" [class.text-black]="direction() === 'maintain'"
+              [class.bg-blue-500]="direction() === 'maintain'"
+              [class.bg-opacity-10]="direction() === 'maintain'"
+              [class.border-blue-500]="direction() === 'maintain'"
+              [class.text-blue-400]="direction() === 'maintain'"
+              [class.shadow-[0_0_15px_rgba(59,130,246,0.3)]]="direction() === 'maintain'"
               class="py-3 px-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-400 text-xs font-bold uppercase tracking-wider hover:border-zinc-700 transition text-center">
-              〓 Consolidad
+              〓 Consolidar
             </button>
             <button (click)="direction.set('deload')"
-              [class.bg-[#CCFF00]]="direction() === 'deload'" [class.text-black]="direction() === 'deload'"
+              [class.bg-orange-500]="direction() === 'deload'"
+              [class.bg-opacity-10]="direction() === 'deload'"
+              [class.border-orange-500]="direction() === 'deload'"
+              [class.text-orange-400]="direction() === 'deload'"
+              [class.shadow-[0_0_15px_rgba(249,115,22,0.3)]]="direction() === 'deload'"
               class="py-3 px-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-400 text-xs font-bold uppercase tracking-wider hover:border-zinc-700 transition text-center">
               ▼ Descarga (-10%)
             </button>
           </div>
         </div>
+
+        <!-- Overload Preference (Only visible if Sobrecarga is selected) -->
+        @if (direction() === 'increment') {
+          <div class="mb-5 animate-in fade-in slide-in-from-top-2 duration-300">
+            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block">Prioridad de Sobrecarga</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button (click)="selectedFocus.set('weight')"
+                [ngClass]="selectedFocus() === 'weight' ? 'bg-[#CCFF00]/10 border-[#CCFF00] text-[#CCFF00]' : ''"
+                class="py-2 px-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-400 text-xs font-bold uppercase tracking-wider hover:border-zinc-700 transition flex items-center justify-center gap-2">
+                <mat-icon class="text-sm">fitness_center</mat-icon> Subir Peso (KG)
+              </button>
+              <button (click)="selectedFocus.set('volume')"
+                [ngClass]="selectedFocus() === 'volume' ? 'bg-purple-500/10 border-purple-500 text-purple-400' : ''"
+                class="py-2 px-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-400 text-xs font-bold uppercase tracking-wider hover:border-zinc-700 transition flex items-center justify-center gap-2">
+                <mat-icon class="text-sm">repeat</mat-icon> Subir Repeticiones
+              </button>
+            </div>
+          </div>
+        }
         <!-- Frequency Options -->
         <div class="mb-8">
           <label for="frecuenciaDias" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block">Frecuencia (Días)</label>

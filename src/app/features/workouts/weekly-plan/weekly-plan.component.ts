@@ -356,7 +356,9 @@ export class WeeklyPlanComponent {
          fatigueLevels: fatigueRecord
       };
 
-      const prompt = "Genera un solo día de entrenamiento para complementar mi rutina actual. Analiza mi fatiga para no sobrecargar músculos exhaustos. Que sea variado e interesante.";
+      const prompt = `Genera un solo día de entrenamiento para complementar mi rutina actual.
+ESTADO DE FATIGA ACTUAL: ${JSON.stringify(fatigueRecord)}
+INSTRUCCIÓN ESTRICTA: No repitas rutinas ni ejercicios principales de días anteriores cercanos. Analiza estrictamente la fatiga actual y genera el día extra priorizando los grupos musculares más recuperados (menor porcentaje de fatiga).`;
 
       try {
            const newWorkout = await this.aiService.generateWorkout(prompt, profile);

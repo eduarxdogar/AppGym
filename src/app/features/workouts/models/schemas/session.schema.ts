@@ -43,3 +43,15 @@ export const WorkoutSessionSchema = z.object({
 export type WorkoutSet = z.infer<typeof WorkoutSetSchema>;
 export type WorkoutExercise = z.infer<typeof WorkoutExerciseSchema>;
 export type WorkoutSession = z.infer<typeof WorkoutSessionSchema>;
+
+export const StrictSessionValidationSchema = z.object({
+  exercises: z.array(z.object({
+    name: z.string().optional(),
+    sets: z.array(z.object({
+      weight: z.number().positive("El peso (KG) debe ser mayor a 0"),
+      reps: z.number().positive("Las repeticiones deben ser mayor a 0"),
+      completed: z.boolean().optional(),
+      type: z.string().optional()
+    }))
+  }))
+});

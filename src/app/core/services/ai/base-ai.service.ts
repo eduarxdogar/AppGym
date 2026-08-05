@@ -5,9 +5,9 @@ import { Functions, httpsCallable } from '@angular/fire/functions';
   providedIn: 'root'
 })
 export class BaseAiService {
-  private functions = inject(Functions);
-  public activeModel = signal<'gemini-2.5-flash' | 'gemini-2.5-pro'>('gemini-2.5-flash');
-  public isConfigured = true;
+  private readonly functions = inject(Functions);
+  public readonly activeModel = signal<'gemini-2.5-flash' | 'gemini-2.5-pro'>('gemini-2.5-flash');
+  public readonly isConfigured = true;
 
   constructor() {}
 
@@ -31,6 +31,6 @@ export class BaseAiService {
   }
 
   public cleanJson(text: string): string {
-    return text.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    return text.trim().replace(/^```json/, '').replace(/```$/, '').trim();
   }
 }
