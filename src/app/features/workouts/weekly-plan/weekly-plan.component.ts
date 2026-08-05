@@ -56,13 +56,16 @@ export class WeeklyPlanComponent {
   weekWorkouts = signal<any[]>([]);
 
   constructor() {
+    // PREVENCIÓN DE GHOST DATA: Forzamos el estado limpio al inicializar
+    this.weekWorkouts.set([]);
+
     // Sincronizar el local state con el state global (solo cuando cambia la fuente de verdad)
     effect(() => {
       const workouts = [...this.workoutService.workouts()].sort((a,b) =>
          new Date(a.fecha!).getTime() - new Date(b.fecha!).getTime()
       );
       this.weekWorkouts.set(workouts);
-    });
+    }, { allowSignalWrites: true });
 
     // AUTO-FILL GENERATOR: Sync with User Profile from Onboarding
     effect(() => {
@@ -179,62 +182,57 @@ export class WeeklyPlanComponent {
     }
   });
 
+  private calculateSetVolume(set: any): number {
+    if (!set?.completed) return 0;
+    const reps = Number(set.reps || set.repeticiones || 0);
+    const weight = Number(set.weight || set.peso || set.pesokg || 0);
+    return (!Number.isNaN(reps) && !Number.isNaN(weight)) ? (reps * weight) : 0;
+  }
+
+  private hasCompletedSet(ex: any): boolean {
+    const sets = ex?.sets || ex?.series;
+    return Array.isArray(sets) && sets.some((s: any) => s?.completed);
+  }
+
   summaryTotalVolume = computed(() => {
-    let vol = 0;
     try {
       const workouts = this.weekWorkouts();
-      if (!Array.isArray(workouts)) return vol;
+      if (!Array.isArray(workouts)) return 0;
 
-      for (const session of workouts) {
-        if (!session) continue;
-        const exercises = session.exercises || session.ejercicios || [];
-        if (!Array.isArray(exercises)) continue;
+      return workouts.reduce((total, session) => {
+        const exercises = session?.exercises || session?.ejercicios;
+        if (!Array.isArray(exercises)) return total;
 
-        for (const ex of exercises) {
-          if (!ex) continue;
-          const sets = ex.sets || ex.series || [];
-          if (!Array.isArray(sets)) continue;
+        const sessionVolume = exercises.reduce((exTotal, ex) => {
+          const sets = ex?.sets || ex?.series;
+          if (!Array.isArray(sets)) return exTotal;
 
-          for (const set of sets) {
-            if (set && set.completed) {
-              const reps = Number(set.reps || set.repeticiones || 0);
-              const weight = Number(set.weight || set.peso || set.pesokg || 0);
-              if (!isNaN(reps) && !isNaN(weight)) {
-                vol += (reps * weight);
-              }
-            }
-          }
-        }
-      }
+          return exTotal + sets.reduce((setTotal, set) => setTotal + this.calculateSetVolume(set), 0);
+        }, 0);
+
+        return total + sessionVolume;
+      }, 0);
     } catch (err) {
       console.error("Error calculating summaryTotalVolume", err);
+      return 0;
     }
-    return vol || 0;
   });
 
   summaryExercisesCompleted = computed(() => {
-    let count = 0;
     try {
       const workouts = this.weekWorkouts();
-      if (!Array.isArray(workouts)) return count;
+      if (!Array.isArray(workouts)) return 0;
 
-      for (const session of workouts) {
-        if (!session) continue;
-        const exercises = session.exercises || session.ejercicios || [];
-        if (!Array.isArray(exercises)) continue;
+      return workouts.reduce((total, session) => {
+        const exercises = session?.exercises || session?.ejercicios;
+        if (!Array.isArray(exercises)) return total;
 
-        for (const ex of exercises) {
-          if (!ex) continue;
-          const sets = ex.sets || ex.series || [];
-          if (Array.isArray(sets) && sets.some((s: any) => s && s.completed)) {
-            count++;
-          }
-        }
-      }
+        return total + exercises.filter(ex => this.hasCompletedSet(ex)).length;
+      }, 0);
     } catch (err) {
       console.error("Error calculating summaryExercisesCompleted", err);
+      return 0;
     }
-    return count || 0;
   });
 
   // AI State

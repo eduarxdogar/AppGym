@@ -3,15 +3,16 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { UiStateService } from '../../../core/services/ui-state.service';
 import { FormsModule } from '@angular/forms';
-import { ChatAiService } from '../../../core/services/ai/chat-ai.service';
+import { ChatAiService } from './services/chat-ai.service';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
 @Component({
-  selector: 'app-ai-coach-drawer',
+  selector: 'app-ai-coach-floating',
   standalone: true,
-  imports: [CommonModule, MatIconModule, FormsModule],
-  templateUrl: './ai-coach-drawer.component.html',
+  imports: [CommonModule, MatIconModule, FormsModule, DragDropModule],
+  templateUrl: './ai-coach-floating.component.html',
 })
-export class AiCoachDrawerComponent {
+export class AiCoachFloatingComponent {
   uiState = inject(UiStateService);
   private readonly aiCoachService = inject(ChatAiService);
 

@@ -1,14 +1,14 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { BaseAiService } from './base-ai.service';
-import { UserProfileStateService } from '../../../features/account/services/user-profile-state.service';
-import { WorkoutService } from '../../../features/workouts/services/workout.service';
-import { MetricsService } from '../../../features/metrics/services/metrics.service';
-import { CardioSessionService } from '../../../features/cardio/services/cardio-session.service';
-import { StorageService } from '../storage.service';
-import { ChatMessage } from '../../../features/workouts/models/ai-requests.model';
-import { ExerciseImageService } from '../../../features/workouts/services/exercise-image.service';
-import { RecoveryService } from '../../../features/metrics/services/recovery.service';
-import { Workout } from '../../../features/workouts/models/workout.model';
+import { BaseAiService } from '../../../../core/services/ai/base-ai.service';
+import { UserProfileStateService } from '../../../../features/account/services/user-profile-state.service';
+import { WorkoutService } from '../../../../features/workouts/services/workout.service';
+import { MetricsService } from '../../../../features/metrics/services/metrics.service';
+import { CardioSessionService } from '../../../../features/cardio/services/cardio-session.service';
+import { StorageService } from '../../../../core/services/storage.service';
+import { ChatMessage } from '../../../../features/workouts/models/ai-requests.model';
+import { ExerciseImageService } from '../../../../features/workouts/services/exercise-image.service';
+import { RecoveryService } from '../../../../features/metrics/services/recovery.service';
+import { Workout } from '../../../../features/workouts/models/workout.model';
 
 @Injectable({
   providedIn: 'root'
@@ -99,13 +99,12 @@ export class ChatAiService {
         historyToSend.shift();
       }
 
-      const responseText = await this.baseAi.generateContent(
-        promptText,
-        false,
-        imageBase64,
+      const responseText = await this.baseAi.callFunction('chatAI', {
+        prompt: promptText,
+        imageBase64: imageBase64,
         mimeType,
-        historyToSend
-      );
+        history: historyToSend
+      });
 
       this.chatHistory.push({ role: 'model', parts: [{ text: responseText }] });
 
@@ -136,8 +135,16 @@ export class ChatAiService {
       return responseText;
     } catch (err: unknown) {
       console.error('Error al chatear con Coach:', err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
+      let errorMessage: string;
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      } else {
+        errorMessage = JSON.stringify(err);
+      }
+      const upperMsg = errorMessage.toUpperCase();
+      if (upperMsg.includes('429') || upperMsg.includes('RESOURCE_EXHAUSTED') || upperMsg.includes('RESOURCE-EXHAUSTED')) {
         return 'Paciencia, fiera. Estoy recuperando el aliento. Intentá de nuevo en unos segundos.';
       }
       return '¡Ey fiera! Hubo un calambre en el sistema. Dame un respiro y volvé a intentar.';
@@ -182,15 +189,7 @@ ESTA RUTINA ES TU PRIORIDAD. Cuando el usuario pregunte "qué toca hoy" o "cómo
       ? equipment.join(', ')
       : 'No especificado';
 
-    return `Eres "Coach Tríada", un entrenador personal de Medellín con 15 años de experiencia. Hablas como un profe de gimnasio: directo, técnico y motivador. NUNCA digas "como IA" o "mi red neuronal". Si el usuario pregunta algo médico serio, remítelo a un profesional.
-
-REGLAS DE RESPUESTA:
-- Sé conciso (máximo 3-4 párrafos cortos).
-- Usa negritas para resaltar números clave.
-- Si explicas la técnica de un ejercicio, al FINAL siempre agrega: "Acordate que en la tarjeta del ejercicio tenés el botón ⓘ para ver el video de la técnica."
-- NUNCA inventes datos que no estén en el contexto.
-- Usa el estado de fatiga y el equipamiento para dar recomendaciones INTELIGENTES. No los menciones mecánicamente, úsalos solo para tomar decisiones sobre qué recomendar.
-
+    return `
 PERFIL DEL ATLETA:
 - Peso: ${userProfile?.weight}kg | Altura: ${userProfile?.height}cm | Nivel: ${userProfile?.fitnessLevel} | Objetivo: ${userProfile?.goal}
 - InBody — Músculo: ${userProfile?.inbodyData?.muscleKg || 'N/A'}kg | Grasa: ${userProfile?.inbodyData?.fatPercent || 'N/A'}%

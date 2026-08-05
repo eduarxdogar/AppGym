@@ -1,35 +1,41 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Functions, httpsCallable } from '@angular/fire/functions';
+import { ToastService } from '../toast.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BaseAiService {
   private readonly functions = inject(Functions);
+  private readonly toastService = inject(ToastService);
   public readonly activeModel = signal<'gemini-2.5-flash' | 'gemini-2.5-pro'>('gemini-2.5-flash');
   public readonly isConfigured = true;
 
-  private readonly callGeminiCallable: any;
+  constructor() {}
 
-  constructor() {
-    this.callGeminiCallable = httpsCallable(this.functions, 'callGemini', { timeout: 300000 });
-  }
-
-  public async generateContent(prompt: string, isJson: boolean = true, imageBase64?: string, mimeType?: string, history?: any[], useSeelegSupplements?: boolean): Promise<string> {
+  public async callFunction(functionName: string, payload: any): Promise<string> {
+    const callable = httpsCallable(this.functions, functionName, { timeout: 300000 });
     try {
-        const result = await this.callGeminiCallable({
-            prompt,
-            model: this.activeModel(),
-            isJson,
-            imageBase64,
-            mimeType,
-            history,
-            useSeelegSupplements
-        });
-        return (result.data as any).text as string;
-    } catch (e: any) {
-        console.error("Error callGemini", e);
-        throw e;
+      const result = await callable({
+        ...payload,
+        model: this.activeModel()
+      });
+      return (result.data as any).text as string;
+    } catch (error: any) {
+      console.error(`Error in Cloud Function ${functionName}:`, error);
+      
+      const errorCode = error?.code;
+      if (errorCode === 'functions/resource-exhausted') {
+        this.toastService.showWarning("El sistema está experimentando alta demanda. Por favor, intenta de nuevo en unos segundos.");
+      } else if (errorCode === 'functions/invalid-argument') {
+        this.toastService.showError("Error de validación en la IA. Por favor, intenta de nuevo.");
+      } else if (errorCode === 'functions/unavailable') {
+        this.toastService.showWarning("Nuestro entrenador de IA está descansando, intenta nuevamente.");
+      } else {
+        this.toastService.showError(error?.message || "Ocurrió un error inesperado de red.");
+      }
+      
+      throw error;
     }
   }
 

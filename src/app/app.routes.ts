@@ -5,6 +5,8 @@ import { profileGuard } from './core/guards/profile.guard';
 import { subscriptionGuard } from './core/guards/subscription.guard';
 import { adminGuard } from './core/guards/admin.guard';
 
+import { MainLayoutComponent } from './shared/layout/main-layout/main-layout.component';
+
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./features/account/login/login.component').then(m => m.LoginComponent) },
   {
@@ -24,6 +26,7 @@ export const routes: Routes = [
   },
   {
       path: '',
+      component: MainLayoutComponent,
       runGuardsAndResolvers: 'always',
       canActivate: [authGuard],
       children: [

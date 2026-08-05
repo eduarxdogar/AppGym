@@ -161,9 +161,9 @@
             <!-- Titulo y Enfoque -->
             <div class="pl-2 mb-4">
               @if (editingWorkoutId() === workout.id) {
-                <input type="text" [(ngModel)]="editingTitle" (keydown.enter)="saveTitle(workout)" (blur)="saveTitle(workout)" (click)="$event.stopPropagation()" class="bg-black/50 border border-zinc-700 text-white px-2 py-1 rounded text-lg font-bold w-full focus:outline-none focus:border-[#CCFF00]" autofocus>
+                <input type="text" [id]="'edit-title-' + workout.id" aria-label="Editar título de la rutina" [(ngModel)]="editingTitle" (keydown.enter)="saveTitle(workout)" (blur)="saveTitle(workout)" (click)="$event.stopPropagation()" class="bg-black/50 border border-zinc-700 text-white px-2 py-1 rounded text-lg font-bold w-full focus:outline-none focus:border-[#CCFF00]" autofocus>
               } @else {
-                <h3 (click)="startEditTitle(workout); $event.stopPropagation()" class="text-lg font-bold text-white group-hover:text-[#CCFF00] transition mb-1 cursor-text flex items-center gap-2">
+                <h3 (click)="startEditTitle(workout); $event.stopPropagation()" (keydown)="startEditTitle(workout); $event.stopPropagation()" class="text-lg font-bold text-white group-hover:text-[#CCFF00] transition mb-1 cursor-text flex items-center gap-2">
                   {{ workout.nombre }} <mat-icon class="text-xs text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity">edit</mat-icon>
                 </h3>
               }

@@ -9,6 +9,9 @@ import { Firestore, collection, doc, deleteField } from '@angular/fire/firestore
 import { Router } from '@angular/router';
 import { ToastService } from '../../../../core/services/toast.service';
 import { StrictSessionValidationSchema } from '../../models/schemas/session.schema';
+import { UserProfileService } from '../../../account/services/user-profile.service';
+import { UserProfileStateService } from '../../../account/services/user-profile-state.service';
+import { RecoveryService } from '../../../metrics/services/recovery.service';
 export interface DropSet {
   reps: number;
   weight: number;
@@ -37,6 +40,9 @@ export class WorkoutSessionService {
   private readonly firestore = inject(Firestore);
   private readonly router = inject(Router);
   private readonly toastService = inject(ToastService);
+  private readonly userProfileService = inject(UserProfileService);
+  private readonly userProfileState = inject(UserProfileStateService);
+  private readonly recoveryService = inject(RecoveryService);
 
   // State
   workout = signal<Workout | null>(null);
@@ -449,6 +455,19 @@ export class WorkoutSessionService {
     if (muscles.size > 0) {
       this.toastService.showSuccess(`Sesión guardada. Desgaste registrado en: ${Array.from(muscles).join(', ')}`);
     }
+
+    // UPDATE FATIGUE IN PROFILE (Wait a bit for the History observable to emit and RecoveryService to recalculate)
+    setTimeout(async () => {
+      const profile = this.userProfileState.profile();
+      if (profile) {
+        const currentStatus = this.recoveryService.getMuscleRecoveryStatus()();
+        const fatigueObj: Record<string, number> = {};
+        currentStatus.forEach((val, key) => {
+          fatigueObj[key] = val.percentage;
+        });
+        await this.userProfileService.saveProfile({ ...profile, fatigueLevels: fatigueObj });
+      }
+    }, 1500);
 
     const updatedWorkout: Workout = {
       ...workout,

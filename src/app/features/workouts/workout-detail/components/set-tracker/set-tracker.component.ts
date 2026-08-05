@@ -1,4 +1,4 @@
-import { Component, input, output, inject } from '@angular/core';
+import { Component, input, output, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,6 +6,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { Ejercicio } from '../../../models/ejercicio.model';
 import { WorkoutSet } from '../../services/workout-session.service';
 import { EditSetDialogComponent } from '../edit-set-dialog/edit-set-dialog.component';
+import { UserProfileStateService } from '../../../../account/services/user-profile-state.service';
+import { ToastService } from '../../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-set-tracker',
@@ -15,6 +17,19 @@ import { EditSetDialogComponent } from '../edit-set-dialog/edit-set-dialog.compo
 })
 export class SetTrackerComponent {
   private readonly dialog = inject(MatDialog);
+  private readonly userProfileState = inject(UserProfileStateService);
+  private readonly toastService = inject(ToastService);
+
+  isBeginner = computed(() => {
+    const level = this.userProfileState.profile()?.fitnessLevel || 'Intermedio';
+    return level.toLowerCase() === 'principiante';
+  });
+
+  checkBeginnerAccess() {
+    if (this.isBeginner()) {
+      this.toastService.showWarning('Eres novato. Sigue la rutina del Coach al pie de la letra. ¡Sube a rango Oro para editar pesos!');
+    }
+  }
 
   exIndex = input.required<number>();
   ex = input.required<Ejercicio>();

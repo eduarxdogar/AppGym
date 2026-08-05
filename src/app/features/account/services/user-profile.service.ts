@@ -15,47 +15,53 @@ export class UserProfileService {
   async saveProfile(profile: UserProfile): Promise<void> {
     const uid = this.auth.currentUser?.uid;
     if (!uid) throw new Error('Usuario no autenticado');
-    const ref = doc(this.firestore, `users/${uid}/profile/data`);
+    
+    await runInInjectionContext(this.injector, async () => {
+      const ref = doc(this.firestore, `users/${uid}/profile/data`);
 
-    // Campos que NUNCA deben ser sobreescritos por el onboarding:
-    // subscriptionStatus, trialEndsAt y mpCustomerId son gestionados
-    // exclusivamente por AuthService y las Cloud Functions de billing.
-    const { subscriptionStatus, trialEndsAt, mpCustomerId, ...profileData } = profile as any;
+      // Campos que NUNCA deben ser sobreescritos por el onboarding:
+      // subscriptionStatus, trialEndsAt y mpCustomerId son gestionados
+      // exclusivamente por AuthService y las Cloud Functions de billing.
+      const { subscriptionStatus, trialEndsAt, mpCustomerId, ...profileData } = profile as any;
 
-    const snap = await getDoc(ref);
+      const snap = await getDoc(ref);
 
-    if (snap.exists()) {
-      // El documento ya existe (fue creado por AuthService al registrarse):
-      // Usamos updateDoc para SOLO actualizar los campos del perfil,
-      // dejando intactos subscriptionStatus, trialEndsAt, etc.
-      await updateDoc(ref, {
-        ...profileData,
-        updatedAt: new Date().toISOString(),
-      });
-    } else {
-      // El documento NO existe (edge case: onboarding sin registro previo):
-      // Inicializamos con el trial de 7 días.
-      const trialEnd = new Date();
-      trialEnd.setDate(trialEnd.getDate() + 7);
-      await setDoc(ref, {
-        ...profileData,
-        subscriptionStatus: 'trialing',
-        trialEndsAt: trialEnd.toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      });
-    }
+      if (snap.exists()) {
+        // El documento ya existe (fue creado por AuthService al registrarse):
+        // Usamos updateDoc para SOLO actualizar los campos del perfil,
+        // dejando intactos subscriptionStatus, trialEndsAt, etc.
+        await updateDoc(ref, {
+          ...profileData,
+          updatedAt: new Date().toISOString(),
+        });
+      } else {
+        // El documento NO existe (edge case: onboarding sin registro previo):
+        // Inicializamos con el trial de 7 días.
+        const trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + 7);
+        await setDoc(ref, {
+          ...profileData,
+          subscriptionStatus: 'trialing',
+          trialEndsAt: trialEnd.toISOString(),
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        });
+      }
+    });
   }
 
   /** Actualiza específicamente el equipamiento del usuario. */
   async updateEquipment(equipment: string[]): Promise<void> {
     const uid = this.auth.currentUser?.uid;
     if (!uid) throw new Error('Usuario no autenticado');
-    const ref = doc(this.firestore, `users/${uid}/profile/data`);
-    await setDoc(ref, {
-      equipment,
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
+    
+    await runInInjectionContext(this.injector, async () => {
+      const ref = doc(this.firestore, `users/${uid}/profile/data`);
+      await setDoc(ref, {
+        equipment,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    });
   }
 
   private readonly user$: Observable<User | null>;
@@ -83,9 +89,12 @@ export class UserProfileService {
   async profileExists(): Promise<boolean> {
     const uid = this.auth.currentUser?.uid;
     if (!uid) return false;
-    const ref = doc(this.firestore, `users/${uid}/profile/data`);
-    const snap = await getDoc(ref);
-    return snap.exists();
+    
+    return runInInjectionContext(this.injector, async () => {
+      const ref = doc(this.firestore, `users/${uid}/profile/data`);
+      const snap = await getDoc(ref);
+      return snap.exists();
+    });
   }
 
   /**
@@ -94,14 +103,16 @@ export class UserProfileService {
    * @param uid UID del usuario a eliminar lógicamente.
    */
   async softDeleteAccount(uid: string): Promise<void> {
-    const ref = doc(this.firestore, `users/${uid}/profile/data`);
-    await updateDoc(ref, {
-      isDeleted: true,
-      deletedAt: Date.now(),
-      updatedAt: new Date().toISOString(),
+    await runInInjectionContext(this.injector, async () => {
+      const ref = doc(this.firestore, `users/${uid}/profile/data`);
+      await updateDoc(ref, {
+        isDeleted: true,
+        deletedAt: Date.now(),
+        updatedAt: new Date().toISOString(),
+      });
+      // Expulsar al usuario de la sesión inmediatamente
+      await signOut(this.auth);
     });
-    // Expulsar al usuario de la sesión inmediatamente
-    await signOut(this.auth);
   }
 
   /**
@@ -111,12 +122,14 @@ export class UserProfileService {
    * @param uid UID del usuario a eliminar permanentemente.
    */
   async hardDeleteAccount(uid: string): Promise<void> {
-    // Eliminar documento de perfil
-    const profileRef = doc(this.firestore, `users/${uid}/profile/data`);
-    await deleteDoc(profileRef);
-    // Eliminar documento raíz del usuario
-    const userRef = doc(this.firestore, `users/${uid}`);
-    await deleteDoc(userRef);
+    await runInInjectionContext(this.injector, async () => {
+      // Eliminar documento de perfil
+      const profileRef = doc(this.firestore, `users/${uid}/profile/data`);
+      await deleteDoc(profileRef);
+      // Eliminar documento raíz del usuario
+      const userRef = doc(this.firestore, `users/${uid}`);
+      await deleteDoc(userRef);
+    });
   }
 
   /**

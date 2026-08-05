@@ -15,7 +15,7 @@ export const EjercicioSchema: z.ZodType<any> = z.lazy(() =>
     serieCalentamiento: z.number().optional(),
     repeticionesCalentamiento: z.number().optional(),
     dificultad: z.enum(['baja', 'media', 'alta']).optional(),
-    rir: z.number().optional(),
+    rir: z.number().nullable().optional().catch(2),
     parciales: z.boolean().optional(),
     videoUrl: z.string().optional(),
     imageUrl: z.string().optional(),
