@@ -19,13 +19,13 @@ const getGenAI = () => {
 const handleGeminiError = (error) => {
     logger.error("Gemini Error:", error);
     console.error("Detalle del error de Gemini:", error);
-    if (error.status === 429 || (error.message && error.message.includes('429'))) {
+    if (error.status === 429 || error.message?.includes('429')) {
         throw new https_1.HttpsError('resource-exhausted', 'AI_QUOTA_EXCEEDED');
     }
     if (error.name === 'SyntaxError' || error.message?.includes('JSON')) {
         throw new https_1.HttpsError('invalid-argument', 'AI_VALIDATION_FAILED');
     }
-    if (error.status === 503 || (error.message && error.message.includes('503'))) {
+    if (error.status === 503 || error.message?.includes('503')) {
         throw new https_1.HttpsError('unavailable', 'AI_SERVICE_DOWN');
     }
     throw new https_1.HttpsError("internal", "Error interno procesando la solicitud de IA.");
@@ -55,7 +55,7 @@ exports.generateWorkoutPlanAI = (0, https_1.onCall)(defaultOptions, async (reque
         return { text: result.response.text() };
     }
     catch (error) {
-        handleGeminiError(error);
+        return handleGeminiError(error);
     }
 });
 exports.generateBoxingPlanAI = (0, https_1.onCall)(defaultOptions, async (request) => {
@@ -75,7 +75,7 @@ exports.generateBoxingPlanAI = (0, https_1.onCall)(defaultOptions, async (reques
         return { text: result.response.text() };
     }
     catch (error) {
-        handleGeminiError(error);
+        return handleGeminiError(error);
     }
 });
 exports.analyzeInbodyAI = (0, https_1.onCall)(defaultOptions, async (request) => {
@@ -97,7 +97,7 @@ exports.analyzeInbodyAI = (0, https_1.onCall)(defaultOptions, async (request) =>
         return { text: result.response.text() };
     }
     catch (error) {
-        handleGeminiError(error);
+        return handleGeminiError(error);
     }
 });
 exports.generateNutritionPlanAI = (0, https_1.onCall)(defaultOptions, async (request) => {
@@ -129,7 +129,7 @@ El resto de las comidas NO deben tener esos campos.`;
         return { text: result.response.text() };
     }
     catch (error) {
-        handleGeminiError(error);
+        return handleGeminiError(error);
     }
 });
 exports.analyzeNutritionLabelAI = (0, https_1.onCall)(defaultOptions, async (request) => {
@@ -151,7 +151,7 @@ exports.analyzeNutritionLabelAI = (0, https_1.onCall)(defaultOptions, async (req
         return { text: result.response.text() };
     }
     catch (error) {
-        handleGeminiError(error);
+        return handleGeminiError(error);
     }
 });
 exports.chatAI = (0, https_1.onCall)(defaultOptions, async (request) => {
@@ -177,19 +177,17 @@ exports.chatAI = (0, https_1.onCall)(defaultOptions, async (request) => {
                 result = await chat.sendMessage(data.prompt);
             }
         }
+        else if (data.imageBase64 && data.mimeType) {
+            const imagePart = { inlineData: { data: data.imageBase64, mimeType: data.mimeType } };
+            result = await model.generateContent([data.prompt, imagePart]);
+        }
         else {
-            if (data.imageBase64 && data.mimeType) {
-                const imagePart = { inlineData: { data: data.imageBase64, mimeType: data.mimeType } };
-                result = await model.generateContent([data.prompt, imagePart]);
-            }
-            else {
-                result = await model.generateContent(data.prompt);
-            }
+            result = await model.generateContent(data.prompt);
         }
         return { text: result.response.text() };
     }
     catch (error) {
-        handleGeminiError(error);
+        return handleGeminiError(error);
     }
 });
 //# sourceMappingURL=ai.js.map

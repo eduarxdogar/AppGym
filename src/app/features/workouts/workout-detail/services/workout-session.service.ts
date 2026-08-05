@@ -456,18 +456,18 @@ export class WorkoutSessionService {
       this.toastService.showSuccess(`Sesión guardada. Desgaste registrado en: ${Array.from(muscles).join(', ')}`);
     }
 
-    // UPDATE FATIGUE IN PROFILE (Wait a bit for the History observable to emit and RecoveryService to recalculate)
-    setTimeout(async () => {
-      const profile = this.userProfileState.profile();
-      if (profile) {
-        const currentStatus = this.recoveryService.getMuscleRecoveryStatus()();
-        const fatigueObj: Record<string, number> = {};
-        currentStatus.forEach((val, key) => {
-          fatigueObj[key] = val.percentage;
-        });
-        await this.userProfileService.saveProfile({ ...profile, fatigueLevels: fatigueObj });
-      }
-    }, 1500);
+    const profile = this.userProfileState.profile();
+    
+    // Deduct base 20% system recovery per completed workout, floor at 0%
+    let updatedSystemRecovery = profile?.systemRecovery ?? 100;
+    updatedSystemRecovery = Math.max(0, updatedSystemRecovery - 20);
+
+    // Calculate fatigue levels synchronously
+    const currentStatus = this.recoveryService.getMuscleRecoveryStatus()();
+    const fatigueObj: Record<string, number> = {};
+    currentStatus.forEach((val, key) => {
+      fatigueObj[key] = val.percentage;
+    });
 
     const updatedWorkout: Workout = {
       ...workout,
@@ -478,7 +478,19 @@ export class WorkoutSessionService {
       activeSetsState: deleteField() as any,
       activeStartTime: deleteField() as any
     };
-    await this.workoutService.updateWorkout(updatedWorkout);
+
+    // Execute Firestore writes in parallel
+    await Promise.all([
+      this.workoutService.updateWorkout(updatedWorkout),
+      profile ? this.userProfileService.saveProfile({
+        ...profile,
+        systemRecovery: updatedSystemRecovery,
+        fatigueLevels: fatigueObj
+      }) : Promise.resolve()
+    ]);
+
+    // Force signal update to reflect immediately in the dashboard
+    this.userProfileState.refreshProfile();
 
     if (workout.fecha) {
       await this.shiftFutureWorkouts(workout, workout.fecha);

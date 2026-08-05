@@ -209,6 +209,11 @@ export class DashboardComponent {
 
   // Computed: Promedio de recuperación global (SNC)
   recoveryScore = computed(() => {
+    const profile = this.userProfile();
+    if (profile?.systemRecovery !== undefined) {
+      return profile.systemRecovery;
+    }
+
     const statusMap = this.muscleStatus();
     if (statusMap.size === 0) return 100;
     
