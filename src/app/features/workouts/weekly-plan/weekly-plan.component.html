@@ -258,6 +258,9 @@
     <app-weekly-summary-modal
       [cycleStartDate]="cycleStartDate()"
       [cycleEndDate]="cycleEndDate()"
+      [completedDays]="summaryCompletedDays()"
+      [totalVolume]="summaryTotalVolume()"
+      [exercisesCompleted]="summaryExercisesCompleted()"
       (closeModal)="showSummaryModal.set(false)"
       (rollover)="doRollover($event)">
     </app-weekly-summary-modal>

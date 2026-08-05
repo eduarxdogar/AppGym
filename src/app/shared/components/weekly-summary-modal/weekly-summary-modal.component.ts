@@ -22,6 +22,9 @@ export class WeeklySummaryModalComponent {
   @Input() cycleStartDate: Date = new Date();
   /** End date of the current microcycle (latest workout fecha in the plan). */
   @Input() cycleEndDate: Date = new Date();
+  @Input() completedDays: number = 0;
+  @Input() totalVolume: number = 0;
+  @Input() exercisesCompleted: number = 0;
 
   // State
   step = signal<1 | 2>(1);
@@ -42,34 +45,16 @@ export class WeeklySummaryModalComponent {
 
   // ── Microcycle-scoped metrics ─────────────────────────────────────────────
 
-  cycleSessionsCount = computed(() =>
-    this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate).length
-  );
+  cycleSessionsCount = computed(() => this.completedDays);
 
   cycleVolumeFormatted = computed(() => {
-    const vol = this.cycleVolume();
+    const vol = this.totalVolume;
     return vol >= 1000 ? (vol / 1000).toFixed(1) + 't' : Math.round(vol) + 'kg';
   });
 
-  cycleExercisesCount = computed(() => {
-    const sessions = this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
-    return sessions.reduce((total, session) => total + (session.exercises?.length || session.ejercicios?.length || 0), 0);
-  });
+  cycleExercisesCount = computed(() => this.exercisesCompleted);
 
-  cycleVolume = computed(() => {
-    const sessions = this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
-    return sessions.reduce((total, session) => {
-      const exercises = session.exercises || session.ejercicios || [];
-      return total + exercises.reduce((acc: number, ex: any) => {
-        const sets = ex.sets || ex.series || [];
-        return acc + sets.reduce((s: number, set: any) => {
-          const reps = Number(set.reps || set.repeticiones || 0);
-          const weight = Number(set.weight || set.peso || set.pesokg || 0);
-          return s + (reps * weight);
-        }, 0);
-      }, 0);
-    }, 0);
-  });
+  cycleVolume = computed(() => this.totalVolume);
 
   /**
    * Real calorie sum from WorkoutSession.calories.

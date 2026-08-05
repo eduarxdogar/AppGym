@@ -9,12 +9,15 @@ export class BaseAiService {
   public readonly activeModel = signal<'gemini-2.5-flash' | 'gemini-2.5-pro'>('gemini-2.5-flash');
   public readonly isConfigured = true;
 
-  constructor() {}
+  private readonly callGeminiCallable: any;
+
+  constructor() {
+    this.callGeminiCallable = httpsCallable(this.functions, 'callGemini', { timeout: 300000 });
+  }
 
   public async generateContent(prompt: string, isJson: boolean = true, imageBase64?: string, mimeType?: string, history?: any[], useSeelegSupplements?: boolean): Promise<string> {
-    const callGemini = httpsCallable(this.functions, 'callGemini', { timeout: 300000 });
     try {
-        const result = await callGemini({
+        const result = await this.callGeminiCallable({
             prompt,
             model: this.activeModel(),
             isJson,
@@ -31,6 +34,21 @@ export class BaseAiService {
   }
 
   public cleanJson(text: string): string {
-    return text.trim().replace(/^```json/, '').replace(/```$/, '').trim();
+    let cleaned = text.trim();
+    if (cleaned.startsWith('```')) {
+      const firstNewLineIndex = cleaned.indexOf('\n');
+      if (firstNewLineIndex !== -1) {
+        cleaned = cleaned.substring(firstNewLineIndex + 1);
+      } else {
+        cleaned = cleaned.substring(3);
+        if (cleaned.toLowerCase().startsWith('json')) {
+          cleaned = cleaned.substring(4);
+        }
+      }
+    }
+    if (cleaned.endsWith('```')) {
+      cleaned = cleaned.substring(0, cleaned.length - 3);
+    }
+    return cleaned.trim();
   }
 }

@@ -167,6 +167,76 @@ export class WeeklyPlanComponent {
   pendingAction = signal<'delete' | 'reset' | null>(null);
   pendingWorkoutId = signal<string | null>(null);
 
+  // Summary Stats Computed
+  summaryCompletedDays = computed(() => {
+    try {
+      const workouts = this.weekWorkouts();
+      if (!Array.isArray(workouts)) return 0;
+      return workouts.filter(w => w && (w.isCompleted === true || w.status === 'completed')).length || 0;
+    } catch (err) {
+      console.error("Error calculating summaryCompletedDays", err);
+      return 0;
+    }
+  });
+
+  summaryTotalVolume = computed(() => {
+    let vol = 0;
+    try {
+      const workouts = this.weekWorkouts();
+      if (!Array.isArray(workouts)) return vol;
+
+      for (const session of workouts) {
+        if (!session) continue;
+        const exercises = session.exercises || session.ejercicios || [];
+        if (!Array.isArray(exercises)) continue;
+
+        for (const ex of exercises) {
+          if (!ex) continue;
+          const sets = ex.sets || ex.series || [];
+          if (!Array.isArray(sets)) continue;
+
+          for (const set of sets) {
+            if (set && set.completed) {
+              const reps = Number(set.reps || set.repeticiones || 0);
+              const weight = Number(set.weight || set.peso || set.pesokg || 0);
+              if (!isNaN(reps) && !isNaN(weight)) {
+                vol += (reps * weight);
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error calculating summaryTotalVolume", err);
+    }
+    return vol || 0;
+  });
+
+  summaryExercisesCompleted = computed(() => {
+    let count = 0;
+    try {
+      const workouts = this.weekWorkouts();
+      if (!Array.isArray(workouts)) return count;
+
+      for (const session of workouts) {
+        if (!session) continue;
+        const exercises = session.exercises || session.ejercicios || [];
+        if (!Array.isArray(exercises)) continue;
+
+        for (const ex of exercises) {
+          if (!ex) continue;
+          const sets = ex.sets || ex.series || [];
+          if (Array.isArray(sets) && sets.some((s: any) => s && s.completed)) {
+            count++;
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error calculating summaryExercisesCompleted", err);
+    }
+    return count || 0;
+  });
+
   // AI State
   isGeneratingDay = signal<boolean>(false);
 
