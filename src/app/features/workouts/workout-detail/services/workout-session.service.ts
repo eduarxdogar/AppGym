@@ -145,6 +145,13 @@ export class WorkoutSessionService {
     const w = this.workout();
     if (!w) return;
     this.isActive.set(true);
+
+    if (this.sessionInterval) {
+      clearInterval(this.sessionInterval);
+      this.sessionInterval = null;
+    }
+    this.sessionSeconds.set(0);
+
     const startTimeStr = new Date().toISOString();
     this.sessionStartTime = new Date(startTimeStr).getTime();
     this.startSessionTimer();

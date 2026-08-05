@@ -31,7 +31,7 @@
   <!-- Messages Area -->
   <div #scrollContainer class="flex-1 overflow-y-auto p-5 pb-32 space-y-4 custom-scroll">
 
-    @for (msg of messages(); track msg) {
+    @for (msg of messages(); track msg.id || $index) {
       <div class="flex flex-col" [ngClass]="msg.role === 'user' ? 'items-end' : 'items-start'">
         <div class="flex gap-2 max-w-[85%]" [ngClass]="{'flex-row-reverse': msg.role === 'user'}">
           <div class="h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center border transition-all"

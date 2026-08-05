@@ -64,7 +64,7 @@ export class WeeklyPlanComponent {
          new Date(a.fecha!).getTime() - new Date(b.fecha!).getTime()
       );
       this.weekWorkouts.set(workouts);
-    }, { allowSignalWrites: true });
+    });
 
     // AUTO-FILL GENERATOR: Sync with User Profile from Onboarding
     effect(() => {
@@ -111,7 +111,7 @@ export class WeeklyPlanComponent {
       if (completed && this.weekWorkouts().length > 0) {
         this.showSummaryModal.set(true);
       }
-    }, { allowSignalWrites: true });
+    });
   }
 
   async drop(event: CdkDragDrop<any[]>) {

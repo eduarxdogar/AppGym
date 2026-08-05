@@ -18,6 +18,7 @@ export const WorkoutSchema = z.object({
   fecha: z.string().optional(),
   nombre: z.string(),
   ejercicios: z.array(EjercicioSchema),
+  coachNotes: z.string(),
   nivelDificultad: z.enum(['principiante', 'intermedio', 'avanzado']),
   musculos: z.array(z.string()).optional(),
   frequency: z.number().optional(),

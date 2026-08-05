@@ -60,17 +60,17 @@ export class UserProfileService {
 
   /** Recupera el perfil del usuario actual. Devuelve null si no existe. */
   getProfile(): Observable<UserProfile | null> {
-    return authState(this.auth).pipe(
-      switchMap((user: User | null) => {
-        if (!user) return of(null);
-        return runInInjectionContext(this.injector, () => {
+    return runInInjectionContext(this.injector, () => {
+      return authState(this.auth).pipe(
+        switchMap((user: User | null) => {
+          if (!user) return of(null);
           const ref = doc(this.firestore, `users/${user.uid}/profile/data`);
           return from(getDoc(ref)).pipe(
             map(snap => snap.exists() ? snap.data() as UserProfile : null)
           );
-        });
-      })
-    );
+        })
+      );
+    });
   }
 
   /** Verifica si el perfil existe (para el guard). */

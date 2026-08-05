@@ -13,15 +13,26 @@
           <button class="text-white"><mat-icon>more_horiz</mat-icon></button>
         </div>
         <div class="px-5 pt-2 pb-6 space-y-8">
-          <button type="button" class="w-full text-left bg-[#151921] rounded-2xl p-5 border border-zinc-800 flex items-center gap-4 relative overflow-hidden group cursor-pointer hover:border-zinc-700 transition-all">
-            <div class="absolute -right-10 -top-10 w-32 h-32 bg-blue-500/10 blur-[50px] rounded-full pointer-events-none"></div>
-            <div class="h-10 w-10 rounded-lg bg-white/10 flex items-center justify-center text-white"><mat-icon>sports_gymnastics</mat-icon></div>
-            <div class="flex-1">
-              <h3 class="text-white font-bold text-sm">Entrenador</h3>
-              <p class="text-zinc-400 text-xs leading-relaxed mt-1">¡Eleva tu estado físico! Descubre los secretos detrás de la selección de ejercicios.</p>
+          @if (workout.coachNotes) {
+            <div class="w-full text-left bg-[#151921] rounded-2xl p-5 border border-[#CCFF00]/20 flex items-start gap-4 relative overflow-hidden group">
+              <div class="absolute -right-10 -top-10 w-32 h-32 bg-[#CCFF00]/10 blur-[50px] rounded-full pointer-events-none"></div>
+              <div class="h-10 w-10 rounded-lg bg-[#CCFF00]/10 flex-shrink-0 flex items-center justify-center text-[#CCFF00]"><mat-icon>psychology</mat-icon></div>
+              <div class="flex-1">
+                <h3 class="text-[#CCFF00] font-bold text-sm">Nota del Coach</h3>
+                <p class="text-zinc-300 text-xs leading-relaxed mt-1">{{ workout.coachNotes }}</p>
+              </div>
             </div>
-            <mat-icon class="text-zinc-600 group-hover:text-white transition-colors">chevron_right</mat-icon>
-          </button>
+          } @else {
+            <button type="button" class="w-full text-left bg-[#151921] rounded-2xl p-5 border border-zinc-800 flex items-center gap-4 relative overflow-hidden group cursor-pointer hover:border-zinc-700 transition-all">
+              <div class="absolute -right-10 -top-10 w-32 h-32 bg-blue-500/10 blur-[50px] rounded-full pointer-events-none"></div>
+              <div class="h-10 w-10 rounded-lg bg-white/10 flex items-center justify-center text-white"><mat-icon>sports_gymnastics</mat-icon></div>
+              <div class="flex-1">
+                <h3 class="text-white font-bold text-sm">Entrenador</h3>
+                <p class="text-zinc-400 text-xs leading-relaxed mt-1">¡Eleva tu estado físico! Descubre los secretos detrás de la selección de ejercicios.</p>
+              </div>
+              <mat-icon class="text-zinc-600 group-hover:text-white transition-colors">chevron_right</mat-icon>
+            </button>
+          }
           
           <div>
             <h3 class="text-lg font-bold text-white mb-4">Músculos a entrenar</h3>
@@ -50,7 +61,7 @@
                 <button type="button" class="w-full text-left bg-[#151921] p-3 rounded-2xl flex items-center gap-4 relative group hover:bg-[#1a1f29] transition-colors cursor-pointer border border-transparent hover:border-zinc-800"
                      (click)="toggleExpand(i)">
                     <div class="h-20 w-20 flex-shrink-0 rounded-xl bg-zinc-800 overflow-hidden relative border border-zinc-700">
-                        <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" alt="Exercise" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                        <img [src]="exerciseImgService.getExerciseThumbnail(ex.nombre)" alt="Exercise" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" (error)="$any($event.target).src = 'assets/placeholder.png'">
                     </div>
                     <div class="flex-1 min-w-0 pr-8">
                          <h4 class="text-white font-bold text-base mb-1 truncate leading-tight">{{ ex.nombre }}</h4>
@@ -280,7 +291,7 @@
               @for (ex of filteredSupersetExercises(); track ex) {
                 <button (click)="selectExerciseFromCatalog(ex)" class="w-full bg-[#151921] border border-zinc-800 hover:border-[#CCFF00]/50 rounded-xl p-3 flex items-center gap-4 text-left group" [ngClass]="{'opacity-50': !hasRequiredEquipment(ex)}">
                   <div class="h-10 w-10 rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden flex-shrink-0">
-                    <img [src]="ex.imageUrl || exerciseImgService.getExerciseThumbnail(ex.nombre)" class="w-full h-full object-cover opacity-70 group-hover:opacity-100" [alt]="ex.nombre">
+                    <img [src]="ex.imageUrl || exerciseImgService.getExerciseThumbnail(ex.nombre)" class="w-full h-full object-cover opacity-70 group-hover:opacity-100" [alt]="ex.nombre" (error)="$any($event.target).src = 'assets/placeholder.png'">
                   </div>
                   <div><p class="text-sm font-bold text-zinc-300 group-hover:text-white">{{ ex.nombre }}</p><p class="text-[10px] text-zinc-600 uppercase tracking-widest">{{ ex.grupoMuscular }}</p></div>
                   <mat-icon class="ml-auto text-zinc-600 group-hover:text-[#CCFF00]">

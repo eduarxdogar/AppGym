@@ -18,6 +18,7 @@ export interface Workout {
   fecha?: string;
   nombre: string;
   ejercicios: Ejercicio[]; 
+  coachNotes?: string;
   nivelDificultad: 'principiante' | 'intermedio' | 'avanzado'; 
   musculos?: string[];
   frequency?: number;

@@ -6,6 +6,8 @@ import { UserProfile } from '../../account/models/user-profile.model';
 import { WeeklyPlanRequest } from '../models/ai-requests.model';
 import { WorkoutSchema } from '../models/schemas/workout.schema';
 import { z } from 'zod';
+import { TrainingHistoryService } from './training-history.service';
+import { firstValueFrom } from 'rxjs';
 
 const SYSTEM_PROMPT = `
 Eres COACH TRÍADA, un Entrenador Élite de Culturismo y Powerbuilding (IFBB Pro Persona). 
@@ -45,7 +47,10 @@ REGLAS DE ORO INTRANSABLES:
 1. BIOMECÁNICA PRIMERO: Siempre la seguridad articular y el torque en el músculo objetivo sobre el ego del peso.
 2. GESTIÓN DE FATIGA: Si un músculo está fatigado (>70%), PROHIBIDO entrenarlo pesado. Se trabajan antagonistas o se prescribe descanso activo estilo culturista.
 3. COHESIÓN SEMANAL: Distribuye el volumen total de forma inteligente para evitar sobreentrenamiento y maximizar la supercompensación.
-4. SOBRECARGA (REPS vs KG): Si la directiva o el foco del usuario es SOBRECARGA (+2.5%) o subir peso, tu prioridad absoluta es AUMENTAR EL PESO (KG) de los ejercicios compuestos. Solo incrementa repeticiones si el usuario lo solicita explícitamente o el peso ya es máximo. Mantén los mismos ejercicios, solo altera las cargas.
+4. SOBRECARGA (MATEMÁTICA ESTRICTA): 
+- Cuando la directiva sea SOBRECARGA (+2.5%) y la prioridad sea PESO (KG): Debes leer el peso del historial enviado. Multiplica ese peso por 1.025 y redondea el resultado al múltiplo de 2.5 más cercano. (Ejemplo: si levantó 140kg, el nuevo peso debe ser 142.5kg o 145kg). Mantén las repeticiones iguales. Debes aplicar el incremento matemático estrictamente a CADA UNO de los ejercicios compuestos del día leyendo su peso real en el historial.
+- Cuando la directiva sea SOBRECARGA y la prioridad sea REPETICIONES: Mantén el peso exacto del historial, pero suma de 1 a 2 repeticiones a las series de trabajo efectivo.
+5. COACH NOTES OBLIGATORIAS: Genera un mensaje corto, directo y en tono motivador (máximo 2 líneas) en el campo 'coachNotes' explicando exactamente qué ajustaste y por qué (Ej: 'Sobrecarga aplicada: Aumentamos 2.5kg en tu peso muerto para seguir forzando la adaptación. ¡A romperla!').
 `;
 
 @Injectable({
@@ -54,6 +59,7 @@ REGLAS DE ORO INTRANSABLES:
 export class TrainerAiService {
   private readonly baseAi = inject(BaseAiService);
   private readonly toastService = inject(ToastService);
+  private readonly trainingHistoryService = inject(TrainingHistoryService);
   public activeModel = this.baseAi.activeModel;
 
   async generateWorkout(userPrompt: string, userProfile: UserProfile): Promise<Workout> {
@@ -63,7 +69,9 @@ export class TrainerAiService {
 
     console.log('AI Coach: Generating single workout...', { userPrompt });
 
-    const prompt = this.buildPrompt(userPrompt, userProfile, 'single');
+    const rawHistory = await firstValueFrom(this.trainingHistoryService.getHistory());
+    const historySummary = this.summarizeHistory(rawHistory);
+    const prompt = this.buildPrompt(userPrompt, userProfile, 'single', 1, undefined, historySummary);
     
     try {
         const text = await this.baseAi.generateContent(prompt, true);
@@ -97,7 +105,9 @@ export class TrainerAiService {
 
     console.log('AI Coach: Generating weekly plan...', request);
 
-    const prompt = this.buildPrompt(request.userPrompt, request.profile, 'weekly', request.daysToGenerate, request.fatigueSummary);
+    const rawHistory = await firstValueFrom(this.trainingHistoryService.getHistory());
+    const historySummary = this.summarizeHistory(rawHistory);
+    const prompt = this.buildPrompt(request.userPrompt, request.profile, 'weekly', request.daysToGenerate, request.fatigueSummary, historySummary);
 
     try {
       const text = await this.baseAi.generateContent(prompt, true);
@@ -133,7 +143,27 @@ export class TrainerAiService {
     }
   }
 
-  private buildPrompt(userPrompt: string, profile: UserProfile, mode: 'single' | 'weekly', daysToGenerate: number = 1, fatigueSummary?: string): string {
+  private summarizeHistory(history: any[]): string {
+    if (!history || history.length === 0) return 'Sin historial previo.';
+    const recent = history.slice(0, 3); // Take last 3 to keep prompt size reasonable
+    let summary = '';
+    for (const session of recent) {
+      summary += `[${session.workoutName || 'Rutina'}]: `;
+      const exSummaries = [];
+      if (session.ejercicios) {
+        for (const ex of session.ejercicios) {
+          if (ex.series && ex.series.length > 0) {
+            const maxWeight = Math.max(...ex.series.map((s: any) => s.weight || 0));
+            exSummaries.push(`${ex.nombre} (Max: ${maxWeight}kg)`);
+          }
+        }
+      }
+      summary += exSummaries.join(', ') + '\n';
+    }
+    return summary || 'Sin datos específicos.';
+  }
+
+  private buildPrompt(userPrompt: string, profile: UserProfile, mode: 'single' | 'weekly', daysToGenerate: number = 1, fatigueSummary?: string, historySummary?: string): string {
     const isWeekly = mode === 'weekly';
     const outputStructure = isWeekly 
       ? `UN ARRAY JSON de ${daysToGenerate} objetos Workout: [ {WORKOUT_1}, {WORKOUT_2}... ]`
@@ -159,6 +189,7 @@ export class TrainerAiService {
       - Equipamiento: ${profile.equipment?.join(', ') || 'Gimnasio completo'}
       - Días disponibles (Cronológico): ${profile.availableDays?.join(', ') || 'Cualquiera'}
       - Fatiga Muscular Reciente: ${fatigueSummary || JSON.stringify(profile.fatigueLevels || {})}
+      - HISTORIAL RECIENTE (PESOS Y REPS): ${historySummary || 'No hay historial previo'}
       - Solicitud específica del usuario: "${userPrompt}"
 
       TAREA: ${extraTaskInstruction}
@@ -169,6 +200,7 @@ export class TrainerAiService {
       ESTRUCTURA JSON DE UN WORKOUT (Interface Workout):
       {
         "nombre": "string (OBLIGATORIO: Para nivel avanzado usar solo nomenclatura técnica: Push F1, Pull F2, Legs, etc. PROHIBIDO: Suave, Flujo, Reactivación)",
+        "coachNotes": "string (OBLIGATORIO: Mensaje corto motivador explicando el ajuste, ej: sobrecarga)",
         "nivelDificultad": "principiante" | "intermedio" | "avanzado",
         "musculos": ["string" (Lista de grupos musculares principales)],
         "ejercicios": [

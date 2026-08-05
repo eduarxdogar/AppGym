@@ -136,7 +136,7 @@ export class WorkoutDetailComponent implements OnInit {
         if (wid) {
             this.sessionService.loadWorkout(wid);
         }
-    }, { allowSignalWrites: true });
+    });
   }
 
   ngOnInit(): void {
