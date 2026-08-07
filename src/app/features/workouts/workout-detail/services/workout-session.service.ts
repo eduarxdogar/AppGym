@@ -488,25 +488,25 @@ export class WorkoutSessionService {
 
     const nowIso = new Date().toISOString();
 
-    const updatedWorkout: Workout = {
-      ...workout,
-      ejercicios: workout.ejercicios.map((ex, index) => {
-        const sets = this.activeSets().get(index) || [];
-        return {
-          ...ex,
-          sets: sets.map(s => ({ ...s }))
-        };
-      }),
-      isCompleted: true,
-      completedAt: new Date().toISOString(),
-      durationMinutes: Math.floor(this.sessionSeconds() / 60),
-      status: 'completed',
-      activeSetsState: deleteField() as any,
-      activeStartTime: deleteField() as any
-    };
-
     // Execute Firestore writes in parallel
     await runInInjectionContext(this.injector, async () => {
+      const updatedWorkout: Workout = {
+        ...workout,
+        ejercicios: workout.ejercicios.map((ex, index) => {
+          const sets = this.activeSets().get(index) || [];
+          return {
+            ...ex,
+            sets: sets.map(s => ({ ...s }))
+          };
+        }),
+        isCompleted: true,
+        completedAt: new Date().toISOString(),
+        durationMinutes: Math.floor(this.sessionSeconds() / 60),
+        status: 'completed',
+        activeSetsState: deleteField() as any,
+        activeStartTime: deleteField() as any
+      };
+
       await Promise.all([
         this.workoutService.updateWorkout(updatedWorkout),
         profile ? this.userProfileService.saveProfile({
