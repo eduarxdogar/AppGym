@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { GamificationService } from '../../../features/metrics/services/gamification.service';
 import { GAMIFICATION_RANKS } from '../../../features/account/models/user-profile.model';
+import { UserProfileStateService } from '../../../features/account/services/user-profile-state.service';
 
 @Component({
   selector: 'app-strength-tier-widget',
@@ -31,7 +32,7 @@ import { GAMIFICATION_RANKS } from '../../../features/account/models/user-profil
             </h3>
           </div>
           <p class="text-xs text-slate-400 font-medium mt-0.5">
-            Tonelaje Total: <span class="text-white font-bold">{{ state().currentTonnage | number }} kg</span>
+            Tonelaje Total: <span class="text-white font-bold">{{ userProfile()?.totalVolume || 0 | number }} kg</span>
           </p>
         </div>
       </div>
@@ -68,9 +69,11 @@ import { GAMIFICATION_RANKS } from '../../../features/account/models/user-profil
 })
 export class StrengthTierWidgetComponent {
   private readonly gamificationService = inject(GamificationService);
+  private readonly userProfileState = inject(UserProfileStateService);
   
   // Expose the signal
   state = this.gamificationService.gamificationState;
+  userProfile = this.userProfileState.profile;
 
   // Computed to get the name of the next rank
   nextRankName = computed(() => {

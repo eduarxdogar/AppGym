@@ -131,7 +131,12 @@ export class BiometricModelComponent {
       }
     });
 
-    beforeRender(({ delta }: NgtRenderState) => {
+    let lastTime = performance.now();
+    beforeRender((state: NgtRenderState) => {
+      const currentTime = performance.now();
+      const delta = (currentTime - lastTime) / 1000;
+      lastTime = currentTime;
+
       this.elapsed += delta;
       const scene = this.modelScene();
       if (scene) scene.rotation.y += delta * 0.4;

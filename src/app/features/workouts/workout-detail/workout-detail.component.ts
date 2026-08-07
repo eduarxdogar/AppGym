@@ -1,4 +1,4 @@
-import { Component, OnInit, input, effect, inject, computed, signal } from '@angular/core';
+import { Component, OnInit, input, effect, inject, computed, signal, NgZone } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { Ejercicio } from '../models/ejercicio.model';
 import { CommonModule } from '@angular/common';
@@ -38,6 +38,7 @@ export class WorkoutDetailComponent implements OnInit {
   private readonly recoveryService       = inject(RecoveryService);
   private readonly toastService          = inject(ToastService);
   private readonly userProfileState      = inject(UserProfileStateService);
+  private readonly zone                  = inject(NgZone);
   
   public readonly sessionService = inject(WorkoutSessionService);
 
@@ -202,9 +203,11 @@ export class WorkoutDetailComponent implements OnInit {
     if (countedMuscles > 0) {
         const average = totalFatigue / countedMuscles;
         if (average <= 60 || anyUnder48h) {
-            this.fatiguedAverage.set(Math.round(average));
-            this.fatiguedMusclesDesc.set(veryFatiguedNames.length > 0 ? veryFatiguedNames.join(', ') : 'Los músculos objetivo');
-            this.showFatigueWarning.set(true);
+            this.zone.run(() => {
+                this.fatiguedAverage.set(Math.round(average));
+                this.fatiguedMusclesDesc.set(veryFatiguedNames.length > 0 ? veryFatiguedNames.join(', ') : 'Los músculos objetivo');
+                this.showFatigueWarning.set(true);
+            });
             return;
         }
     }
@@ -225,9 +228,23 @@ export class WorkoutDetailComponent implements OnInit {
     if (!w) return;
 
     let hasIncomplete = false;
-    this.sessionService.activeSets().forEach(sets => {
-        if (sets.some(s => !s.completed)) {
-            hasIncomplete = true;
+    w.ejercicios.forEach((ex, idx) => {
+        // La IA puede mandar 'sets' mapeados o un array directo. El servicio los guarda en activeSets.
+        const activeSetsForEx = this.sessionService.activeSets().get(idx);
+        
+        // Verificamos si en el activeSets() hay sets incompletos
+        if (activeSetsForEx && activeSetsForEx.length > 0) {
+             if (activeSetsForEx.some(s => !s.completed)) {
+                 hasIncomplete = true;
+             }
+        } else {
+             // Si no están en activeSets pero vienen de la IA, checamos la estructura
+             const exSets = (ex as any).sets || [];
+             if (Array.isArray(exSets)) {
+                 if (exSets.some((s: any) => !s.completed && !s.isCompleted)) {
+                     hasIncomplete = true;
+                 }
+             }
         }
     });
 
@@ -236,8 +253,10 @@ export class WorkoutDetailComponent implements OnInit {
         if (!proceed) return;
     }
 
-    this.pendingExitAction.set('save');
-    this.showExitModal.set(true);
+    this.zone.run(() => {
+        this.pendingExitAction.set('save');
+        this.showExitModal.set(true);
+    });
   }
 
   cancelActiveSession() {

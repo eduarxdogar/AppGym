@@ -1,4 +1,4 @@
-import { Component, input, output, inject, computed } from '@angular/core';
+import { Component, input, output, inject, computed, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,6 +19,7 @@ export class SetTrackerComponent {
   private readonly dialog = inject(MatDialog);
   private readonly userProfileState = inject(UserProfileStateService);
   private readonly toastService = inject(ToastService);
+  private readonly zone = inject(NgZone);
 
   isBeginner = computed(() => {
     const level = this.userProfileState.profile()?.fitnessLevel || 'Intermedio';
@@ -27,7 +28,9 @@ export class SetTrackerComponent {
 
   checkBeginnerAccess() {
     if (this.isBeginner()) {
-      this.toastService.showWarning('Eres novato. Sigue la rutina del Coach al pie de la letra. ¡Sube a rango Oro para editar pesos!');
+      this.zone.run(() => {
+        this.toastService.showWarning('Eres novato. Sigue la rutina del Coach al pie de la letra. ¡Sube a rango Oro para editar pesos!');
+      });
     }
   }
 
@@ -54,16 +57,18 @@ export class SetTrackerComponent {
   openSuperserieModal = output<number>();
 
   markAsIncomplete(exIndex: number, setIndex: number): void {
-    const dialogRef = this.dialog.open(EditSetDialogComponent, {
-      width: '400px',
-      panelClass: 'bg-zinc-900', // To avoid default white background flashes if any
-      backdropClass: 'bg-black/50'
-    });
+    this.zone.run(() => {
+      const dialogRef = this.dialog.open(EditSetDialogComponent, {
+        width: '400px',
+        panelClass: 'bg-zinc-900', // To avoid default white background flashes if any
+        backdropClass: 'bg-black/50'
+      });
 
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.toggleComplete.emit({ exIndex, setIndex });
-      }
+      dialogRef.afterClosed().subscribe((result) => {
+        if (result) {
+          this.toggleComplete.emit({ exIndex, setIndex });
+        }
+      });
     });
   }
 

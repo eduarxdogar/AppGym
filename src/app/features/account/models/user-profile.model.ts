@@ -74,4 +74,6 @@ export interface UserProfile {
   deletedAt?: number;
   /** Email del usuario — almacenado en el perfil para que el Admin pueda listarlo en la tabla. */
   email?: string;
+  /** Accumulated total volume lifted (tonnage) */
+  totalVolume?: number;
 }

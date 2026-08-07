@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, EnvironmentInjector, runInInjectionContext } from '@angular/core';
 import { Workout } from '../../models/workout.model';
 import { WorkoutService } from '../../services/workout.service';
 import { TrainingSessionService } from '../../services/training-session.service';
@@ -38,6 +38,7 @@ export class WorkoutSessionService {
   private readonly trainingHistoryService = inject(TrainingHistoryService);
   public readonly restTimer = inject(RestTimerService);
   private readonly firestore = inject(Firestore);
+  private readonly injector = inject(EnvironmentInjector);
   private readonly router = inject(Router);
   private readonly toastService = inject(ToastService);
   private readonly userProfileService = inject(UserProfileService);
@@ -388,9 +389,13 @@ export class WorkoutSessionService {
   calculateTotalVolume(): number {
     let total = 0;
     this.activeSets().forEach(sets => {
-      sets.forEach(s => {
-        if (s.completed) total += (s.reps * s.weight);
-      });
+      if (Array.isArray(sets)) {
+        sets.forEach(s => {
+          if (s.completed && s.reps && s.weight) {
+             total += (s.reps * s.weight);
+          }
+        });
+      }
     });
     return total;
   }
@@ -435,19 +440,25 @@ export class WorkoutSessionService {
       if (ex.grupoMuscular) muscles.add(ex.grupoMuscular);
     });
 
+    const docId = runInInjectionContext(this.injector, () => {
+      return doc(collection(this.firestore, 'dummy')).id;
+    });
+
+    const sessionVolume = this.calculateTotalVolume();
+
     const session: WorkoutSession = {
-      id: doc(collection(this.firestore, 'dummy')).id,
+      id: docId,
       userId: '', 
       workoutId: workout.id,
       name: workout.nombre,
       startTime: startTime.toISOString(),
       endTime: new Date().toISOString(),
       duration: this.sessionTimeFormatted(),
-      totalVolume: this.calculateTotalVolume(),
+      totalVolume: sessionVolume,
       musclesWorked: Array.from(muscles),
       exercises: sessionExercises,
       feeling: 'good',
-      calories: Math.round((this.sessionSeconds() / 60 * 5) + (this.calculateTotalVolume() * 0.0005))
+      calories: Math.round((this.sessionSeconds() / 60 * 5) + (sessionVolume * 0.0005))
     };
 
     await this.trainingHistoryService.addSession(session);
@@ -462,12 +473,20 @@ export class WorkoutSessionService {
     let updatedSystemRecovery = profile?.systemRecovery ?? 100;
     updatedSystemRecovery = Math.max(0, updatedSystemRecovery - 20);
 
-    // Calculate fatigue levels synchronously
+    // Calculate hydrated fatigue for target muscles
     const currentStatus = this.recoveryService.getMuscleRecoveryStatus()();
-    const fatigueObj: Record<string, number> = {};
-    currentStatus.forEach((val, key) => {
-      fatigueObj[key] = val.percentage;
+    const fatigueObj: Record<string, number> = { ...profile?.muscleFatigue };
+    
+    // Deduct 30% from each muscle worked in this session
+    muscles.forEach(m => {
+      const normalized = this.recoveryService.normalizeMuscleName(m);
+      if (normalized) {
+        const currentPercentage = currentStatus.get(normalized)?.percentage ?? 100;
+        fatigueObj[normalized] = Math.max(0, currentPercentage - 30);
+      }
     });
+
+    const nowIso = new Date().toISOString();
 
     const updatedWorkout: Workout = {
       ...workout,
@@ -480,14 +499,18 @@ export class WorkoutSessionService {
     };
 
     // Execute Firestore writes in parallel
-    await Promise.all([
-      this.workoutService.updateWorkout(updatedWorkout),
-      profile ? this.userProfileService.saveProfile({
-        ...profile,
-        systemRecovery: updatedSystemRecovery,
-        fatigueLevels: fatigueObj
-      }) : Promise.resolve()
-    ]);
+    await runInInjectionContext(this.injector, async () => {
+      await Promise.all([
+        this.workoutService.updateWorkout(updatedWorkout),
+        profile ? this.userProfileService.saveProfile({
+          ...profile,
+          systemRecovery: updatedSystemRecovery,
+          muscleFatigue: fatigueObj,
+          lastFatigueUpdate: nowIso,
+          totalVolume: (profile.totalVolume || 0) + sessionVolume
+        }) : Promise.resolve()
+      ]);
+    });
 
     // Force signal update to reflect immediately in the dashboard
     this.userProfileState.refreshProfile();
