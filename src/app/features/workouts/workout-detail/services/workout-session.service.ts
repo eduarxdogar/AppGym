@@ -490,6 +490,13 @@ export class WorkoutSessionService {
 
     const updatedWorkout: Workout = {
       ...workout,
+      ejercicios: workout.ejercicios.map((ex, index) => {
+        const sets = this.activeSets().get(index) || [];
+        return {
+          ...ex,
+          sets: sets.map(s => ({ ...s }))
+        };
+      }),
       isCompleted: true,
       completedAt: new Date().toISOString(),
       durationMinutes: Math.floor(this.sessionSeconds() / 60),

@@ -182,38 +182,30 @@ export class WeeklyPlanComponent {
     }
   });
 
-  private calculateSetVolume(set: any): number {
-    const isCompleted = set?.completed === true || set?.isCompleted === true || set?.checked === true;
-    if (!isCompleted) return 0;
-    const reps = Number(set.reps || set.repeticiones || 0);
-    const weight = Number(set.weight || set.peso || set.pesokg || set.kg || 0);
-    return (!Number.isNaN(reps) && !Number.isNaN(weight)) ? (reps * weight) : 0;
-  }
-
-  private hasCompletedSet(ex: any): boolean {
-    const sets = ex?.sets || ex?.series;
-    return Array.isArray(sets) && sets.some((s: any) => s?.completed === true || s?.isCompleted === true || s?.checked === true);
-  }
-
   summaryTotalVolume = computed(() => {
     const workouts = this.weekWorkouts();
-    console.log('Week Workouts Data:', workouts);
     try {
       if (!Array.isArray(workouts)) return 0;
-
-      return workouts.reduce((total, session) => {
-        const exercises = session?.exercises || session?.ejercicios;
-        if (!Array.isArray(exercises)) return total;
-
-        const sessionVolume = exercises.reduce((exTotal, ex) => {
+      let vol = 0;
+      for (const w of workouts) {
+        const exercises = w?.exercises || w?.ejercicios;
+        if (!Array.isArray(exercises)) continue;
+        for (const ex of exercises) {
           const sets = ex?.sets || ex?.series;
-          if (!Array.isArray(sets)) return exTotal;
-
-          return exTotal + sets.reduce((setTotal, set) => setTotal + this.calculateSetVolume(set), 0);
-        }, 0);
-
-        return total + sessionVolume;
-      }, 0);
+          if (!Array.isArray(sets)) continue;
+          for (const set of sets) {
+            const isSetDone = set.completed === true || set.isCompleted === true || set.checked === true;
+            if (set && isSetDone) {
+              const reps = Number(set.reps || set.repeticiones || 0);
+              const weight = Number(set.weight || set.peso || set.pesokg || 0);
+              if (!isNaN(reps) && !isNaN(weight)) {
+                vol += (reps * weight);
+              }
+            }
+          }
+        }
+      }
+      return vol;
     } catch (err) {
       console.error("Error calculating summaryTotalVolume", err);
       return 0;
@@ -224,13 +216,25 @@ export class WeeklyPlanComponent {
     try {
       const workouts = this.weekWorkouts();
       if (!Array.isArray(workouts)) return 0;
-
-      return workouts.reduce((total, session) => {
-        const exercises = session?.exercises || session?.ejercicios;
-        if (!Array.isArray(exercises)) return total;
-
-        return total + exercises.filter(ex => this.hasCompletedSet(ex)).length;
-      }, 0);
+      let count = 0;
+      for (const w of workouts) {
+        const exercises = w?.exercises || w?.ejercicios;
+        if (!Array.isArray(exercises)) continue;
+        for (const ex of exercises) {
+          const sets = ex?.sets || ex?.series;
+          if (!Array.isArray(sets)) continue;
+          let hasCompletedSet = false;
+          for (const set of sets) {
+            const isSetDone = set.completed === true || set.isCompleted === true || set.checked === true;
+            if (set && isSetDone) {
+              hasCompletedSet = true;
+              break;
+            }
+          }
+          if (hasCompletedSet) count++;
+        }
+      }
+      return count;
     } catch (err) {
       console.error("Error calculating summaryExercisesCompleted", err);
       return 0;

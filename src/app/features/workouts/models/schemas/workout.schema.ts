@@ -30,7 +30,7 @@ export const WorkoutSchema = z.object({
   status: z.enum(['idle', 'active', 'completed']).optional(),
   activeStartTime: z.string().optional(),
   activeSetsState: z.record(z.string(), z.array(ActiveSetStateSchema)).optional(),
-}).strict();
+}).passthrough();
 
 export type ActiveSetState = z.infer<typeof ActiveSetStateSchema>;
 export type ProgressionOptions = z.infer<typeof ProgressionOptionsSchema>;
