@@ -406,10 +406,18 @@ export class WeeklyPlanComponent {
         if (workout.ejercicios) {
           workout.ejercicios.forEach((ex: any) => {
             if (Array.isArray(ex.series)) {
-              ex.series.forEach((s: any) => s.completed = false);
+              ex.series.forEach((s: any) => {
+                s.completed = false;
+                s.isCompleted = false;
+                s.checked = false;
+              });
             }
             if (Array.isArray(ex.sets)) {
-              ex.sets.forEach((s: any) => s.completed = false);
+              ex.sets.forEach((s: any) => {
+                s.completed = false;
+                s.isCompleted = false;
+                s.checked = false;
+              });
             }
           });
         }

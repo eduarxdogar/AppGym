@@ -57,7 +57,16 @@ export const generateWorkoutPlanAI = onCall(defaultOptions, async (request) => {
     });
     
     const result = await model.generateContent(data.prompt);
-    return { text: result.response.text() };
+    const rawText = result.response.text();
+    
+    try {
+       // Validación superficial robusta para evitar crashes no controlados (503)
+       JSON.parse(rawText.replace(/```json|```/gi, '').trim());
+    } catch (parseError) {
+       logger.warn("El LLM generó texto que no es JSON estricto. Se retorna crudo para que el frontend intente sanearlo.", { rawText });
+    }
+    
+    return { text: rawText };
   } catch (error) {
     return handleGeminiError(error);
   }

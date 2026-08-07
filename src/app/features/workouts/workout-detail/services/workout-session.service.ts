@@ -526,7 +526,7 @@ export class WorkoutSessionService {
       await this.shiftFutureWorkouts(workout, workout.fecha);
     }
 
-    this.trainingSessionService.saveSession(null);
+    this.clearActiveSession();
     this.router.navigate(['/weekly-plan']);
   }
 
@@ -568,11 +568,18 @@ export class WorkoutSessionService {
       delete updatedW.activeStartTime;
       delete updatedW.activeSetsState;
       this.workoutService.updateWorkout(updatedW);
-      this.trainingSessionService.saveSession(null);
     }
+    this.clearActiveSession();
+    this.router.navigate(['/weekly-plan']);
+  }
+
+  clearActiveSession() {
+    this.workout.set(null);
+    this.activeSets.set(new Map());
+    this.sessionSeconds.set(0);
     this.isActive.set(false);
     this.stopSessionTimer();
     this.restTimer.stop();
-    this.router.navigate(['/weekly-plan']);
+    this.trainingSessionService.saveSession(null);
   }
 }
