@@ -16,8 +16,13 @@ export class StorageService {
   private readonly authService = inject(AuthService);
   private readonly injector = inject(Injector);
   private readonly logger = inject(LoggerService);
+  private readonly workoutsCol;
+  private readonly historyCol;
 
-  constructor() { }
+  constructor() {
+    this.workoutsCol = collection(this.firestore, 'workouts');
+    this.historyCol = collection(this.firestore, 'workout_history');
+  }
 
   getWorkouts(): Observable<Workout[]> {
     return this.authService.authState$.pipe(
@@ -26,8 +31,7 @@ export class StorageService {
           return of([] as Workout[]);
         }
         return runInInjectionContext(this.injector, () => {
-             const workoutsCol = collection(this.firestore, 'workouts');
-             const q = query(workoutsCol, where('userId', '==', user.uid));
+             const q = query(this.workoutsCol, where('userId', '==', user.uid));
              return (collectionData(q, { idField: 'id' }) as Observable<Workout[]>).pipe(
                  catchError(err => {
                      this.logger.error('Firestore rule or collection error:', err);
@@ -64,26 +68,28 @@ export class StorageService {
       throw new Error('Debe estar autenticado para guardar.');
     }
 
-    try {
-      const workoutsCol = collection(this.firestore, 'workouts');
-      const docRef = doc(workoutsCol, String(workout.id));
-      const safeWorkout = this.sanitizeData({ ...workout, userId: user.uid });
-      await setDoc(docRef, safeWorkout, { merge: true });
-    } catch (error) {
-      this.logger.error('Error saving workout:', error);
-      throw error;
-    }
+    return runInInjectionContext(this.injector, async () => {
+      try {
+        const docRef = doc(this.workoutsCol, String(workout.id));
+        const safeWorkout = this.sanitizeData({ ...workout, userId: user.uid });
+        await setDoc(docRef, safeWorkout, { merge: true });
+      } catch (error) {
+        this.logger.error('Error saving workout:', error);
+        throw error;
+      }
+    });
   }
 
   async deleteWorkout(id: string | number): Promise<void> {
-    try {
-      const workoutsCol = collection(this.firestore, 'workouts');
-      const docRef = doc(workoutsCol, String(id));
-      await deleteDoc(docRef);
-    } catch (error) {
-      this.logger.error('Error deleting workout:', error);
-      throw error;
-    }
+    return runInInjectionContext(this.injector, async () => {
+      try {
+        const docRef = doc(this.workoutsCol, String(id));
+        await deleteDoc(docRef);
+      } catch (error) {
+        this.logger.error('Error deleting workout:', error);
+        throw error;
+      }
+    });
   }
 
   // --- HISTORY MANAGEMENT ---
@@ -93,9 +99,8 @@ export class StorageService {
       switchMap(user => {
         if (!user) return of([]);
         return runInInjectionContext(this.injector, () => {
-             const historyCol = collection(this.firestore, 'workout_history');
              const q = query(
-               historyCol, 
+               this.historyCol, 
                where('userId', '==', user.uid),
                orderBy('fecha', 'desc'),
                limit(50)
@@ -114,17 +119,18 @@ export class StorageService {
     const user = this.authService.currentUser();
     if (!user) throw new Error('User must be authenticated');
 
-    try {
-      const historyCol = collection(this.firestore, 'workout_history');
-      const docId = session.id ? String(session.id) : doc(historyCol).id;
-      const docRef = doc(historyCol, docId);
-      
-      const safeSession = this.sanitizeData({ ...session, id: docId, userId: user.uid });
-      await setDoc(docRef, safeSession, { merge: true });
-    } catch (error) {
-      this.logger.error('Error saving history:', error);
-      throw error;
-    }
+    return runInInjectionContext(this.injector, async () => {
+      try {
+        const docId = session.id ? String(session.id) : doc(this.historyCol).id;
+        const docRef = doc(this.historyCol, docId);
+        
+        const safeSession = this.sanitizeData({ ...session, id: docId, userId: user.uid });
+        await setDoc(docRef, safeSession, { merge: true });
+      } catch (error) {
+        this.logger.error('Error saving history:', error);
+        throw error;
+      }
+    });
   }
 
   // --- LEGACY METHODS ---
@@ -144,9 +150,11 @@ export class StorageService {
   async saveChatMessage(workoutId: string, message: ChatMessage): Promise<void> {
     const user = this.authService.currentUser();
     if (!user) return;
-    const chatCol = collection(this.firestore, 'workouts', workoutId, 'chat_history');
-    const docRef = doc(chatCol, message.id);
-    await setDoc(docRef, { ...message, userId: user.uid });
+    return runInInjectionContext(this.injector, async () => {
+      const chatCol = collection(this.firestore, 'workouts', workoutId, 'chat_history');
+      const docRef = doc(chatCol, message.id);
+      await setDoc(docRef, { ...message, userId: user.uid });
+    });
   }
 
   getChatHistory(workoutId: string): Observable<ChatMessage[]> {

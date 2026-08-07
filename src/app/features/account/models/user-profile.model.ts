@@ -41,6 +41,9 @@ export interface UserProfile {
   availableDays: string[];
   equipment: string[];
   fatigueLevels?: Record<string, number>;
+  muscleFatigue?: Record<string, number>;
+  lastFatigueUpdate?: string;
+  systemRecovery?: number;
   inbodyData?: {
     muscleKg?: number | null;
     fatPercent?: number | null;

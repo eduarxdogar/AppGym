@@ -35,7 +35,21 @@ export class TrainerAiService {
             isJson: true
         });
         const cleanText = this.baseAi.cleanJson(text);
-        const parsedData = JSON.parse(cleanText);
+        const parsedData = this.sanitizeAIResponse(JSON.parse(cleanText));
+
+        if (Array.isArray(parsedData.ejercicios)) {
+            parsedData.ejercicios.forEach((ex: any) => {
+                if (!Array.isArray(ex.sets) || ex.sets.length === 0) {
+                    const numSeries = ex.series || ex.targetSets || 3;
+                    ex.sets = Array.from({ length: numSeries }).map((_, i) => ({
+                        type: i === 0 ? 'W' : 'E',
+                        reps: ex.repeticiones || 10,
+                        weight: ex.pesokg || 0,
+                        completed: false
+                    }));
+                }
+            });
+        }
         
         const validation = WorkoutSchema.safeParse({
             ...parsedData,
@@ -74,7 +88,25 @@ export class TrainerAiService {
           isJson: true
       });
       const cleanText = this.baseAi.cleanJson(text);
-      const parsedData = JSON.parse(cleanText);
+      const parsedData = this.sanitizeAIResponse(JSON.parse(cleanText));
+
+      if (Array.isArray(parsedData)) {
+          parsedData.forEach((workout: any) => {
+              if (Array.isArray(workout.ejercicios)) {
+                  workout.ejercicios.forEach((ex: any) => {
+                      if (!Array.isArray(ex.sets) || ex.sets.length === 0) {
+                          const numSeries = ex.series || ex.targetSets || 3;
+                          ex.sets = Array.from({ length: numSeries }).map((_, i) => ({
+                              type: i === 0 ? 'W' : 'E',
+                              reps: ex.repeticiones || 10,
+                              weight: ex.pesokg || 0,
+                              completed: false
+                          }));
+                      }
+                  });
+              }
+          });
+      }
 
       const workoutAiSchema = WorkoutSchema.omit({ id: true, fecha: true });
       const validation = z.array(workoutAiSchema).safeParse(parsedData);
@@ -103,6 +135,34 @@ export class TrainerAiService {
       console.error('Error generating weekly plan:', error);
       throw error;
     }
+  }
+
+  private sanitizeAIResponse(data: any): any {
+    if (!data) return data;
+    
+    if (Array.isArray(data)) {
+        return data.map(item => this.sanitizeAIResponse(item));
+    }
+
+    if (typeof data === 'object') {
+        const sanitized = { ...data };
+        
+        if (Array.isArray(sanitized.ejercicios)) {
+            sanitized.ejercicios = sanitized.ejercicios.map((ex: any) => {
+                const cleanEx = { ...ex };
+                
+                if (cleanEx.name && !cleanEx.nombre) cleanEx.nombre = cleanEx.name;
+                if (typeof cleanEx.sets === 'number' && !cleanEx.series) cleanEx.series = cleanEx.sets;
+                if (typeof cleanEx.reps === 'number' && !cleanEx.repeticiones) cleanEx.repeticiones = cleanEx.reps;
+                if (typeof cleanEx.weight === 'number' && !cleanEx.pesokg) cleanEx.pesokg = cleanEx.weight;
+                
+                return cleanEx;
+            });
+        }
+        return sanitized;
+    }
+    
+    return data;
   }
 
   private getExerciseMaxWeight(ex: any): number {

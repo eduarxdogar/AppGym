@@ -65,7 +65,7 @@ export class WeeklyPlanComponent {
          new Date(a.fecha!).getTime() - new Date(b.fecha!).getTime()
       );
       this.weekWorkouts.set(workouts);
-    }, { allowSignalWrites: true });
+    });
 
     // AUTO-FILL GENERATOR: Sync with User Profile from Onboarding
     effect(() => {
@@ -183,20 +183,22 @@ export class WeeklyPlanComponent {
   });
 
   private calculateSetVolume(set: any): number {
-    if (!set?.completed) return 0;
+    const isCompleted = set?.completed === true || set?.isCompleted === true || set?.checked === true;
+    if (!isCompleted) return 0;
     const reps = Number(set.reps || set.repeticiones || 0);
-    const weight = Number(set.weight || set.peso || set.pesokg || 0);
+    const weight = Number(set.weight || set.peso || set.pesokg || set.kg || 0);
     return (!Number.isNaN(reps) && !Number.isNaN(weight)) ? (reps * weight) : 0;
   }
 
   private hasCompletedSet(ex: any): boolean {
     const sets = ex?.sets || ex?.series;
-    return Array.isArray(sets) && sets.some((s: any) => s?.completed);
+    return Array.isArray(sets) && sets.some((s: any) => s?.completed === true || s?.isCompleted === true || s?.checked === true);
   }
 
   summaryTotalVolume = computed(() => {
+    const workouts = this.weekWorkouts();
+    console.log('Week Workouts Data:', workouts);
     try {
-      const workouts = this.weekWorkouts();
       if (!Array.isArray(workouts)) return 0;
 
       return workouts.reduce((total, session) => {

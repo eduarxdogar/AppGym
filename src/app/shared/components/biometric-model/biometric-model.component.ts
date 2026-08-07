@@ -28,7 +28,9 @@ const MUSCLE_MESH_MAP: Record<string, string[]> = {
   'Bíceps': ['Biceps_L', 'Biceps_R'],
   'Tríceps': ['Triceps_L', 'Triceps_R'],
   'Antebrazos': ['Forearms_L', 'Forearms_R'],
-  'Hombros': ['Deltoid_L', 'Deltoid_R'],
+  'Hombro Anterior': ['Deltoid_L', 'Deltoid_R'],
+  'Hombro Lateral': ['Deltoid_L', 'Deltoid_R'],
+  'Hombro Posterior': ['Deltoid_L', 'Deltoid_R'],
   'Core': ['Abs'],
   'Trapecio': ['Traps_L', 'Traps_R'],
   'Lumbares': ['LowerBack']

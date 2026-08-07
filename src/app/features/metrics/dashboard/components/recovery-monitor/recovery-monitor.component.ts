@@ -45,6 +45,13 @@ export class RecoveryMonitorComponent {
     return fresh.slice(0, 4);
   });
 
+  /** < 80% recovery = fatigued */
+  fatiguedMuscles = computed(() => {
+    const map = this.statusMap();
+    const fatigued = Array.from(map.values()).filter(m => m.percentage < 80);
+    return fatigued.slice(0, 4);
+  });
+
   /** All muscles sorted: most fatigued first */
   allMuscles = computed(() => {
     const map = this.statusMap();

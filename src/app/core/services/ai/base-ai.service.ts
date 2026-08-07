@@ -1,4 +1,4 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, inject, Injector, runInInjectionContext } from '@angular/core';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { ToastService } from '../toast.service';
 
@@ -8,13 +8,23 @@ import { ToastService } from '../toast.service';
 export class BaseAiService {
   private readonly functions = inject(Functions);
   private readonly toastService = inject(ToastService);
+  private readonly injector = inject(Injector);
   public readonly activeModel = signal<'gemini-2.5-flash' | 'gemini-2.5-pro'>('gemini-2.5-flash');
   public readonly isConfigured = true;
+  private callables: Record<string, any> = {};
 
-  constructor() {}
+  constructor() {
+    this.callables['generateWorkoutPlanAI'] = httpsCallable(this.functions, 'generateWorkoutPlanAI', { timeout: 300000 });
+  }
 
   public async callFunction(functionName: string, payload: any): Promise<string> {
-    const callable = httpsCallable(this.functions, functionName, { timeout: 300000 });
+    let callable = this.callables[functionName];
+    if (!callable) {
+      callable = runInInjectionContext(this.injector, () => 
+        httpsCallable(this.functions, functionName, { timeout: 300000 })
+      );
+      this.callables[functionName] = callable;
+    }
     try {
       const result = await callable({
         ...payload,
