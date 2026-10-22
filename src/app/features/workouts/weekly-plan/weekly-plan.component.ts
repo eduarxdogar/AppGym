@@ -10,13 +10,14 @@ import { TrainerAiService } from '../../../core/services/ai/trainer-ai.service';
 import { WeeklyPlanRequest } from '../../../core/models/ai-requests.model';
 import { UserProfile } from '../../../core/models/user-profile.model';
 import { UserProfileStateService } from '../../../core/services/user-profile-state.service';
-import { RecoveryService } from '../../../core/services/recovery.service';
+import { aiErrorMessage } from '../../../core/utils/ai-error-message';
 import { ToastService } from '../../../core/services/toast.service';
 import { WeeklySummaryModalComponent } from '../../../shared/components/weekly-summary-modal/weekly-summary-modal.component';
 import { ProgressionEngineService } from '../../../core/services/progression-engine.service';
 import { ProgressionOptions } from '../../../core/models/workout.model';
 import { TrainingHistoryService } from '../../../core/services/training-history.service';
 import { WorkoutSession } from '../../../core/models/workout-history.model';
+import { planDateRange } from '../../../core/utils/workout-session.utils';
 
 @Component({
   selector: 'app-weekly-plan',
@@ -32,7 +33,6 @@ export class WeeklyPlanComponent {
   // Services
   private readonly workoutService = inject(WorkoutService);
   public readonly aiService = inject(TrainerAiService);
-  private readonly recoveryService = inject(RecoveryService);
   private readonly profileState = inject(UserProfileStateService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -143,14 +143,14 @@ export class WeeklyPlanComponent {
   cycleStartDate = computed<Date>(() => {
     const workouts = this.weekWorkouts();
     if (workouts.length === 0) return new Date();
-    return new Date(workouts[0].fecha!);
+    return planDateRange(workouts).start;
   });
 
   /** Latest fecha in the current plan — used to scope the summary modal metrics. */
   cycleEndDate = computed<Date>(() => {
     const workouts = this.weekWorkouts();
     if (workouts.length === 0) return new Date();
-    return new Date(workouts.at(-1)!.fecha!);
+    return planDateRange(workouts).end;
   });
 
   completedDaysCount = computed(() => {
@@ -337,12 +337,6 @@ export class WeeklyPlanComponent {
       
       this.isGeneratingDay.set(true);
       
-      // Get Real Fatigue
-      const fatigueRecord: Record<string, number> = {};
-      this.recoveryService.muscleRecoveryStatus().forEach((val, key) => {
-          fatigueRecord[key] = val.percentage;
-      });
-
       const userProfile = this.profileState.profile();
       const profile: UserProfile = {
          ...(userProfile || {
@@ -352,8 +346,7 @@ export class WeeklyPlanComponent {
            equipment: ['Gym Completo'],
            fitnessLevel: 'Intermedio',
            goal: 'volumen'
-         }),
-         fatigueLevels: fatigueRecord
+         })
       };
 
       const prompt = "Genera un solo día de entrenamiento para complementar mi rutina actual. Analiza mi fatiga para no sobrecargar músculos exhaustos. Que sea variado e interesante.";
@@ -375,7 +368,7 @@ export class WeeklyPlanComponent {
 
       } catch (err: any) {
            console.error(err);
-           this.toastService.showError(err.message || 'Error al contactar a la IA. Revisa tu conexión.');
+           this.toastService.showError(aiErrorMessage(err, 'Error al contactar a la IA. Revisa tu conexión.'));
       } finally {
            this.isGeneratingDay.set(false);
       }
@@ -386,12 +379,6 @@ export class WeeklyPlanComponent {
 
      this.isLoading.set(true);
      this.errorMessage.set(null);
-
-     // Get Real Fatigue
-     const fatigueRecord: Record<string, number> = {};
-     this.recoveryService.muscleRecoveryStatus().forEach((val, key) => {
-         fatigueRecord[key] = val.percentage;
-     });
 
      const userProfile = this.profileState.profile();
      
@@ -414,8 +401,7 @@ export class WeeklyPlanComponent {
              goal: 'volumen'
            }),
            availableDays: sortedDays.length > 0 ? sortedDays : (userProfile?.availableDays || []),
-           fitnessLevel: this.selectedLevel,
-           fatigueLevels: fatigueRecord
+           fitnessLevel: this.selectedLevel
         }
      };
 
@@ -428,8 +414,9 @@ export class WeeklyPlanComponent {
         this.toastService.showSuccess('Plan semanal generado satisfactoriamente.');
      } catch (err: any) {
         console.error(err);
-        this.errorMessage.set(err.message || 'Error generando el plan. Intenta nuevamente.');
-        this.toastService.showError(err.message || 'Ocurrió un error generando el plan.');
+        const message = aiErrorMessage(err, 'Error generando el plan. Intenta nuevamente.');
+        this.errorMessage.set(message);
+        this.toastService.showError(message);
      } finally {
         this.isLoading.set(false);
      }

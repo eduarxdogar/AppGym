@@ -1,12 +1,13 @@
 import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
-import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, where, orderBy } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, query, where, orderBy, writeBatch } from '@angular/fire/firestore';
 import { Observable, of } from 'rxjs';
-import { switchMap, catchError } from 'rxjs/operators';
+import { switchMap, catchError, map } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { Workout } from '../../core/models/workout.model';
 import { WorkoutSession } from '../models/workout-history.model';
 import { ChatMessage } from '../models/ai-requests.model';
 import { LoggerService } from './logger.service';
+import { firestoreData, normalizeSession } from '../utils/workout-session.utils';
 
 @Injectable({
   providedIn: 'root'
@@ -43,21 +44,6 @@ export class StorageService {
     );
   }
 
-  private sanitizeData(obj: any): any {
-    if (obj === undefined) return null;
-    if (obj === null || typeof obj !== 'object') return obj;
-    if (Array.isArray(obj)) {
-      return obj.map(item => this.sanitizeData(item));
-    }
-    const cleanObj: any = {};
-    for (const key in obj) {
-      if (Object.hasOwn(obj, key)) {
-        cleanObj[key] = this.sanitizeData(obj[key]);
-      }
-    }
-    return cleanObj;
-  }
-
   async saveWorkout(workout: Workout): Promise<void> {
     const user = this.authService.currentUser();
     if (!user) {
@@ -67,7 +53,7 @@ export class StorageService {
     try {
       const workoutsCol = collection(this.firestore, 'workouts');
       const docRef = doc(workoutsCol, String(workout.id));
-      const safeWorkout = this.sanitizeData({ ...workout, userId: user.uid });
+      const safeWorkout = firestoreData({ ...workout, userId: user.uid });
       await setDoc(docRef, safeWorkout, { merge: true });
     } catch (error) {
       this.logger.error('Error saving workout:', error);
@@ -95,7 +81,9 @@ export class StorageService {
         return runInInjectionContext(this.injector, () => {
              const historyCol = collection(this.firestore, 'workout_history');
              const q = query(historyCol, where('userId', '==', user.uid));
-             return collectionData(q, { idField: 'id' }) as Observable<WorkoutSession[]>;
+             return (collectionData(q, { idField: 'id' }) as Observable<WorkoutSession[]>).pipe(
+               map(sessions => sessions.map(normalizeSession))
+             );
         });
       }),
       catchError(err => {
@@ -114,7 +102,7 @@ export class StorageService {
       const docId = session.id ? String(session.id) : doc(historyCol).id;
       const docRef = doc(historyCol, docId);
       
-      const safeSession = this.sanitizeData({ ...session, id: docId, userId: user.uid });
+      const safeSession = firestoreData({ ...session, id: docId, userId: user.uid });
       await setDoc(docRef, safeSession, { merge: true });
     } catch (error) {
       this.logger.error('Error saving history:', error);
@@ -142,6 +130,16 @@ export class StorageService {
     const chatCol = collection(this.firestore, 'workouts', workoutId, 'chat_history');
     const docRef = doc(chatCol, message.id);
     await setDoc(docRef, { ...message, userId: user.uid });
+  }
+
+  async saveChatMessages(workoutId: string, messages: ChatMessage[]): Promise<void> {
+    const user = this.authService.currentUser();
+    if (!user) throw new Error('Usuario no autenticado');
+    const batch = writeBatch(this.firestore);
+    for (const message of messages) {
+      batch.set(doc(this.firestore, 'workouts', workoutId, 'chat_history', message.id), { ...message, userId: user.uid });
+    }
+    await batch.commit();
   }
 
   getChatHistory(workoutId: string): Observable<ChatMessage[]> {

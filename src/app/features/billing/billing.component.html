@@ -1,3 +1,4 @@
+@if (subscription.subscriptionState() === 'expired') {
 <div class="min-h-screen bg-slate-900 flex items-center justify-center p-4">
   <div class="max-w-md w-full bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-700">
     <div class="p-8">
@@ -43,6 +44,12 @@
 
         <span>{{ isLoading() ? 'Generando sesión...' : 'Suscribirse por 30.000 COP / mes' }}</span>
       </button>
+      @if (errorMessage()) {
+        <p role="alert" class="text-red-400 text-sm mt-4">{{ errorMessage() }}</p>
+      }
     </div>
   </div>
 </div>
+} @else {
+  <div role="status" class="min-h-screen bg-slate-900 text-slate-300 flex items-center justify-center p-4">Verificando tu acceso...</div>
+}

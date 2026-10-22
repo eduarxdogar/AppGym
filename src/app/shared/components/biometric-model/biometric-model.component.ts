@@ -10,36 +10,14 @@ import {
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-import { extend, beforeRender, NgtRenderState, NgtThreeEvent, NgtArgs, injectStore, injectLoader } from 'angular-three';
+import { extend, injectBeforeRender, NgtRenderState, NgtThreeEvent, NgtArgs, injectStore, injectLoader } from 'angular-three';
 import { MatIconModule } from '@angular/material/icon';
+import { musclesForMesh, statusForMesh } from '../../../core/models/muscle-taxonomy';
+import { MuscleStatus } from '../../../core/models/workout-history.model';
 import { RecoveryService } from '../../../core/services/recovery.service';
 import { UserProfileStateService } from '../../../core/services/user-profile-state.service';
 
 extend(THREE);
-
-/** Mapa exacto de los IDs de los músculos a los nombres de los meshes del .glb optimizado */
-const MUSCLE_MESH_MAP: Record<string, string[]> = {
-  'Pecho': ['Pectoral_L', 'Pectoral_R'],
-  'Espalda': ['Lats_L', 'Lats_R', 'Traps_L', 'Traps_R', 'LowerBack'],
-  'Cuádriceps': ['Quadriceps_L', 'Quadriceps_R'],
-  'Isquios': ['Hamstrings_L', 'Hamstrings_R'],
-  'Gemelos': ['Calves_L', 'Calves_R'],
-  'Glúteos': ['Glutes_L', 'Glutes_R'],
-  'Bíceps': ['Biceps_L', 'Biceps_R'],
-  'Tríceps': ['Triceps_L', 'Triceps_R'],
-  'Antebrazos': ['Forearms_L', 'Forearms_R'],
-  'Hombros': ['Deltoid_L', 'Deltoid_R'],
-  'Core': ['Abs'],
-  'Trapecio': ['Traps_L', 'Traps_R'],
-  'Lumbares': ['LowerBack']
-};
-
-function resolveMuscleFromMeshName(meshName: string): string | null {
-  for (const [muscle, meshes] of Object.entries(MUSCLE_MESH_MAP)) {
-    if (meshes.some(m => meshName.includes(m))) return muscle;
-  }
-  return null;
-}
 
 @Component({
   selector: 'app-biometric-model',
@@ -104,7 +82,7 @@ export class BiometricModelComponent {
 
         // Configurar la cámara dinámicamente según el tamaño del modelo
         const maxDim = Math.max(size.x, size.y, size.z);
-        const state = this.store();
+        const state = this.store.snapshot;
         const camera = state.camera;
         if (camera) {
            // Posiciona en Z proporcional al tamaño, y sube Y ligeramente para que encuadre bien la cabeza
@@ -129,7 +107,7 @@ export class BiometricModelComponent {
       }
     });
 
-    beforeRender(({ delta }: NgtRenderState) => {
+    injectBeforeRender(({ delta }: NgtRenderState) => {
       this.elapsed += delta;
       const scene = this.modelScene();
       if (scene) scene.rotation.y += delta * 0.4;
@@ -142,8 +120,7 @@ export class BiometricModelComponent {
       if (!(child instanceof THREE.Mesh)) return;
       
       const meshName = child.name;
-      const muscle = resolveMuscleFromMeshName(meshName);
-      if (muscle) this.meshMuscleMap.set(child.uuid, muscle);
+      if (musclesForMesh(meshName).length) this.meshMuscleMap.set(child.uuid, meshName);
 
       // Clonar el material original para evitar referencias globales
       if (Array.isArray(child.material)) {
@@ -171,9 +148,9 @@ export class BiometricModelComponent {
     });
   }
 
-  private computeMuscleEmissive(muscle: string | undefined, statusMap: Map<string, any>) {
+  private computeMuscleEmissive(muscle: string | undefined, statusMap: Map<string, MuscleStatus>) {
     if (!muscle) return { isFatigued: false, targetColor: 0, intensityMult: 1 };
-    const recoveryInfo = statusMap.get(muscle);
+    const recoveryInfo = statusForMesh(muscle, statusMap);
     if (!recoveryInfo) return { isFatigued: false, targetColor: 0, intensityMult: 1 };
 
     const p = recoveryInfo.percentage;
@@ -186,7 +163,7 @@ export class BiometricModelComponent {
     return { isFatigued: false, targetColor: 0, intensityMult: 1.0 };
   }
 
-  private applyEmissiveToMaterial(m: THREE.MeshStandardMaterial, childUuid: string, basePulsedIntensity: number, statusMap: Map<string, any>): void {
+  private applyEmissiveToMaterial(m: THREE.MeshStandardMaterial, childUuid: string, basePulsedIntensity: number, statusMap: Map<string, MuscleStatus>): void {
     const muscle = this.meshMuscleMap.get(childUuid);
     const { isFatigued, targetColor, intensityMult } = this.computeMuscleEmissive(muscle, statusMap);
 
@@ -233,13 +210,14 @@ export class BiometricModelComponent {
   onMeshClick(event: NgtThreeEvent<MouseEvent>): void {
     event.stopPropagation();
     const mesh = event.object as THREE.Mesh;
-    const muscle = this.meshMuscleMap.get(mesh.uuid);
+    const meshName = this.meshMuscleMap.get(mesh.uuid);
+    const muscle = meshName ? this.recoveryService.getStatusForMesh(meshName)?.name : undefined;
     if (muscle) {
        this.recoveryService.setSelectedMuscle(muscle);
        
        // Proyección 2D para el Tooltip
-       const camera = this.store().camera;
-       const gl = this.store().gl;
+       const camera = this.store.snapshot.camera;
+       const gl = this.store.snapshot.gl;
        if (camera && gl && event.point) {
            const vector = event.point.clone();
            vector.project(camera);

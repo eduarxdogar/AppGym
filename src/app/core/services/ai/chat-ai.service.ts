@@ -1,4 +1,5 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, effect, inject, signal } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { BaseAiService } from './base-ai.service';
 import { UserProfileStateService } from '../user-profile-state.service';
 import { WorkoutService } from '../workout.service';
@@ -9,6 +10,9 @@ import { ChatMessage } from '../../models/ai-requests.model';
 import { ExerciseImageService } from '../exercise-image.service';
 import { RecoveryService } from '../recovery.service';
 import { Workout } from '../../models/workout.model';
+import { AuthService } from '../auth.service';
+import { ToastService } from '../toast.service';
+import { aiErrorMessage } from '../../utils/ai-error-message';
 
 @Injectable({
   providedIn: 'root'
@@ -22,6 +26,21 @@ export class ChatAiService {
   private readonly storageService  = inject(StorageService);
   private readonly imgService      = inject(ExerciseImageService);
   private readonly recoveryService = inject(RecoveryService);
+  private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
+  private historySubscription?: Subscription;
+  private ownerUid = this.auth.currentUser()?.uid ?? null;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.historySubscription?.unsubscribe());
+    effect(() => {
+      const uid = this.auth.currentUser()?.uid ?? null;
+      if (uid !== this.ownerUid) {
+        this.ownerUid = uid;
+        this.resetChat();
+      }
+    });
+  }
 
   /** Currently active workout context for the coach */
   private readonly activeWorkoutId = signal<string | null>(null);
@@ -31,6 +50,7 @@ export class ChatAiService {
   readonly messages = signal<ChatMessage[]>([]);
 
   resetChat() {
+    this.historySubscription?.unsubscribe();
     this.chatHistory = [];
     this.messages.set([]);
     this.activeWorkoutId.set(null);
@@ -46,7 +66,8 @@ export class ChatAiService {
 
   loadChatHistory(workoutId: string) {
     if (!workoutId) return;
-    this.storageService.getChatHistory(workoutId).subscribe({
+    this.historySubscription?.unsubscribe();
+    this.historySubscription = this.storageService.getChatHistory(workoutId).subscribe({
       next: (msgs) => {
         this.messages.set(msgs || []);
         if (msgs && msgs.length > 0) {
@@ -77,27 +98,22 @@ export class ChatAiService {
     }
 
     const workoutId = targetWorkoutId ?? this.activeWorkoutId();
+    const ownerUid = this.auth.currentUser()?.uid;
+    const previousHistory = [...this.chatHistory];
+    const promptText = message || '¿Qué ves en esta imagen?';
+    const userMsg: ChatMessage = {
+      id: crypto.randomUUID(), workoutId: workoutId ?? 'global', role: 'user',
+      text: promptText, timestamp: new Date().toISOString(),
+    };
+    this.messages.update(messages => [...messages, userMsg]);
 
     try {
-      // --- Inject context on first turn ---
-      if (this.chatHistory.length === 0) {
-        const contextText = this.buildInitialContext(workoutId);
-
-        this.chatHistory.push(
-            { role: 'user', parts: [{ text: contextText }] },
-            { role: 'model', parts: [{ text: '¡Listo! Soy Coach Tríada. Ya tengo tu contexto completo. ¿Qué necesitás?' }] }
-        );
-      }
-
-      // --- Build user message ---
-      const promptText = message || '¿Qué ves en esta imagen?';
-      this.chatHistory.push({ role: 'user', parts: [{ text: promptText }] });
-
-      // Ensure the history array being sent to Gemini API starts with 'user'
-      let historyToSend = this.chatHistory.slice(0, -1);
-      while (historyToSend.length > 0 && historyToSend[0].role !== 'user') {
-        historyToSend.shift();
-      }
+      // Refresh profile/fatigue context even when a saved conversation is restored.
+      const historyToSend = [
+        { role: 'user', parts: [{ text: this.buildInitialContext(workoutId) }] },
+        { role: 'model', parts: [{ text: 'Tengo el contexto actual del atleta.' }] },
+        ...this.chatHistory.slice(-48),
+      ];
 
       const responseText = await this.baseAi.generateContent(
         promptText,
@@ -107,40 +123,33 @@ export class ChatAiService {
         historyToSend
       );
 
-      this.chatHistory.push({ role: 'model', parts: [{ text: responseText }] });
+      if (this.auth.currentUser()?.uid !== ownerUid || (targetWorkoutId === undefined && this.activeWorkoutId() !== workoutId)) return responseText;
+
+      this.chatHistory.push({ role: 'user', parts: [{ text: promptText }] },
+        { role: 'model', parts: [{ text: responseText }] });
+      const coachMsg: ChatMessage = { id: crypto.randomUUID(), workoutId: workoutId ?? 'global',
+        role: 'coach', text: responseText, timestamp: new Date().toISOString() };
+      this.messages.update(messages => [...messages, coachMsg]);
 
       // --- Persist to Firestore if we have a workoutId ---
       if (workoutId) {
-        const now = new Date().toISOString();
-        const userMsg: ChatMessage = {
-          id: `${Date.now()}_u`,
-          workoutId,
-          role: 'user',
-          text: promptText,
-          timestamp: now
-        };
-        const coachMsg: ChatMessage = {
-          id: `${Date.now()}_c`,
-          workoutId,
-          role: 'coach',
-          text: responseText,
-          timestamp: new Date().toISOString()
-        };
-        await this.storageService.saveChatMessage(workoutId, userMsg);
-        await this.storageService.saveChatMessage(workoutId, coachMsg);
-
-        // We don't manually update this.messages signal here because 
-        // loadChatHistory has a real-time subscription to getChatHistory
+        try {
+          await this.storageService.saveChatMessages(workoutId, [userMsg, coachMsg]);
+        } catch {
+          this.toast.showError('El Coach respondió, pero no pudimos guardar la conversación.');
+        }
       }
 
       return responseText;
     } catch (err: unknown) {
       console.error('Error al chatear con Coach:', err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
-        return 'Paciencia, fiera. Estoy recuperando el aliento. Intentá de nuevo en unos segundos.';
+      const errorMessage = aiErrorMessage(err, 'No pudimos obtener una respuesta del Coach. Inténtalo de nuevo.');
+      if (this.auth.currentUser()?.uid === ownerUid && (targetWorkoutId !== undefined || this.activeWorkoutId() === workoutId)) {
+        this.chatHistory = previousHistory;
+        this.messages.update(messages => [...messages, { id: crypto.randomUUID(), workoutId: workoutId ?? 'global',
+          role: 'coach', text: errorMessage, timestamp: new Date().toISOString() }]);
       }
-      return '¡Ey fiera! Hubo un calambre en el sistema. Dame un respiro y volvé a intentar.';
+      return errorMessage;
     }
   }
 

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const EjercicioSchema: z.ZodType<any> = z.lazy(() =>
   z.object({
-    id: z.number(),
+    id: z.union([z.string(), z.number()]),
     nombre: z.string(),
     grupoMuscular: z.string(),
     tipo: z.enum(['aislado', 'compuesto']).optional(),

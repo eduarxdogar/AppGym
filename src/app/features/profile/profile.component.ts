@@ -13,6 +13,7 @@ import { GamificationService } from '../../core/services/gamification.service';
 import { DatabaseMigrationService } from '../../core/services/database-migration.service';
 import { MigrationReport } from '../../core/models/admin.model';
 import { UserProfileSchema } from './schemas/user-profile.schema';
+import { SubscriptionService } from '../../core/services/subscription.service';
 
 @Component({
   selector: 'app-profile',
@@ -21,6 +22,7 @@ import { UserProfileSchema } from './schemas/user-profile.schema';
   templateUrl: './profile.component.html'
 })
 export class ProfileComponent {
+  readonly subscription = inject(SubscriptionService);
   private readonly authService = inject(AuthService);
   private readonly auth = inject(Auth);
   private readonly storage = inject(Storage);
@@ -133,6 +135,7 @@ export class ProfileComponent {
   }
 
   async renewSubscription() {
+    if (this.subscription.subscriptionState() !== 'expired') return;
     this.isBillingLoading.set(true);
     try {
       const checkout = httpsCallable<{ }, { init_point: string }>(this.functions, 'createCheckoutSession');

@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { MetricsService } from '../../../core/services/metrics.service';
 import { ProgressionOptions } from '../../../core/models/workout.model';
+import { sessionVolume, sessionSetCount, sessionCalories } from '../../../core/utils/workout-session.utils';
 
 @Component({
   selector: 'app-weekly-summary-modal',
@@ -48,50 +49,12 @@ export class WeeklySummaryModalComponent {
     return sessions.reduce((total, session) => total + (session.exercises?.length || session.ejercicios?.length || 0), 0);
   });
 
-  cycleVolume = computed(() => {
-    const sessions = this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
-    return sessions.reduce((total, session) => {
-      const exercises = session.exercises || session.ejercicios || [];
-      return total + exercises.reduce((acc: number, ex: any) => {
-        const sets = ex.sets || ex.series || [];
-        return acc + sets.reduce((s: number, set: any) => {
-          const reps = Number(set.reps || set.repeticiones || 0);
-          const weight = Number(set.weight || set.peso || set.pesokg || 0);
-          return s + (reps * weight);
-        }, 0);
-      }, 0);
-    }, 0);
-  });
-
-  /**
-   * Real calorie sum from WorkoutSession.calories.
-   * Falls back to duration-based estimate (MET 5 × 75 kg) when calories
-   * were not stored — consistent with MetricsService.gymCalories logic.
-   */
-  cycleCalories = computed(() => {
-    const sessions = this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
-    return Math.round(sessions.reduce((acc, s) => {
-      if (s.calories && s.calories > 0) return acc + s.calories;
-      // Estimate from session timing
-      let durationH = 1;
-      if (s.endTime && s.startTime) {
-        const ms = new Date(s.endTime).getTime() - new Date(s.startTime).getTime();
-        if (ms > 0) durationH = ms / 3_600_000;
-      }
-      return acc + 5.0 * 75 * durationH;
-    }, 0));
-  });
-
-  cycleTotalSets = computed(() => {
-    const sessions = this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate);
-    return sessions.reduce((total, session) => {
-      const exercises = session.exercises || session.ejercicios || [];
-      return total + exercises.reduce((acc: number, ex: any) => {
-        const sets = ex.sets || ex.series || [];
-        return acc + sets.filter((s: any) => s.completed !== false).length;
-      }, 0);
-    }, 0);
-  });
+  cycleVolume = computed(() => this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate)
+    .reduce((sum, session) => sum + sessionVolume(session), 0));
+  cycleCalories = computed(() => this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate)
+    .reduce((sum, session) => sum + sessionCalories(session), 0));
+  cycleTotalSets = computed(() => this.metricsService.getMicrocycleSessions(this.cycleStartDate, this.cycleEndDate)
+    .reduce((sum, session) => sum + sessionSetCount(session), 0));
 
   // ── Actions ───────────────────────────────────────────────────────────────
 

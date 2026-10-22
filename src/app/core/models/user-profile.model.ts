@@ -31,6 +31,7 @@ export interface GamificationState {
 }
 
 export interface UserProfile {
+  onboardingCompleted?: boolean;
   displayName?: string;
   age?: number | null;
   weight: number;
@@ -40,6 +41,8 @@ export interface UserProfile {
   fitnessLevel: 'Principiante' | 'Intermedio' | 'Avanzado';
   availableDays: string[];
   equipment: string[];
+  availableEquipment?: string[];
+  /** Fatigue percentage: 0 = fully recovered, 100 = fully fatigued. */
   fatigueLevels?: Record<string, number>;
   inbodyData?: {
     muscleKg?: number | null;
@@ -62,8 +65,12 @@ export interface UserProfile {
   useSeelegSupplements?: boolean;
   createdAt?: string;
   updatedAt?: string;
-  subscriptionStatus?: 'trialing' | 'active' | 'past_due' | 'canceled';
-  trialEndsAt?: string;
+  subscriptionStatus?: 'vip' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'refunded' | 'charged_back';
+  trialEndsAt?: string | null;
+  expiresAt?: string | null;
+  subscriptionPaymentId?: string;
+  subscriptionPaymentUpdatedAt?: string;
+  subscriptionPaymentApprovedAt?: string;
   mpCustomerId?: string;
   /** Soft-delete flag — gestionado exclusivamente por el Super Admin o por el propio usuario. */
   isDeleted?: boolean;

@@ -40,7 +40,7 @@ export class ProgressionEngineService {
       // ── STEP 1: Determine exercise structure source ──────────────────────
       // Look up the most recent completed session for this workout type.
       // Match by name (case-insensitive, trimmed). If not found, use template.
-      const lastSession = this.findLastSession(oldWorkout.nombre, historyMap);
+      const lastSession = this.findLastSession(oldWorkout, historyMap);
       const sourceEjercicios: Ejercicio[] = lastSession
         ? this.sessionToEjercicios(lastSession, oldWorkout)
         : oldWorkout.ejercicios;
@@ -83,6 +83,8 @@ export class ProgressionEngineService {
         isCompleted: false,
         status: 'idle',
         activeStartTime: undefined,
+        activeSessionId: undefined,
+        lastSessionId: undefined,
         completedAt: undefined,
         durationMinutes: undefined,
         activeSetsState: {},
@@ -115,10 +117,14 @@ export class ProgressionEngineService {
    * Exact match is tried first; falls back to case-insensitive includes().
    */
   private findLastSession(
-    workoutName: string,
+    workout: Workout,
     historyMap: Map<string, WorkoutSession[]>
   ): WorkoutSession | null {
-    const normalized = workoutName.trim().toLowerCase();
+    const matching = Array.from(historyMap.values()).flat().filter(session =>
+      (session.originWorkoutId ?? session.workoutId) === workout.id
+    ).sort((a, b) => new Date(b.endTime ?? b.startTime ?? 0).getTime() - new Date(a.endTime ?? a.startTime ?? 0).getTime());
+    if (matching.length) return matching[0];
+    const normalized = workout.nombre.trim().toLowerCase();
 
     // 1. Exact match
     for (const [key, sessions] of historyMap.entries()) {
@@ -154,7 +160,7 @@ export class ProgressionEngineService {
     return rawExercises.map((ex): Ejercicio => {
       // Find matching template by ID first, then by normalized name
       const normalizedSessionExName = (ex.nombre ?? ex.name ?? '').trim().toLowerCase();
-      let templateEx = planWorkout.ejercicios.find(e => e.id && e.id === (ex as any).id);
+      let templateEx = planWorkout.ejercicios.find(e => e.id === ex.id);
       
       if (!templateEx && normalizedSessionExName) {
         templateEx = planWorkout.ejercicios.find(e => 
@@ -165,17 +171,17 @@ export class ProgressionEngineService {
       // Reconstruct from the session data, falling back to the template
       const reconstructed: Ejercicio = {
         ...templateEx,
-        id: (ex as any).id ?? templateEx?.id ?? crypto.randomUUID(), // Ensure ID exists
+        id: ex.id ?? templateEx?.id ?? crypto.randomUUID(), // Ensure ID exists
         nombre: ex.nombre ?? ex.name ?? templateEx?.nombre ?? 'Ejercicio Extra',
         grupoMuscular: ex.grupoMuscular ?? ex.groupMuscular ?? ex.muscleGroup ?? templateEx?.grupoMuscular ?? 'Otro',
         repeticiones: templateEx?.repeticiones ?? 10,
-        series: templateEx?.series ?? 3,
-        tipos: templateEx?.tipos ?? 'normal'
+        series: ex.targetSets ?? templateEx?.series ?? 3,
+        tipos: ex.tipos ?? templateEx?.tipos ?? 'normal'
       } as Ejercicio;
 
       // Restore completed set weight using MAX EFFORT (Peso Base)
       const lastSets = ex.sets ?? ex.series ?? [];
-      const completedSets = lastSets.filter((s: any) => s.completed !== false);
+      const completedSets = lastSets.filter((s: any) => s.completed === true);
       
       if (completedSets.length > 0) {
         let maxWeight = 0;
@@ -185,7 +191,7 @@ export class ProgressionEngineService {
         });
 
         reconstructed.pesokg = maxWeight > 0 ? maxWeight : (reconstructed.pesokg ?? 0);
-        reconstructed.series = completedSets.length;
+
       }
 
       return reconstructed;
@@ -203,7 +209,7 @@ export class ProgressionEngineService {
     const rawExercises = session.exercises ?? session.ejercicios ?? [];
     
     const normalizedName = (ejercicio.nombre ?? '').trim().toLowerCase();
-    let rawEx = rawExercises.find((e: any) => (e as any).id && (e as any).id === ejercicio.id);
+    let rawEx = rawExercises.find(e => e.id === ejercicio.id);
     
     if (!rawEx && normalizedName) {
       rawEx = rawExercises.find((e: any) => (e.nombre ?? e.name ?? '').trim().toLowerCase() === normalizedName);
@@ -215,7 +221,7 @@ export class ProgressionEngineService {
     return sets.map((s: any) => ({
       reps: Number(s.reps ?? s.repeticiones ?? 0),
       weight: Number(s.weight ?? s.peso ?? s.pesokg ?? 0),
-      completed: s.completed !== false
+      completed: s.completed === true
     }));
   }
 
@@ -262,7 +268,7 @@ export class ProgressionEngineService {
     return {
       sets: dropSet.sets.map(drop => ({
         ...drop,
-        peso: Math.round((newTopWeight * drop.porcentaje) * 2) / 2 // Round to nearest 0.5 kg
+        peso: Math.round((newTopWeight * (drop.porcentaje > 1 ? drop.porcentaje / 100 : drop.porcentaje)) * 2) / 2 // Round to nearest 0.5 kg
       }))
     };
   }

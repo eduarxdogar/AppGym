@@ -6,6 +6,8 @@ import { UserProfile } from '../../models/user-profile.model';
 import { WeeklyPlanRequest } from '../../models/ai-requests.model';
 import { WorkoutSchema } from '../../models/workout/schemas/workout.schema';
 import { z } from 'zod';
+import { RecoveryService } from '../recovery.service';
+import { profileEquipment } from '../../models/equipment';
 
 const SYSTEM_PROMPT = `
 Eres COACH TRÍADA, un Entrenador Élite de Culturismo y Powerbuilding (IFBB Pro Persona). 
@@ -52,6 +54,7 @@ REGLAS DE ORO INTRANSABLES:
 })
 export class TrainerAiService {
   private readonly baseAi = inject(BaseAiService);
+  private readonly recovery = inject(RecoveryService);
   private readonly toastService = inject(ToastService);
   public activeModel = this.baseAi.activeModel;
 
@@ -62,10 +65,10 @@ export class TrainerAiService {
 
     console.log('AI Coach: Generating single workout...', { userPrompt });
 
-    const prompt = this.buildPrompt(userPrompt, userProfile, 'single');
+    const prompt = this.buildPrompt(userPrompt, userProfile);
     
     try {
-        const text = await this.baseAi.generateContent(prompt, true);
+        const text = await this.baseAi.generateWorkoutContent(prompt);
         const cleanText = this.baseAi.cleanJson(text);
         const parsedData = JSON.parse(cleanText);
         
@@ -96,13 +99,25 @@ export class TrainerAiService {
 
     console.log('AI Coach: Generating weekly plan...', request);
 
-    const prompt = this.buildPrompt(request.userPrompt, request.profile, 'weekly', request.daysToGenerate);
-
     try {
-      const text = await this.baseAi.generateContent(prompt, true);
-      const cleanText = this.baseAi.cleanJson(text);
-      const parsedData = JSON.parse(cleanText);
-
+      if (!Number.isInteger(request.daysToGenerate) || request.daysToGenerate < 1 || request.daysToGenerate > 7) {
+        throw new Error('El plan debe tener entre uno y siete días.');
+      }
+      // A whole week can exceed the provider's ten-second deadline. Generate bounded
+      // daily responses, preserve their order and expose no partial plan on failure.
+      const split = request.daysToGenerate === 4 ? ['Torso A', 'Pierna A', 'Torso B', 'Pierna B']
+        : request.daysToGenerate === 5 ? ['Push', 'Pull', 'Legs', 'Torso', 'Pierna']
+        : request.daysToGenerate <= 2 ? ['Full Body A', 'Full Body B']
+        : Array.from({ length: request.daysToGenerate }, (_, i) => ['Push', 'Pull', 'Legs'][i % 3] + (i < 3 ? ' F1' : ' F2'));
+      const parsedData = await Promise.all(Array.from({ length: request.daysToGenerate }, async (_, index) => {
+        const prompt = this.buildPrompt(request.userPrompt, request.profile)
+          + `\nCOORDINACIÓN SEMANAL: Día ${index + 1} de ${request.daysToGenerate}. Distribución: ${split.join(', ')}.
+En esta respuesta genera SOLO el día ${index + 1}, enfoque ${split[index]}, como UN objeto Workout.
+La fatiga y el equipo tienen prioridad sobre el split. Usa 4-6 ejercicios adecuados al nivel y notas concisas
+(máximo 60 caracteres por ejercicio). No repitas la semana completa ni añadas explicaciones fuera del JSON.`;
+        const text = await this.baseAi.generateWorkoutContent(prompt);
+        return JSON.parse(this.baseAi.cleanJson(text)) as unknown;
+      }));
       const workoutAiSchema = WorkoutSchema.omit({ id: true, fecha: true });
       const validation = z.array(workoutAiSchema).safeParse(parsedData);
 
@@ -112,11 +127,16 @@ export class TrainerAiService {
          throw new TypeError('AI did not return a valid array of workouts');
       }
 
-      const today = new Date();
+      const cursor = new Date();
+      const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const availableDays = new Set((request.profile.availableDays ?? []).filter(day => dayNames.includes(day)));
 
-      return validation.data.map((data, index) => {
-         const workoutDate = new Date(today);
-         workoutDate.setDate(today.getDate() + index);
+      return validation.data.map(data => {
+         while (availableDays.size > 0 && !availableDays.has(dayNames[cursor.getDay()])) {
+           cursor.setDate(cursor.getDate() + 1);
+         }
+         const workoutDate = new Date(cursor);
+         cursor.setDate(cursor.getDate() + 1);
 
          return {
             ...data,
@@ -132,11 +152,11 @@ export class TrainerAiService {
     }
   }
 
-  private buildPrompt(userPrompt: string, profile: UserProfile, mode: 'single' | 'weekly', daysToGenerate: number = 1): string {
-    const isWeekly = mode === 'weekly';
-    const outputStructure = isWeekly 
-      ? `UN ARRAY JSON de ${daysToGenerate} objetos Workout: [ {WORKOUT_1}, {WORKOUT_2}... ]`
-      : `UN SOLO objeto JSON (Workout)`;
+  private buildPrompt(userPrompt: string, profile: UserProfile): string {
+    // RecoveryService.percentage means recovery. Convert at this single boundary
+    // rather than trusting legacy profile.fatigueLevels populated by callers.
+    const fatigueLevels = Object.fromEntries(Array.from(this.recovery.muscleRecoveryStatus(), ([muscle, status]) =>
+      [muscle, Math.max(0, Math.min(100, 100 - status.percentage))]));
 
     const now = new Date();
     const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -150,15 +170,17 @@ export class TrainerAiService {
       - Fecha Actual: Hoy es ${currentDayName}, ${formattedDate}.
       - Objetivo: ${profile.goal || 'volumen'}
       - Nivel Fitness: ${profile.fitnessLevel || 'Intermedio'}
-      - Equipamiento: ${profile.equipment?.join(', ') || 'Gimnasio completo'}
+      - Equipamiento: ${profileEquipment(profile).join(', ')}
+      ${profileEquipment(profile).includes('BODYWEIGHT') ? '- PRIORIDAD DE EQUIPO: SOLO calistenia de peso corporal del catálogo del servidor. pesokg: 0. Sin máquinas, pesas ni dropsets. Adapta repeticiones, tempo y técnica al nivel.' : ''}
       - Días disponibles (Cronológico): ${profile.availableDays?.join(', ') || 'Cualquiera'}
-      - Fatiga Muscular Reciente: ${JSON.stringify(profile.fatigueLevels || {})}
+      - Fatiga Muscular Reciente (0% = sin fatiga; 100% = fatiga máxima): ${JSON.stringify(fatigueLevels)}
+      - Ajusta la carga al estado real: prioriza músculos con baja fatiga y evita sobrecargar los de alta fatiga.
       - Solicitud específica del usuario: "${userPrompt}"
 
-      TAREA: ${isWeekly ? `Genera un plan de ${daysToGenerate} días. REGLA ESTRICTA: El Día 1 DEBE ser asignado a HOY (${currentDayName}) si es uno de los días disponibles del usuario, o al primer día disponible a partir de mañana. NO saltes días innecesariamente.` : 'Genera una rutina única.'}
+      TAREA: Genera una rutina única. Usa notas concisas y conserva los campos requeridos.
 
       REGLA DE ORO: Debes responder EXCLUSIVAMENTE con un JSON válido. No incluyas markdown, solo el JSON raw.
-      Tu respuesta debe ser: ${outputStructure}.
+      Tu respuesta debe ser: UN SOLO objeto JSON (Workout).
 
       ESTRUCTURA JSON DE UN WORKOUT (Interface Workout):
       {

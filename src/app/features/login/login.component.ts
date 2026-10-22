@@ -4,6 +4,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { UiCardComponent } from '../../shared/ui/ui-card/ui-card.component';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router'; // Added Router
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -71,6 +72,7 @@ export class LoginComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly ngZone = inject(NgZone);
+  private readonly toast = inject(ToastService);
 
   isCheckingAuth = signal(false);
 
@@ -90,6 +92,7 @@ export class LoginComponent {
       })
       .catch(error => {
           console.error('Error en login:', error);
+          this.toast.showError('No pudimos iniciar sesión y verificar tu acceso. Inténtalo de nuevo.');
           this.isCheckingAuth.set(false);
       });
   }

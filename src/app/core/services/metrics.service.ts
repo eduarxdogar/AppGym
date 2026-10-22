@@ -2,19 +2,17 @@ import { Injectable, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
-import { WorkoutService } from './workout.service';
+import { TrainingClockService } from './training-clock.service';
+import { sessionVolume, sessionSetCount, sessionCalories } from '../utils/workout-session.utils';
 import { StorageService } from './storage.service';
 import { CardioSessionService } from './cardio-session.service';
-import { WorkoutSession, WorkoutExercise, WorkoutSet } from '../models/workout-history.model';
+import { WorkoutSession } from '../models/workout-history.model';
 import { WeeklyMetrics } from '../models/stats-data.model';
 
-const DEFAULT_USER_WEIGHT_KG = 75;
-const RESISTANCE_MET = 6;
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Injectable({ providedIn: 'root' })
 export class MetricsService {
-  private readonly workoutService = inject(WorkoutService);
+  private readonly clock = inject(TrainingClockService);
   private readonly storageService = inject(StorageService);
   private readonly cardioService = inject(CardioSessionService);
 
@@ -33,7 +31,7 @@ export class MetricsService {
     if (!isoDate) return false;
     const d = new Date(isoDate);
     if (Number.isNaN(d.getTime())) return false;
-    const now = new Date();
+    const now = new Date(Math.max(this.clock.now(), Date.now()));
     if (d.getTime() > now.getTime()) return false;
     const start = new Date(now);
     start.setDate(now.getDate() - (days - 1));
@@ -58,7 +56,7 @@ export class MetricsService {
    * not a rolling 7-day window.
    */
   getMicrocycleSessions(startDate: Date, endDate: Date): WorkoutSession[] {
-    const start = startDate.getTime();
+    const start = new Date(startDate).setHours(0, 0, 0, 0);
     // Include the full end day (23:59:59.999)
     const end = new Date(endDate).setHours(23, 59, 59, 999);
     return (this.history() ?? []).filter(s => {
@@ -70,46 +68,9 @@ export class MetricsService {
   }
 
   /** Total lifted volume from history (reps × weight) in the last 7 days */
-  readonly totalVolume = computed<number>(() =>
-    this.last7DaysSessions().reduce((total, session) => {
-      const exercises = session.exercises || session.ejercicios || [];
-      const sessionVol = exercises.reduce((acc, ex) => {
-        const sets = ex.sets || ex.series || [];
-        return acc + sets.reduce((s, set) => {
-          const reps = Number(set.reps || set.repeticiones || 0);
-          const weight = Number(set.weight || set.peso || set.pesokg || 0);
-          return s + (reps * weight);
-        }, 0);
-      }, 0);
-      return total + sessionVol;
-    }, 0)
-  );
-
-  /** Total working sets across all sessions in the last 7 days */
-  readonly totalSets = computed<number>(() =>
-    this.last7DaysSessions().reduce((total, session) => {
-      const exercises = session.exercises || session.ejercicios || [];
-      return total + (exercises as WorkoutExercise[]).reduce((acc: number, ex: WorkoutExercise) => {
-        const sets = ex.sets || ex.series || [];
-        return acc + sets.filter((s: WorkoutSet) => s.completed !== false).length;
-      }, 0);
-    }, 0)
-  );
-
-  /** Estimated gym calories from history sessions */
-  readonly gymCalories = computed<number>(() => {
-    const sessions = this.last7DaysSessions();
-    if (!sessions.length) return 0;
-    return Math.round(sessions.reduce((acc, s) => {
-      // Estimate duration: 60 min default if no timing data
-      let durationH = 1;
-      if (s.endTime && s.startTime) {
-        const ms = new Date(s.endTime).getTime() - new Date(s.startTime).getTime();
-        if (ms > 0) durationH = ms / 3_600_000;
-      }
-      return acc + RESISTANCE_MET * DEFAULT_USER_WEIGHT_KG * durationH;
-    }, 0));
-  });
+  readonly totalVolume = computed(() => this.last7DaysSessions().reduce((sum, session) => sum + sessionVolume(session), 0));
+  readonly totalSets = computed(() => this.last7DaysSessions().reduce((sum, session) => sum + sessionSetCount(session), 0));
+  readonly gymCalories = computed(() => this.last7DaysSessions().reduce((sum, session) => sum + sessionCalories(session), 0));
 
   // ─── Cardio computeds ────────────────────────────────────────────────
 

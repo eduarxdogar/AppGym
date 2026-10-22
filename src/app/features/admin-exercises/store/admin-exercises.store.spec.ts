@@ -1,25 +1,28 @@
 import { TestBed } from '@angular/core/testing';
 import { AdminExercisesStore } from './admin-exercises.store';
-import { AdminExercisesApi, AdminExercise } from '../services/admin-exercises.api';
+import { AdminExercisesQueries } from '../api/admin-exercises.queries';
+import { AdminExercisesCommands } from '../api/admin-exercises.commands';
+import { AdminExercise } from '../models/admin-exercises.models';
 import { ToastService } from '../../../core/services/toast.service';
 
 describe('AdminExercisesStore', () => {
   let store: AdminExercisesStore;
-  let apiSpy: jasmine.SpyObj<AdminExercisesApi>;
+  let apiSpy: jasmine.SpyObj<AdminExercisesQueries>;
 
   beforeEach(() => {
-    const spy = jasmine.createSpyObj('AdminExercisesApi', ['getExercises', 'createExercise', 'updateExercise']);
+    const spy = jasmine.createSpyObj('AdminExercisesQueries', ['getExercises']);
     const toastSpy = jasmine.createSpyObj('ToastService', ['showSuccess', 'showError']);
 
     TestBed.configureTestingModule({
       providers: [
         AdminExercisesStore,
-        { provide: AdminExercisesApi, useValue: spy },
+        { provide: AdminExercisesQueries, useValue: spy },
+        { provide: AdminExercisesCommands, useValue: jasmine.createSpyObj('commands', ['createExercise', 'updateExercise']) },
         { provide: ToastService, useValue: toastSpy }
       ]
     });
     store = TestBed.inject(AdminExercisesStore);
-    apiSpy = TestBed.inject(AdminExercisesApi) as jasmine.SpyObj<AdminExercisesApi>;
+    apiSpy = TestBed.inject(AdminExercisesQueries) as jasmine.SpyObj<AdminExercisesQueries>;
   });
 
   it('should be created with isLoading false', () => {

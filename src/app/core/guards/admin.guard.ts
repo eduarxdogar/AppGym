@@ -4,21 +4,15 @@ import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 
-const SUPER_ADMIN_EMAIL = 'cristiangarzon1231@gmail.com';
-
-/**
- * Guard funcional que protege rutas exclusivas del Super Admin.
- * Valida el email del usuario autenticado contra el email del admin.
- * Si no coincide → redirige a /dashboard.
- */
+/** Uses the same signed-token decision as the administrative menu. */
 export const adminGuard: CanActivateFn = (): Observable<boolean | UrlTree> => {
   const router = inject(Router);
   const authService = inject(AuthService);
 
-  return authService.authState$.pipe(
+  return authService.isAdmin$.pipe(
     take(1),
-    map(user => {
-      if (user?.email === SUPER_ADMIN_EMAIL) {
+    map(isAdmin => {
+      if (isAdmin) {
         return true;
       }
       return router.createUrlTree(['/dashboard']);

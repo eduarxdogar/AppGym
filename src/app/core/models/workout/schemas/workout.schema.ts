@@ -1,12 +1,10 @@
 import { z } from 'zod';
 import { EjercicioSchema } from '../../exercise/schemas/exercise.schema';
+import { WorkoutSetSchema } from '../../workout-session/schemas/session.schema';
 
-export const ActiveSetStateSchema = z.object({
-  reps: z.number(),
-  weight: z.number(),
-  completed: z.boolean(),
-  isDropset: z.boolean().optional(),
-}).strict();
+export const ActiveSetStateSchema = WorkoutSetSchema.extend({
+  reps: z.number(), weight: z.number(), completed: z.boolean(), isDropset: z.boolean().optional()
+});
 
 export const ProgressionOptionsSchema = z.object({
   focus: z.enum(['weight', 'volume']),
@@ -26,6 +24,8 @@ export const WorkoutSchema = z.object({
   durationMinutes: z.number().optional(),
   status: z.enum(['idle', 'active', 'completed']).optional(),
   activeStartTime: z.string().optional(),
+  activeSessionId: z.string().optional(),
+  lastSessionId: z.string().optional(),
   activeSetsState: z.record(z.string(), z.array(ActiveSetStateSchema)).optional(),
 }).strict();
 

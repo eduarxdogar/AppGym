@@ -1,36 +1,35 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
-import { Auth, authState } from '@angular/fire/auth';
+import { AuthService } from '../services/auth.service';
 import { UserProfileService } from '../services/user-profile.service';
-import { switchMap, map, take } from 'rxjs/operators';
-import { from } from 'rxjs';
+import { ToastService } from '../services/toast.service';
+import { switchMap, map, take, catchError } from 'rxjs/operators';
+import { from, of } from 'rxjs';
 
 /**
- * Guard que verifica si el usuario tiene un perfil creado.
- * Si está autenticado pero no tiene perfil → redirige a /onboarding.
+ * Requires explicit onboarding completion and valid mandatory profile fields.
+ * Si está autenticado pero su perfil está incompleto → redirige a /onboarding.
  * Si no está autenticado → redirige a /login.
  */
 export const profileGuard: CanActivateFn = () => {
   const router = inject(Router);
-  const auth = inject(Auth);
+  const auth = inject(AuthService);
   const profileService = inject(UserProfileService);
+  const toast = inject(ToastService);
 
-  return authState(auth).pipe(
+  return auth.authState$.pipe(
     take(1),
     switchMap(currentUser => {
       if (!currentUser) {
-        router.navigate(['/login']);
-        return [false];
+        return of(router.createUrlTree(['/login']));
       }
-      return from(profileService.profileExists()).pipe(
-        map(exists => {
-          if (!exists) {
-            router.navigate(['/onboarding']);
-            return false;
-          }
-          return true;
-        })
+      return from(profileService.hasCompletedOnboarding()).pipe(
+        map(completed => completed ? true : router.createUrlTree(['/onboarding']))
       );
+    }),
+    catchError(() => {
+      toast.showError('No pudimos verificar tu perfil. Inicia sesión de nuevo para reintentar.');
+      return of(router.createUrlTree(['/login']));
     })
   );
 };

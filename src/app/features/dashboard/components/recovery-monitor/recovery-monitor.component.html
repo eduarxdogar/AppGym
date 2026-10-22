@@ -60,10 +60,8 @@
       <div class="absolute top-3 left-1/2 -translate-x-1/2 text-[9px] font-mono text-[#00f3ff]/50 tracking-[0.4em] uppercase pointer-events-none z-10">BIOMETRIC SCAN ACTIVE</div>
 
       <!-- 3D Canvas -->
-      <ngt-canvas [camera]="{ position: [0, 0, 40], fov: 45 }" (pointermissed)="onCanvasMissed()">
-        <ng-template canvasContent>
-          <app-biometric-model (tooltipData)="onTooltipData($event)" />
-        </ng-template>
+      <ngt-canvas [sceneGraph]="bodyScene" [camera]="{ position: [0, 0, 40], fov: 45 }"
+        (rendered)="onSceneRendered($event)" (pointerMissed)="onCanvasMissed()">
       </ngt-canvas>
 
       <!-- HUD BOTTOM BAR (InBody) — Mobile-First -->
@@ -162,7 +160,7 @@
           <div class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800/60">
             <div>
               <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-mono mb-0.5">ETA</div>
-              <div class="text-sm font-bold text-white font-mono">{{ getEtaHours(selectedMuscle()!.percentage) }} HRS</div>
+              <div class="text-sm font-bold text-white font-mono">{{ selectedMuscle()?.recoveryEtaHours ?? 0 }} HRS</div>
             </div>
             <div>
               <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-mono mb-0.5">VOLUME</div>
@@ -257,7 +255,7 @@
               <!-- ETA badge -->
               <div class="shrink-0 text-center pl-3">
                 <span class="text-[10px] font-mono text-zinc-600 block">ETA</span>
-                <span class="text-sm font-black text-white font-mono">{{ getEtaHours(m.percentage) }}h</span>
+                <span class="text-sm font-black text-white font-mono">{{ m.recoveryEtaHours ?? 0 }}h</span>
               </div>
             </div>
           </div>

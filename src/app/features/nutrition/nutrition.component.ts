@@ -9,6 +9,7 @@ import { NutritionService, DailyNutritionLog } from '../../core/services/nutriti
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { GamificationService } from '../../core/services/gamification.service';
+import { aiErrorMessage } from '../../core/utils/ai-error-message';
 
 @Component({
   selector: 'app-nutrition',
@@ -153,9 +154,9 @@ export class NutritionComponent implements OnInit {
         this.targetCalories,
         this.useSeelegSupplements() // pass the user's explicit opt-in choice
       );
+      await this.nutritionService.savePlan(result);
       this.plan.set(result);
       this.showForm.set(false);
-      await this.nutritionService.savePlan(result);
       
       // Reset today's log
       const today = new Date().toISOString().split('T')[0];
@@ -167,8 +168,8 @@ export class NutritionComponent implements OnInit {
           consumedFats: 0,
           consumedMeals: {}
       });
-    } catch (err: any) {
-      this.error.set(err.message || 'No se pudo generar el plan.');
+    } catch (err: unknown) {
+      this.error.set(aiErrorMessage(err, 'No pudimos generar o guardar tu plan. Inténtalo de nuevo.'));
     } finally {
       this.isLoading.set(false);
     }

@@ -17,7 +17,6 @@ import { provideAuth, getAuth } from '@angular/fire/auth';
 import { provideFunctions, getFunctions } from '@angular/fire/functions';
 import { provideStorage, getStorage } from '@angular/fire/storage';
 import { environment } from '../environments/environment';
-import { provideNgtRenderer } from 'angular-three/dom';
 
 import { MatNativeDateModule } from '@angular/material/core';
 import { 
@@ -41,7 +40,6 @@ export const appConfig: ApplicationConfig = {
     provideAuth(() => getAuth()),
     provideFunctions(() => getFunctions()),
     provideStorage(() => getStorage()),
-    provideNgtRenderer(),
     provideCharts(withDefaultRegisterables()),
     importProvidersFrom(
       LucideAngularModule.pick({

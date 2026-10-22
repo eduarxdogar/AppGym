@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ProfileBasicsSchema } from '../../../core/models/onboarding.validation';
 
 export const SegmentalDataSchema = z.object({
   rightArm: z.string().nullable().optional(),
@@ -21,24 +22,26 @@ export const InbodyDataSchema = z.object({
   segmentalFat: SegmentalDataSchema.optional(),
 }).strict();
 
-export const UserProfileSchema = z.object({
+export const UserProfileSchema = ProfileBasicsSchema.extend({
+  onboardingCompleted: z.boolean().optional(),
   displayName: z.string().optional(),
   age: z.number().nullable().optional(),
-  weight: z.number(),
-  height: z.number(),
+  height: z.number().finite().positive(),
   sex: z.enum(['male', 'female', 'other']).nullable().optional(),
-  goal: z.enum(['volumen', 'definicion', 'mantenimiento', 'perdida_peso']),
-  fitnessLevel: z.enum(['Principiante', 'Intermedio', 'Avanzado']),
-  availableDays: z.array(z.string()),
   equipment: z.array(z.string()),
+  availableEquipment: z.array(z.string().min(1)).min(1).optional(),
   fatigueLevels: z.record(z.string(), z.number()).optional(),
   inbodyData: InbodyDataSchema.optional(),
   baseGym: z.string().optional(),
   useSeelegSupplements: z.boolean().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
-  subscriptionStatus: z.enum(['trialing', 'active', 'past_due', 'canceled']).optional(),
-  trialEndsAt: z.string().optional(),
+  subscriptionStatus: z.enum(['vip', 'trialing', 'active', 'past_due', 'canceled', 'refunded', 'charged_back']).optional(),
+  trialEndsAt: z.string().nullable().optional(),
+  expiresAt: z.string().nullable().optional(),
+  subscriptionPaymentId: z.string().optional(),
+  subscriptionPaymentUpdatedAt: z.string().optional(),
+  subscriptionPaymentApprovedAt: z.string().optional(),
   mpCustomerId: z.string().optional(),
   isDeleted: z.boolean().optional(),
   deletedAt: z.number().optional(),

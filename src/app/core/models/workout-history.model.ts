@@ -23,67 +23,14 @@ export interface MuscleStatus {
   percentage: number;
   lastWorkoutDate?: Date;
   totalVolume?: number;
+  recoveryEtaHours?: number;
 }
 
-export interface WorkoutSet {
-  reps?: number;
-  repeticiones?: number;
-  weight?: number;
-  peso?: number;
-  pesokg?: number;
-  completed?: boolean;
-  type?: string;
-  tipo?: string;
-}
-
-export interface WorkoutExercise {
-  name?: string;
-  nombre?: string;
-  /**
-   * Canonical muscle group.
-   * Legacy docs may contain raw values like 'hombros' — the migration
-   * backfills these, but all consuming code must also handle them via
-   * RecoveryService.MUSCLE_MAP.
-   */
-  grupoMuscular?: string;
-  groupMuscular?: string;
-  muscleGroup?: string;
-  sets?: WorkoutSet[];
-  series?: WorkoutSet[];
-  /** Advanced set type, preserved across microcycle rollover. */
-  tipos?: 'normal' | 'top-set' | 'back-set' | 'drop-set' | 'super-serie';
-}
-
-export interface WorkoutSession {
-  id?: string;
-  userId?: string;
-  /**
-   * Links this session to a specific microcycle plan document.
-   * Set when the session is completed from a planned Workout.
-   * Legacy docs that were not migrated will have this field undefined or
-   * set to MIGRATION_SENTINELS.MICROCYCLE_ID ('legacy-cycle').
-   */
-  microcycleId?: string;
-  /**
-   * ID of the source Workout plan document this session was executed from.
-   * Enables the progression engine to match sessions to their plan workout
-   * without relying solely on name matching.
-   * Legacy docs: undefined or MIGRATION_SENTINELS.WORKOUT_ID ('legacy-workout').
-   */
-  originWorkoutId?: string;
-  nombre?: string;
-  fecha?: string;
-  startTime?: string;
-  endTime?: string;
-  exercises?: WorkoutExercise[];
-  ejercicios?: WorkoutExercise[];
-  // Calculated & legacy properties
-  calories?: number;
-  duration?: string;
-  totalVolume?: number;
-  musclesWorked?: string[];
-  musculos?: string[];
-}
+export type {
+  WorkoutSession,
+  WorkoutSessionExercise as WorkoutExercise,
+  WorkoutSessionSet as WorkoutSet
+} from './workout-session.model';
 
 export const RECOVERY_CONSTANTS = {
   BASE_RECOVERY_PER_HOUR: 0.85,       // Slower: full recovery takes ~117h (5 days) at default

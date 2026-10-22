@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/wrkout/exercises.json",
+  "revision": "5994bea047eee4d39a2c0872be3dd8fdd258ba31",
+  "originalCombinedUrl": "https://raw.githubusercontent.com/wrkout/exercises.json/master/exercises.json",
+  "note": "Combined URL returned 404; combined all individual exercise.json files. Added directory id and all image URLs verified against the source tree.",
+  "records": 873,
+  "sha256": "5288a42e42a6542c93a4d13b460e6728c668d42bccd751ed97c85a68f60cd146",
+  "images": 1746,
+  "license": "Unlicense",
+  "instructionsLanguage": "en"
+}

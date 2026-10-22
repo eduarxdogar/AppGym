@@ -1,9 +1,25 @@
 import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
-import { Firestore, doc, setDoc, updateDoc, getDoc, deleteDoc, collectionGroup, getDocs, query } from '@angular/fire/firestore';
+import { Firestore, doc, docData, setDoc, updateDoc, getDoc, deleteDoc, collectionGroup, getDocs, query } from '@angular/fire/firestore';
 import { Auth, authState, User, signOut } from '@angular/fire/auth';
-import { from, Observable, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { switchMap, map } from 'rxjs/operators';
 import { UserProfile } from '../../core/models/user-profile.model';
+import { isOnboardingComplete } from '../models/onboarding.validation';
+import { profileEquipment } from '../models/equipment';
+
+/** Profiles contain JSON data; remove absent optional fields recursively before writing. */
+export function profileWriteData(profile: UserProfile): Record<string, unknown> {
+  const { subscriptionStatus, trialEndsAt, expiresAt, mpCustomerId,
+    subscriptionPaymentId, subscriptionPaymentUpdatedAt, subscriptionPaymentApprovedAt, ...data } = profile;
+  const clean = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.filter(item => item !== undefined).map(clean);
+    if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+      return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined).map(([key, item]) => [key, clean(item)]));
+    }
+    return value;
+  };
+  return clean(data) as Record<string, unknown>;
+}
 
 @Injectable({ providedIn: 'root' })
 export class UserProfileService {
@@ -15,36 +31,15 @@ export class UserProfileService {
   async saveProfile(profile: UserProfile): Promise<void> {
     const uid = this.auth.currentUser?.uid;
     if (!uid) throw new Error('Usuario no autenticado');
+    if (profile.onboardingCompleted === true && !isOnboardingComplete(profile)) {
+      throw new Error('Completa un peso válido, objetivo, nivel y al menos un día disponible.');
+    }
     const ref = doc(this.firestore, `users/${uid}/profile/data`);
 
-    // Campos que NUNCA deben ser sobreescritos por el onboarding:
-    // subscriptionStatus, trialEndsAt y mpCustomerId son gestionados
-    // exclusivamente por AuthService y las Cloud Functions de billing.
-    const { subscriptionStatus, trialEndsAt, mpCustomerId, ...profileData } = profile as any;
-
-    const snap = await getDoc(ref);
-
-    if (snap.exists()) {
-      // El documento ya existe (fue creado por AuthService al registrarse):
-      // Usamos updateDoc para SOLO actualizar los campos del perfil,
-      // dejando intactos subscriptionStatus, trialEndsAt, etc.
-      await updateDoc(ref, {
-        ...profileData,
-        updatedAt: new Date().toISOString(),
-      });
-    } else {
-      // El documento NO existe (edge case: onboarding sin registro previo):
-      // Inicializamos con el trial de 7 días.
-      const trialEnd = new Date();
-      trialEnd.setDate(trialEnd.getDate() + 7);
-      await setDoc(ref, {
-        ...profileData,
-        subscriptionStatus: 'trialing',
-        trialEndsAt: trialEnd.toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      });
-    }
+    const availableEquipment = profileEquipment(profile);
+    await setDoc(ref, { ...profileWriteData(profile), availableEquipment,
+      equipment: availableEquipment.includes('BODYWEIGHT') ? ['Calistenia'] : availableEquipment,
+      updatedAt: new Date().toISOString() }, { merge: true });
   }
 
   /** Actualiza específicamente el equipamiento del usuario. */
@@ -52,8 +47,11 @@ export class UserProfileService {
     const uid = this.auth.currentUser?.uid;
     if (!uid) throw new Error('Usuario no autenticado');
     const ref = doc(this.firestore, `users/${uid}/profile/data`);
+    const snapshot = await getDoc(ref);
+    const availableEquipment = profileEquipment({ baseGym: snapshot.data()?.['baseGym'], equipment });
     await setDoc(ref, {
-      equipment,
+      equipment: availableEquipment.includes('BODYWEIGHT') ? ['Calistenia'] : availableEquipment,
+      availableEquipment,
       updatedAt: new Date().toISOString()
     }, { merge: true });
   }
@@ -65,21 +63,19 @@ export class UserProfileService {
         if (!user) return of(null);
         return runInInjectionContext(this.injector, () => {
           const ref = doc(this.firestore, `users/${user.uid}/profile/data`);
-          return from(getDoc(ref)).pipe(
-            map(snap => snap.exists() ? snap.data() as UserProfile : null)
-          );
+          return docData(ref).pipe(map(data => data ? data as UserProfile : null));
         });
       })
     );
   }
 
-  /** Verifica si el perfil existe (para el guard). */
-  async profileExists(): Promise<boolean> {
+  /** A billing-only or legacy profile is not a completed onboarding. */
+  async hasCompletedOnboarding(): Promise<boolean> {
     const uid = this.auth.currentUser?.uid;
     if (!uid) return false;
     const ref = doc(this.firestore, `users/${uid}/profile/data`);
     const snap = await getDoc(ref);
-    return snap.exists();
+    return snap.exists() && isOnboardingComplete(snap.data());
   }
 
   /**
@@ -132,7 +128,7 @@ export class UserProfileService {
         // Extraemos el UID del documento padre (users/{uid})
         const uid = snap.ref.parent.parent?.id;
         if (!uid) return null; // seguridad: descartamos docs huérfanos
-        return { uid, ...snap.data() as UserProfile };
+        return { ...snap.data() as UserProfile, uid };
       })
       .filter((p): p is UserProfile & { uid: string } => p !== null);
   }

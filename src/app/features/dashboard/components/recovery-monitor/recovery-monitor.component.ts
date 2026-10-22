@@ -1,17 +1,20 @@
-import { Component, inject, computed, signal, ElementRef, ViewChild } from '@angular/core';
+import { Component, inject, computed, signal, ElementRef, ViewChild, ComponentRef, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { RecoveryService } from '../../../../core/services/recovery.service';
 import { UserProfileStateService } from '../../../../core/services/user-profile-state.service';
 import { UserProfileService } from '../../../../core/services/user-profile.service';
 import { InbodyAiService } from '../../../../core/services/ai/inbody-ai.service';
-import { NgtCanvas } from 'angular-three/dom';
+import { NgtCanvas } from 'angular-three';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BiometricModelComponent } from '../../../../shared/components/biometric-model/biometric-model.component';
+import { readInbodyFile } from '../../../../core/utils/inbody-file';
+import { aiErrorMessage } from '../../../../core/utils/ai-error-message';
 
 @Component({
   selector: 'app-recovery-monitor',
   standalone: true,
-  imports: [CommonModule, MatIconModule, NgtCanvas, BiometricModelComponent],
+  imports: [CommonModule, MatIconModule, NgtCanvas],
   templateUrl: './recovery-monitor.component.html',
   styles: [`
     :host { display: block; }
@@ -21,6 +24,11 @@ import { BiometricModelComponent } from '../../../../shared/components/biometric
   `]
 })
 export class RecoveryMonitorComponent {
+  readonly bodyScene = BiometricModelComponent;
+  private readonly destroyRef = inject(DestroyRef);
+  onSceneRendered(ref: ComponentRef<BiometricModelComponent>): void {
+    ref.instance.tooltipData.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(event => this.onTooltipData(event));
+  }
   @ViewChild('inbodyFileInput') inbodyFileInput!: ElementRef<HTMLInputElement>;
 
   private readonly recoveryService = inject(RecoveryService);
@@ -97,14 +105,15 @@ export class RecoveryMonitorComponent {
   async onInbodyFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file) return;
+    if (!file || this.rescanState() === 'scanning') return;
 
     this.rescanState.set('scanning');
     this.rescanMessage.set('Analizando archivo con IA...');
 
+    let reading = true;
     try {
-      const base64 = await this.fileToBase64(file);
-      const mimeType = file.type;
+      const { base64, mimeType } = await readInbodyFile(file);
+      reading = false;
       const result = await this.inbodyAi.scanInBodyReport(base64, mimeType);
 
       const currentProfile = this.profile();
@@ -127,29 +136,13 @@ export class RecoveryMonitorComponent {
       
       // Auto-close after 2s
       setTimeout(() => this.closeRescan(), 2500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.rescanState.set('error');
-      this.rescanMessage.set(err?.message || 'Error al procesar el archivo. Inténtalo de nuevo.');
+      this.rescanMessage.set(reading && err instanceof Error ? err.message
+        : aiErrorMessage(err, 'Error al procesar el archivo. Inténtalo de nuevo.'));
     } finally {
       input.value = ''; // Reset input
     }
-  }
-
-  private fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        // Strip the data:image/...;base64, prefix
-        resolve(result.split(',')[1]);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  getEtaHours(percentage: number): number {
-    return Math.max(0, Math.round(48 * (1 - (percentage / 100))));
   }
 
   /**
@@ -170,7 +163,7 @@ export class RecoveryMonitorComponent {
 
     const ARM_MUSCLES = ['Bíceps', 'Tríceps', 'Antebrazos'];
     const LEG_MUSCLES = ['Cuádriceps', 'Isquios', 'Glúteos', 'Gemelos'];
-    const TRUNK_MUSCLES = ['Pecho', 'Espalda', 'Hombros', 'Core', 'Trapecio', 'Lumbares'];
+    const TRUNK_MUSCLES = ['Pecho', 'Espalda', 'Hombros', 'Hombro Anterior', 'Hombro Lateral', 'Hombro Posterior', 'Core', 'Trapecio', 'Lumbares'];
 
     let muscleVal = '--';
     let fatVal = '--';

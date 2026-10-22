@@ -4,6 +4,7 @@ import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { TrainingHistoryService } from './training-history.service';
 import { WorkoutSession, WorkoutExercise, WorkoutSet } from '../models/workout-history.model';
+import { sessionVolume } from '../utils/workout-session.utils';
 import { GAMIFICATION_RANKS, GamificationState } from '../models/user-profile.model';
 
 @Injectable({ providedIn: 'root' })
@@ -23,19 +24,7 @@ export class GamificationService {
    */
   readonly currentTonnage = computed<number>(() => {
     return (this.history() ?? []).reduce((total, session) => {
-      // Prioritize explicit session totalVolume, fallback to calculating it
-      let sessionVol = session.totalVolume || 0;
-      if (!sessionVol && session.exercises) {
-        (session.exercises as WorkoutExercise[]).forEach(ex => {
-          ex.sets?.forEach((s: WorkoutSet) => {
-            if (s.completed !== false) {
-              const weight = Number(s.weight || (s as any).peso || (s as any).pesokg || 0);
-              const reps = Number(s.reps || (s as any).repeticiones || 0);
-              sessionVol += (weight * reps);
-            }
-          });
-        });
-      }
+      const sessionVol = sessionVolume(session);
       return total + sessionVol;
     }, 0);
   });

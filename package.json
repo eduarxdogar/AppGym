@@ -7,7 +7,11 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "test:rules": "npm --prefix functions run build && firebase emulators:exec --config firebase.security-test.json --project demo-appgym-security --only firestore \"node --test tests/firestore.rules.test.mjs tests/billing.integration.test.mjs scripts/import-exercises.integration.test.js\"",
+    "test:backend": "npm --prefix functions test",
+    "test:orchestrator": "npm --prefix functions run test:orchestrator",
+    "test:scripts": "node --test scripts/setup-admins.test.js scripts/import-exercises.test.js"
   },
   "private": true,
   "dependencies": {
@@ -24,7 +28,7 @@
     "@angular/router": "^19.2.0",
     "@google/generative-ai": "^0.24.1",
     "@tanstack/angular-table": "^8.21.4",
-    "angular-three": "^4.2.2",
+    "angular-three": "3.7.2",
     "chart.js": "^4.5.1",
     "firebase": "^11.10.0",
     "idb": "^8.0.3",
@@ -33,7 +37,7 @@
     "ngxtension": "^7.2.0",
     "rxfire": "^6.1.0",
     "rxjs": "~7.8.0",
-    "three": "^0.184.0",
+    "three": "0.172.0",
     "tslib": "^2.3.0",
     "zod": "^4.4.3",
     "zone.js": "~0.15.0"
@@ -42,9 +46,11 @@
     "@angular-devkit/build-angular": "^19.2.19",
     "@angular/cli": "^19.2.6",
     "@angular/compiler-cli": "^19.2.0",
+    "@firebase/rules-unit-testing": "4.0.1",
     "@types/jasmine": "~5.1.0",
-    "@types/three": "^0.184.1",
+    "@types/three": "0.172.0",
     "autoprefixer": "^10.4.19",
+    "firebase-tools": "14.22.0",
     "husky": "^9.1.7",
     "jasmine-core": "~5.6.0",
     "karma": "~6.4.0",

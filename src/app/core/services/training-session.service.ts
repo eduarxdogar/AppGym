@@ -15,7 +15,13 @@ export class TrainingSessionService {
 
   private loadSession(): TrainingSession | null {
     const data = localStorage.getItem('currentTrainingSession');
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+    try {
+      const session = JSON.parse(data) as TrainingSession;
+      session.fechaInicio = new Date(session.fechaInicio);
+      if (!Number.isFinite(session.fechaInicio.getTime())) return null;
+      return session;
+    } catch { return null; }
   }
 
   public saveSession(session: TrainingSession | null) {
@@ -27,12 +33,14 @@ export class TrainingSessionService {
     this.sessionSubject.next(session);
   }
 
-  startSession(workout: Workout): void {
+  startSession(workout: Workout, startTime = new Date(), sessionId?: string, userId?: string): void {
     const session: TrainingSession = {
       id: Date.now(),
       workoutId: workout.id,
       nombre: workout.nombre,
-      fechaInicio: new Date(),
+      fechaInicio: startTime,
+      sessionId,
+      userId,
     };
     this.saveSession(session);
   }

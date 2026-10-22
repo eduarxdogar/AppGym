@@ -110,19 +110,26 @@
             <mat-icon class="text-emerald-400">workspace_premium</mat-icon> Suscripción
           </h3>
           <div class="flex items-center gap-3">
-            @if (userProfile()?.subscriptionStatus === 'active') {
+            @if (subscription.isVip()) {
               <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
-                <mat-icon class="text-[16px]">check_circle</mat-icon> Activa
+                <mat-icon class="text-[16px]">check_circle</mat-icon> {{ subscription.subscriptionState() === 'vip' ? 'VIP permanente' : 'VIP activo' }}
               </span>
             } @else {
               <span class="px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
-                <mat-icon class="text-[16px]">schedule</mat-icon> {{ userProfile()?.subscriptionStatus === 'trialing' ? 'En periodo de prueba' : 'Expirada / Pendiente' }}
+                <mat-icon class="text-[16px]">schedule</mat-icon> {{ subscription.subscriptionState() === 'trialing' ? 'Prueba gratuita · No VIP' : subscription.subscriptionState() === 'loading' ? 'Verificando acceso' : 'No VIP · Acceso vencido' }}
               </span>
             }
           </div>
+          @if (subscription.subscriptionState() === 'vip') {
+            <p class="text-sm text-emerald-400 mt-3">Cuenta administradora con acceso completo, sin vencimiento ni pagos.</p>
+          } @else if (subscription.trialDaysRemaining() !== null) {
+            <p class="text-sm text-amber-400 mt-3">Te quedan {{ subscription.trialDaysRemaining() }} {{ subscription.trialDaysRemaining() === 1 ? 'día' : 'días' }} de acceso completo gratuito.</p>
+          } @else if (subscription.subscriptionState() === 'active') {
+            <p class="text-sm text-emerald-400 mt-3">Acceso completo hasta {{ userProfile()?.expiresAt | date:'dd/MM/yyyy' }}.</p>
+          }
         </div>
 
-        @if (userProfile()?.subscriptionStatus !== 'active') {
+        @if (subscription.subscriptionState() === 'expired') {
           <button
             (click)="renewSubscription()"
             [disabled]="isBillingLoading()"
