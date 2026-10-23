@@ -1,5 +1,5 @@
 export interface Ejercicio {
-  id: number;
+  id: string | number;
   nombre: string;
   grupoMuscular: string;
   tipo?: 'aislado' | 'compuesto';

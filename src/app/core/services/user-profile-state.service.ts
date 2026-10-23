@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { UserProfileService } from './user-profile.service';
-import { AuthService } from './auth.service';
+import { catchError, of, startWith, Subject, switchMap } from 'rxjs';
 import { UserProfile } from '../../core/models/user-profile.model';
 
 @Injectable({
@@ -9,8 +9,8 @@ import { UserProfile } from '../../core/models/user-profile.model';
 })
 export class UserProfileStateService {
   private readonly userProfileService = inject(UserProfileService);
-  private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly refresh = new Subject<void>();
 
   /**
    * Estado del perfil con tres posibles valores:
@@ -22,24 +22,17 @@ export class UserProfileStateService {
   readonly profile = this._profile.asReadonly();
 
   constructor() {
-    this.authService.authState$.pipe(
+    this.refresh.pipe(
+      startWith(undefined),
+      switchMap(() => this.userProfileService.getProfile().pipe(catchError(() => of(null)))),
       takeUntilDestroyed(this.destroyRef)
-    ).subscribe(user => {
-      if (user) {
-        this.refreshProfile();
-      } else {
-        // Usuario deslogueado: reseteamos a null (no undefined)
-        this._profile.set(null);
-      }
-    });
+    ).subscribe(profile => this._profile.set(profile));
   }
 
   refreshProfile(): void {
     // Marcamos como loading antes de la petición
     this._profile.set(undefined);
-    this.userProfileService.getProfile().subscribe(profileData => {
-      this._profile.set(profileData);
-    });
+    this.refresh.next();
   }
 }
 

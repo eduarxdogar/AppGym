@@ -1,5 +1,7 @@
 export interface TrainingSession {
     id: number;
+    sessionId?: string;
+    userId?: string;
     workoutId: string;
     nombre: string;
     fechaInicio: Date;

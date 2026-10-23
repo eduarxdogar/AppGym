@@ -2,37 +2,99 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // 1. REGLA GLOBAL SUPER ADMIN
     function isSuperAdmin() {
-      return request.auth != null && request.auth.token.email == 'cristiangarzon1231@gmail.com';
+      return request.auth != null && (request.auth.token.get('admin', false) == true
+        || (request.auth.token.get('email_verified', false) == true
+          && request.auth.token.get('email', '') == 'cristiangarzon1231@gmail.com'));
     }
+    function owns(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    function billingFields() {
+      return ['role', 'isVip', 'subscriptionStatus', 'trialEndsAt', 'expiresAt', 'mpCustomerId',
+        'subscriptionPaymentId', 'subscriptionPaymentUpdatedAt', 'subscriptionPaymentApprovedAt'];
+    }
+    function noBillingFields() {
+      return !request.resource.data.keys().hasAny(billingFields());
+    }
+    function billingUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(billingFields());
+    }
+    function ownerUnchanged() {
+      return request.resource.data.keys().hasAll(['userId'])
+        && request.resource.data.userId == resource.data.userId;
+    }
+    // Do not let an overlapping admin rule bypass billing or ownership checks.
     match /{document=**} {
-      allow read, write: if isSuperAdmin();
+      allow read: if isSuperAdmin();
+    }
+    match /{collection}/{document=**} {
+      allow write: if isSuperAdmin()
+        && !(collection in ['users', 'workouts', 'workout_history', 'cardio_sessions', 'billing_accounts']);
     }
 
-    // 2. REGLAS PARA PERFIL DEL USUARIO
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      match /{document=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if owns(userId) || isSuperAdmin();
+      allow create: if (owns(userId) || isSuperAdmin()) && noBillingFields();
+      allow update: if (owns(userId) || isSuperAdmin()) && billingUnchanged();
+      allow delete: if isSuperAdmin();
+      match /{subcollection}/{document=**} {
+        allow read: if owns(userId) || isSuperAdmin();
+        allow create: if (owns(userId) || isSuperAdmin()) && noBillingFields();
+        allow update: if (owns(userId) || isSuperAdmin()) && billingUnchanged();
+        // A user cannot delete the billing profile and recreate a fresh trial.
+        allow delete: if isSuperAdmin() || (owns(userId)
+          && !resource.data.keys().hasAny(billingFields()));
       }
     }
 
     // 3. COLECCIONES GLOBALES (ARQUITECTURA PLANA)
     // Se valida por el campo interno 'userId' del documento
     match /workouts/{docId} {
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if owns(request.resource.data.userId) || isSuperAdmin();
+      allow read, delete: if owns(resource.data.userId) || isSuperAdmin();
+      allow update: if (owns(resource.data.userId) || isSuperAdmin()) && ownerUnchanged();
+      match /chat_history/{messageId} {
+        function ownsWorkout() {
+          return owns(get(/databases/$(database)/documents/workouts/$(docId)).data.userId);
+        }
+        allow read: if ownsWorkout() || isSuperAdmin();
+        allow create: if (ownsWorkout() || isSuperAdmin())
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.workoutId == docId
+          && request.resource.data.role in ['user', 'coach']
+          && request.resource.data.keys().hasOnly(['id', 'workoutId', 'userId', 'role', 'text', 'timestamp'])
+          && request.resource.data.id == messageId
+          && request.resource.data.timestamp is string
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 65536;
+      }
     }
     
     match /workout_history/{docId} {
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if owns(request.resource.data.userId) || isSuperAdmin();
+      // Idempotent completion first reads its stable history ID before creating it.
+      // A missing document contains no user data; existing histories stay owner-only.
+      allow get: if isSuperAdmin() || (request.auth != null
+        && (!exists(/databases/$(database)/documents/workout_history/$(docId)) || owns(resource.data.userId)));
+      allow list, delete: if owns(resource.data.userId) || isSuperAdmin();
+      allow update: if (owns(resource.data.userId) || isSuperAdmin()) && ownerUnchanged();
     }
     
     match /cardio_sessions/{docId} {
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if owns(request.resource.data.userId) || isSuperAdmin();
+      allow read, delete: if owns(resource.data.userId) || isSuperAdmin();
+      allow update: if (owns(resource.data.userId) || isSuperAdmin()) && ownerUnchanged();
+    }
+
+    // Plans use the authenticated UID as their document ID, not an internal owner field.
+    match /nutrition_plans/{userId} {
+      allow read, delete: if owns(userId) || isSuperAdmin();
+      allow create, update: if (owns(userId) || isSuperAdmin())
+        && request.resource.data.keys().hasAll(['plan', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['plan', 'updatedAt'])
+        && request.resource.data.plan is map
+        && request.resource.data.updatedAt is string;
     }
 
     // 4. COLECCIONES PÚBLICAS (Catálogos)

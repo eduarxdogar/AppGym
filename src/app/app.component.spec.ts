@@ -1,9 +1,11 @@
+import { appTestProviders } from './testing/app-test.providers';
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      providers: appTestProviders(),
       imports: [AppComponent],
     }).compileComponents();
   });
@@ -20,10 +22,10 @@ describe('AppComponent', () => {
     expect(app.title).toEqual('fitness-app');
   });
 
-  it('should render title', () => {
+  it('should render the application outlet', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, fitness-app');
+    expect(compiled.querySelector('router-outlet')).not.toBeNull();
   });
 });

@@ -1,158 +1,178 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanupUserSubcollections = exports.mercadopagoWebhook = exports.createCheckoutSession = exports.callGemini = void 0;
+exports.cleanupUserSubcollections = exports.mercadopagoWebhook = exports.createCheckoutSession = exports.analyzeNutritionLabelAI = exports.analyzeInbodyAI = exports.chatAI = exports.generateBoxingPlanAI = exports.generateNutritionPlanAI = exports.generateWorkoutPlanAI = exports.callGemini = exports.initializeSubscription = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
+const params_1 = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
-const generative_ai_1 = require("@google/generative-ai");
 const mercadopago_1 = require("mercadopago");
 const admin = require("firebase-admin");
-if (!admin.apps.length) {
+const billing_1 = require("./billing");
+const billing_store_1 = require("./billing-store");
+const gemini_1 = require("./gemini");
+const payment_webhook_1 = require("./payment-webhook");
+const ai_orchestrator_1 = require("./ai-orchestrator");
+const workout_policy_1 = require("./workout-policy");
+if (!admin.apps.length)
     admin.initializeApp();
-}
-exports.callGemini = (0, https_1.onCall)({
-    cors: true,
-    region: 'us-central1',
-    timeoutSeconds: 300,
-    memory: '512MiB',
-    maxInstances: 10,
-    concurrency: 80,
-}, async (request) => {
-    // 1. Validate Authentication
-    if (!request.auth) {
-        throw new https_1.HttpsError("unauthenticated", "El usuario debe estar autenticado para usar la IA.");
-    }
-    // 2. Extract payload
-    const data = request.data;
-    let prompt = data.prompt;
-    const modelName = data.model;
-    const isJson = data.isJson;
-    if (!prompt || !modelName) {
-        throw new https_1.HttpsError("invalid-argument", "Faltan argumentos requeridos (prompt o model).");
-    }
-    // Inject Seeleg rule if requested
-    if (data.useSeelegSupplements) {
-        const seelegRule = `
-INTEGRACIÓN SEELEG (activada por el usuario):
-El usuario ha optado por recibir recomendaciones de suplementación Seeleg.
-Genera exactamente UNA comida (preferiblemente un Snack o Post-Entreno) como
-una preparación detallada que utilice suplementos de la marca Seeleg
-(ej. "Batido Post-Entreno Seeleg Whey", "Avena con Seeleg Isolate", etc.).
-Para ESA comida específica y solo esa, agrega en el JSON los campos:
-  "isSponsored": true,
-  "sponsorBrand": "Seeleg"
-El resto de las comidas NO deben tener esos campos.`;
-        prompt = prompt + '\n' + seelegRule;
-    }
-    // 3. Initialize Gemini
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        logger.error("No se encontró GEMINI_API_KEY en el entorno.");
-        throw new https_1.HttpsError("internal", "Configuración de servidor incompleta.");
-    }
-    const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
-    // Nota: No se está usando responseSchema aquí, pero si se usara, se añadirían
-    // las propiedades isSponsored (BOOLEAN) y sponsorBrand (STRING) al esquema de meals.
-    const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: isJson ? { responseMimeType: "application/json" } : undefined,
+const geminiKeys = ['GEMINI_API_KEY', 'GEMINI_API_KEY_2', 'GEMINI_API_KEY_3'].map(name => (0, params_1.defineSecret)(name));
+const openaiKey = (0, params_1.defineSecret)('OPENAI_API_KEY');
+const deepseekKey = (0, params_1.defineSecret)('DEEPSEEK_API_KEY');
+const mpAccessToken = (0, params_1.defineSecret)('MP_ACCESS_TOKEN');
+const mpWebhookSecret = (0, params_1.defineSecret)('MP_WEBHOOK_SECRET');
+async function initializeUserBilling(uid) {
+    const user = await admin.auth().getUser(uid);
+    if (user.disabled)
+        throw new https_1.HttpsError('permission-denied', 'La cuenta está deshabilitada.');
+    await (0, billing_store_1.initializeBilling)(admin.firestore(), user.uid, Date.parse(user.metadata.creationTime), {
+        email: user.email, email_verified: user.emailVerified, vip: user.customClaims?.vip,
     });
+}
+// Billing initialization is server-only and cannot restart a trial after profile deletion.
+exports.initializeSubscription = (0, https_1.onCall)({ cors: true, region: 'us-central1' }, async (request) => {
+    if (!request.auth)
+        throw new https_1.HttpsError('unauthenticated', 'Debes iniciar sesión.');
+    await initializeUserBilling(request.auth.uid);
+    return { initialized: true };
+});
+const aiOptions = {
+    cors: true, region: 'us-central1', timeoutSeconds: 300,
+    memory: '512MiB', maxInstances: 10, concurrency: 80, secrets: [openaiKey, deepseekKey, ...geminiKeys],
+};
+async function handleAi(request, defaults) {
+    if (!request.auth)
+        throw new https_1.HttpsError('unauthenticated', 'Debes iniciar sesión para usar la IA.');
+    let data;
     try {
-        // 4. Call Gemini
-        let result;
-        if (data.history && data.history.length > 0) {
-            const chat = model.startChat({ history: data.history });
-            if (data.imageBase64 && data.mimeType) {
-                const imagePart = { inlineData: { data: data.imageBase64, mimeType: data.mimeType } };
-                result = await chat.sendMessage([prompt, imagePart]);
-            }
-            else {
-                result = await chat.sendMessage(prompt);
-            }
+        const input = request.data;
+        if (defaults && (!input || typeof input !== 'object' || Array.isArray(input)))
+            throw new Error('Invalid payload');
+        data = (0, gemini_1.parseGeminiPayload)(defaults ? { model: 'gemini-2.5-flash', isJson: defaults.isJson,
+            ...input, ...(defaults.purpose ? { purpose: defaults.purpose, isJson: true } : {}) } : input);
+        if (defaults?.mediaRequired && !data.imageBase64)
+            throw new Error('Missing media');
+        if (data.purpose === 'workout' && (!data.isJson || data.imageBase64))
+            throw new Error('Invalid workout payload');
+    }
+    catch {
+        throw new https_1.HttpsError('invalid-argument', 'Solicitud de IA inválida o demasiado grande.');
+    }
+    const profile = await admin.firestore().doc('users/' + request.auth.uid + '/profile/data').get();
+    const billing = profile.data();
+    if (billing?.isDeleted || !(0, billing_1.hasSubscriptionAccess)(billing ?? {})) {
+        throw new https_1.HttpsError('permission-denied', 'La suscripción o el período de prueba no están vigentes.');
+    }
+    if (data.useSeelegSupplements === true) {
+        data = { ...data, prompt: data.prompt + '\nINTEGRACIÓN SEELEG (activada por el usuario): Genera exactamente UNA comida (Snack o Post-Entreno) como una preparación detallada con suplementos Seeleg. Solo esa comida debe incluir isSponsored: true y sponsorBrand: "Seeleg" en el JSON. El resto de comidas no deben incluir esos campos.' };
+    }
+    try {
+        let context = { isJson: data.isJson, history: data.history, model: data.model,
+            systemInstruction: defaults?.systemInstruction };
+        if (data.purpose === 'workout' && (0, workout_policy_1.isBodyweightProfile)(billing ?? {})) {
+            const db = admin.firestore();
+            const snapshots = await Promise.all([
+                db.collection('global_exercises').where('equipment', '==', 'body only').get(),
+                db.collection('global_exercises').where('equipmentRequired', 'array-contains', 'Calistenia').get(),
+            ]);
+            const catalog = new Map();
+            for (const snapshot of snapshots)
+                for (const doc of snapshot.docs)
+                    catalog.set(doc.id, { ...doc.data(), id: doc.id });
+            const policy = (0, workout_policy_1.bodyweightPolicy)([...catalog.values()]);
+            context = { ...context, ...policy,
+                systemInstruction: [context.systemInstruction, policy.systemInstruction].filter(Boolean).join('\n') };
         }
-        else {
-            if (data.imageBase64 && data.mimeType) {
-                const imagePart = { inlineData: { data: data.imageBase64, mimeType: data.mimeType } };
-                result = await model.generateContent([prompt, imagePart]);
-            }
-            else {
-                result = await model.generateContent(prompt);
-            }
+        if (data.imageBase64) {
+            return { text: await (0, gemini_1.generateWithFallback)({ ...data,
+                    prompt: [context.systemInstruction, data.prompt].filter(Boolean).join('\n') }, geminiKeys.map(key => key.value())) };
         }
-        return { text: result.response.text() };
+        return { text: await (0, ai_orchestrator_1.orchestrateAi)(data.prompt, context, { keys: {
+                    openai: openaiKey.value(), deepseek: deepseekKey.value(), gemini: geminiKeys.map(key => key.value()),
+                } }) };
     }
     catch (error) {
-        logger.error("Gemini Error:", error);
-        console.error("Detalle del error de Gemini:", error);
-        // Check if it's a quota/rate limit error (429)
-        if (error.status === 429 || (error.message && error.message.includes('429'))) {
-            throw new https_1.HttpsError('resource-exhausted', 'Límite de cuota excedido temporalmente.');
-        }
-        throw new https_1.HttpsError("internal", "Error interno procesando el documento.");
+        const status = error instanceof gemini_1.GeminiError || error instanceof ai_orchestrator_1.AiUnavailableError ? error.status : 500;
+        logger.warn('AI request failed', { status });
+        throw new https_1.HttpsError(status === 429 ? 'resource-exhausted' : status === 504 ? 'deadline-exceeded'
+            : status === 503 ? 'unavailable' : 'internal', 'No fue posible completar la solicitud de IA.', { providerAttemptsComplete: true });
     }
-});
+}
+// Preserve existing callable names/contracts, including deployed legacy clients.
+exports.callGemini = (0, https_1.onCall)(aiOptions, request => handleAi(request));
+exports.generateWorkoutPlanAI = (0, https_1.onCall)(aiOptions, request => handleAi(request, {
+    isJson: true, purpose: 'workout', systemInstruction: 'Eres COACH TRÍADA. Genera rutinas seguras según nivel, objetivo, disponibilidad y fatiga. Respeta exactamente el esquema Workout solicitado.',
+}));
+exports.generateNutritionPlanAI = (0, https_1.onCall)(aiOptions, request => handleAi(request, {
+    isJson: true, systemInstruction: 'Eres un nutricionista deportivo. Respeta el esquema JSON solicitado y los datos del usuario.',
+}));
+exports.generateBoxingPlanAI = (0, https_1.onCall)(aiOptions, request => handleAi(request, {
+    isJson: true, systemInstruction: 'Eres un entrenador de boxeo. Genera un plan seguro con el esquema JSON solicitado.',
+}));
+exports.chatAI = (0, https_1.onCall)(aiOptions, request => handleAi(request, { isJson: false,
+    systemInstruction: 'Eres COACH TRÍADA. Responde en español sobre entrenamiento y nutrición, considerando el contexto y la fatiga del usuario.',
+}));
+exports.analyzeInbodyAI = (0, https_1.onCall)(aiOptions, request => handleAi(request, { isJson: true, mediaRequired: true,
+    systemInstruction: 'Extrae únicamente mediciones visibles del informe InBody. Usa null para valores ausentes, nunca inventes resultados.',
+}));
+exports.analyzeNutritionLabelAI = (0, https_1.onCall)(aiOptions, request => handleAi(request, { isJson: true, mediaRequired: true,
+    systemInstruction: 'Extrae valores por porción (por 100g si no hay porción). Devuelve JSON con calories, protein, carbs y fats numéricos; no inventes mediciones.',
+}));
 exports.createCheckoutSession = (0, https_1.onCall)({
-    cors: true,
-    region: 'us-central1'
+    cors: true, region: 'us-central1', secrets: [mpAccessToken],
 }, async (request) => {
-    if (!request.auth) {
-        throw new https_1.HttpsError("unauthenticated", "El usuario debe estar autenticado para crear una sesión de pago.");
+    if (!request.auth)
+        throw new https_1.HttpsError('unauthenticated', 'Debes iniciar sesión para pagar.');
+    // A direct request or a login race must not charge a user whose trial is not initialized yet.
+    await initializeUserBilling(request.auth.uid);
+    const profile = await admin.firestore().doc('users/' + request.auth.uid + '/profile/data').get();
+    if (profile.get('isDeleted'))
+        throw new https_1.HttpsError('permission-denied', 'La cuenta no está disponible.');
+    if ((0, billing_1.hasSubscriptionAccess)(profile.data() ?? {})) {
+        throw new https_1.HttpsError('failed-precondition', 'Tu acceso está vigente. No necesitas realizar un pago.');
     }
-    const mpAccessToken = process.env.MP_ACCESS_TOKEN;
-    if (!mpAccessToken) {
-        logger.error("No se encontró MP_ACCESS_TOKEN en el entorno.");
-        throw new https_1.HttpsError("internal", "Configuración de servidor incompleta.");
-    }
+    if (!mpAccessToken.value())
+        throw new https_1.HttpsError('internal', 'Configuración de pagos incompleta.');
     try {
-        const client = new mercadopago_1.MercadoPagoConfig({ accessToken: mpAccessToken });
-        const preference = new mercadopago_1.Preference(client);
-        const result = await preference.create({
-            body: {
-                items: [
-                    {
-                        id: "suscripcion_mensual",
-                        title: "Suscripción Mensual AppGym",
-                        unit_price: 30000,
-                        quantity: 1,
-                        currency_id: "COP"
-                    }
-                ],
-                external_reference: request.auth.uid
-            }
-        });
+        const client = new mercadopago_1.MercadoPagoConfig({ accessToken: mpAccessToken.value(), options: { timeout: 10_000 } });
+        const result = await new mercadopago_1.Preference(client).create({ body: {
+                items: [{ id: 'suscripcion_mensual', title: 'Suscripción Mensual AppGym', unit_price: billing_1.MONTHLY_PRICE,
+                        quantity: 1, currency_id: billing_1.MONTHLY_CURRENCY }],
+                external_reference: request.auth.uid,
+            } });
+        if (!result.init_point)
+            throw new Error('Missing checkout URL');
         return { init_point: result.init_point };
     }
-    catch (error) {
-        logger.error("Error creando sesión de MercadoPago:", error);
-        throw new https_1.HttpsError("internal", "Error generando la sesión de pago.");
+    catch {
+        logger.error('Mercado Pago checkout failed');
+        throw new https_1.HttpsError('internal', 'Error generando la sesión de pago.');
     }
 });
-exports.mercadopagoWebhook = (0, https_1.onRequest)({ cors: true }, async (request, response) => {
-    const type = request.query.type || request.body.type;
-    const dataId = request.query['data.id'] || request.body.data?.id;
-    if (type === 'payment' && dataId) {
-        const mpAccessToken = process.env.MP_ACCESS_TOKEN;
-        if (mpAccessToken) {
-            try {
-                const client = new mercadopago_1.MercadoPagoConfig({ accessToken: mpAccessToken });
-                const payment = new mercadopago_1.Payment(client);
-                const paymentInfo = await payment.get({ id: dataId });
-                if (paymentInfo.status === 'approved' && paymentInfo.external_reference) {
-                    const uid = paymentInfo.external_reference;
-                    // Use merge:true for idempotence and safety
-                    await admin.firestore().doc(`users/${uid}/profile/data`).set({
-                        subscriptionStatus: 'active',
-                        trialEndsAt: null
-                    }, { merge: true });
-                }
-            }
-            catch (err) {
-                logger.error('Error procesando webhook MP', err);
-            }
-        }
+exports.mercadopagoWebhook = (0, https_1.onRequest)({
+    region: 'us-central1', timeoutSeconds: 30, secrets: [mpAccessToken, mpWebhookSecret],
+}, async (request, response) => {
+    try {
+        const status = await (0, payment_webhook_1.processPaymentNotification)({
+            method: request.method, signature: request.headers['x-signature'], requestId: request.headers['x-request-id'],
+            dataId: request.query['data.id'], bodyDataId: request.body?.data?.id,
+            type: request.query.type ?? request.body?.type,
+        }, {
+            secret: mpWebhookSecret.value(),
+            getPayment: async (id) => {
+                if (!mpAccessToken.value())
+                    throw new Error('Missing payment credentials');
+                const client = new mercadopago_1.MercadoPagoConfig({ accessToken: mpAccessToken.value(), options: { timeout: 10_000 } });
+                return new mercadopago_1.Payment(client).get({ id });
+            },
+            savePayment: payment => (0, billing_store_1.applyPayment)(admin.firestore(), payment),
+        });
+        response.status(status).send(status === 200 ? 'OK' : 'Rejected');
     }
-    // Always return 200 OK fast so MercadoPago doesn't retry
-    response.status(200).send('OK');
+    catch {
+        // Do not acknowledge failed API calls or writes; Mercado Pago must retry.
+        logger.error('Mercado Pago webhook processing failed');
+        response.status(500).send('Retry');
+    }
 });
 /**
  * TRIGGER: Borrado en Cascada (Hard Delete)

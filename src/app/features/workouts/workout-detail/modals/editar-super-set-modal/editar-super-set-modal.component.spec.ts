@@ -1,3 +1,4 @@
+import { appTestProviders } from '../../../../../testing/app-test.providers';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { EditarSuperSetModalComponent } from './editar-super-set-modal.component';
@@ -8,6 +9,7 @@ describe('EditarSuperSetModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      providers: appTestProviders(),
       imports: [EditarSuperSetModalComponent]
     })
     .compileComponents();

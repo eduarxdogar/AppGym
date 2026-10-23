@@ -1,6 +1,19 @@
 import { z } from 'zod';
 
-export const WorkoutSetSchema = z.object({
+const WorkoutLoadSchema = z.object({
+  reps: z.number().optional(),
+  weight: z.number().optional(),
+  completed: z.boolean().optional(),
+}).strict();
+
+const DropSetSchema = WorkoutLoadSchema.extend({
+  superSet: WorkoutLoadSchema.optional(),
+  superWeight: z.number().optional(),
+  superReps: z.number().optional(),
+  superCompleted: z.boolean().optional(),
+});
+
+export const WorkoutSetSchema = DropSetSchema.extend({
   reps: z.number().optional(),
   repeticiones: z.number().optional(),
   weight: z.number().optional(),
@@ -9,9 +22,13 @@ export const WorkoutSetSchema = z.object({
   completed: z.boolean().optional(),
   type: z.string().optional(),
   tipo: z.string().optional(),
+  rpe: z.number().optional(),
+  dropSets: z.array(DropSetSchema).optional(),
 }).strict();
 
 export const WorkoutExerciseSchema = z.object({
+  id: z.union([z.string(), z.number()]).optional(),
+  exerciseId: z.union([z.string(), z.number()]).optional(),
   name: z.string().optional(),
   nombre: z.string().optional(),
   grupoMuscular: z.string().optional(),
@@ -19,6 +36,13 @@ export const WorkoutExerciseSchema = z.object({
   muscleGroup: z.string().optional(),
   sets: z.array(WorkoutSetSchema).optional(),
   series: z.array(WorkoutSetSchema).optional(),
+  targetSets: z.number().optional(),
+  notes: z.string().optional(),
+  superSetExercise: z.object({
+    id: z.union([z.string(), z.number()]).optional(),
+    nombre: z.string().optional(),
+    grupoMuscular: z.string().optional(),
+  }).strict().optional(),
   tipos: z.enum(['normal', 'top-set', 'back-set', 'drop-set', 'super-serie']).optional(),
 }).strict();
 
@@ -28,6 +52,9 @@ export const WorkoutSessionSchema = z.object({
   microcycleId: z.string().optional(),
   originWorkoutId: z.string().optional(),
   nombre: z.string().optional(),
+  name: z.string().optional(),
+  workoutId: z.union([z.string(), z.number()]).optional(),
+  feeling: z.enum(['good', 'tired', 'average', 'strong']).optional(),
   fecha: z.string().optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),

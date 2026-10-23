@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Firestore, collectionGroup, getDocs, query } from '@angular/fire/firestore';
 import { AdminUserRow } from '../models/admin-users.models';
+import { profileRow } from './admin-user-identity';
 
 @Injectable({ providedIn: 'root' })
 export class AdminUsersQueries {
@@ -12,9 +13,8 @@ export class AdminUsersQueries {
 
     return querySnapshot.docs
       .map(snap => {
-        const uid = snap.ref.parent.parent?.id;
-        if (!uid) return null;
-        return { uid, ...snap.data() as any };
+        if (!/^users\/[^/]+\/profile\/data$/.test(snap.ref.path)) return null;
+        return profileRow(snap.ref.path, snap.data());
       })
       .filter((p): p is AdminUserRow => p !== null);
   }

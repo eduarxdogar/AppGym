@@ -9,10 +9,14 @@ import { UserProfile } from '../../core/models/user-profile.model';
 import { InbodyAiService } from '../../core/services/ai/inbody-ai.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UserProfileSchema } from '../profile/schemas/user-profile.schema';
+import { AVAILABLE_DAYS, ProfileBasicsSchema } from '../../core/models/onboarding.validation';
+import { InbodyScanResult } from '../../core/models/inbody-scan.schema';
+import { aiErrorMessage } from '../../core/utils/ai-error-message';
+import { readInbodyFile } from '../../core/utils/inbody-file';
+import { profileEquipment } from '../../core/models/equipment';
 
-const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const EQUIPMENT = ['Mancuernas', 'Barra', 'Máquinas', 'Bandas', 'Polea', 'Kettlebells', 'Calistenia'];
-const GYMS = ['Smart Fit', 'Bodytech', 'Athletic', 'Gimnasio de Barrio', 'Home Gym', 'Otro'];
+const GYMS = ['Smart Fit', 'Bodytech', 'Athletic', 'Gimnasio de Barrio', 'Home Gym', 'Calistenia', 'Otro'];
 
 @Component({
   selector: 'app-onboarding',
@@ -41,16 +45,9 @@ export class OnboardingComponent {
   inbodyFileName = signal<string | null>(null);
   inbodyIsPdf = signal(false);
   scanningInBody = signal(false);
-  inbodyScanResult = signal<{
-    muscleKg?: number | null;
-    fatPercent?: number | null;
-    bmr?: number | null;
-    waterPercentage?: number | null;
-    visceralFat?: number | null;
-    boneMass?: number | null;
-  } | null>(null);
+  inbodyScanResult = signal<InbodyScanResult | null>(null);
 
-  allDays = DAYS;
+  allDays = AVAILABLE_DAYS;
   allEquipment = EQUIPMENT;
   gyms = GYMS;
 
@@ -64,12 +61,12 @@ export class OnboardingComponent {
     fitnessLevel: 'Intermedio',
     availableDays: ['Lunes', 'Miércoles', 'Viernes'],
     equipment: ['Máquinas', 'Mancuernas'],
-    baseGym: 'Gimnasio de Barrio'
+    baseGym: ''
   };
 
   canProceed(): boolean {
-    if (this.step() === 0) return !!(this.profile.weight && this.profile.height && this.profile.goal);
-    if (this.step() === 1) return this.profile.availableDays.length > 0;
+    if (this.step() === 0) return UserProfileSchema.pick({ weight: true, height: true, goal: true }).strip().safeParse(this.profile).success;
+    if (this.step() === 1) return ProfileBasicsSchema.pick({ fitnessLevel: true, availableDays: true }).safeParse(this.profile).success;
     return true;
   }
 
@@ -79,7 +76,8 @@ export class OnboardingComponent {
   prevStep() { if (this.step() > 0) this.step.update(s => s - 1); }
 
   setLevel(lvl: string) {
-    this.profile.fitnessLevel = lvl as any;
+    const level = ProfileBasicsSchema.shape.fitnessLevel.safeParse(lvl);
+    if (level.success) this.profile.fitnessLevel = level.data;
   }
 
   toggleDay(day: string) {
@@ -98,100 +96,54 @@ export class OnboardingComponent {
     }
   }
 
-  async onInBodySelected(event: any) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    this.inbodyFileName.set(file.name);
-    this.inbodyIsPdf.set(file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'));
-
-    const reader = new FileReader();
-    reader.onload = async (e: any) => {
-      const dataUrl = e.target.result as string;
-      this.inbodyPreview.set(dataUrl);
-
-      // Extract MimeType and Base64
-      const mimeMatch = /data:([^;]+);base64/.exec(dataUrl);
-      if (!mimeMatch) return;
-      const mimeType = mimeMatch[1];
-      const base64 = dataUrl.split(',')[1];
-
-      this.scanningInBody.set(true);
-      try {
-        const result = await this.aiCoach.scanInBodyReport(base64, mimeType);
-        this.inbodyScanResult.set(result);
-        
-        // Mapeo explícito para asegurar persistencia en Firestore
-        this.profile.inbodyData = {
-          muscleKg: result.muscleKg || null,
-          fatPercent: result.fatPercent || null,
-          bmr: result.bmr || null,
-          waterPercentage: result.waterPercentage || null,
-          visceralFat: result.visceralFat || null,
-          boneMass: result.boneMass || null,
-          segmentalMuscle: result.segmentalMuscle || undefined,
-          segmentalFat: result.segmentalFat || undefined
-        };
-      } catch (err: unknown) {
-        console.error('InBody Scan failed:', err);
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        if (errorMsg.includes('resource-exhausted') || errorMsg.includes('429')) {
-          this.toastService.showWarning('Límite de IA alcanzado. Por favor, intenta de nuevo en unos minutos.');
-        } else {
-          this.toastService.showError('Falla de conexión con el servidor IA.');
-        }
-      } finally {
-        this.scanningInBody.set(false);
-      }
-    };
-    reader.readAsDataURL(file);
-    event.target.value = '';
+  async onInBodySelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!file || this.scanningInBody() || this.isSaving()) return;
+    input.value = '';
+    this.scanningInBody.set(true);
+    let reading = true;
+    try {
+      const upload = await readInbodyFile(file);
+      reading = false;
+      const result = await this.aiCoach.scanInBodyReport(upload.base64, upload.mimeType);
+      // Apply only a validated result, preserving any earlier valid report on failure.
+      this.inbodyFileName.set(file.name);
+      this.inbodyIsPdf.set(upload.mimeType === 'application/pdf');
+      this.inbodyPreview.set(upload.dataUrl);
+      this.inbodyScanResult.set(result);
+      this.profile.inbodyData = result;
+    } catch (error: unknown) {
+      this.toastService.showError(reading && error instanceof Error ? error.message
+        : aiErrorMessage(error, 'No pudimos analizar el reporte. Intenta de nuevo o continúa sin InBody.'));
+    } finally {
+      this.scanningInBody.set(false);
+    }
   }
 
   async saveProfile() {
+    if (this.isSaving() || this.scanningInBody()) return;
     this.isSaving.set(true);
     this.error.set(null);
     try {
-      // Aseguramos que el payload incluya explícitamente los datos de InBody si existen
-      // Sanitización estricta: Firestore no acepta 'undefined'. 
-      // Convertimos campos opcionales a null o valores por defecto.
-      const finalProfile: UserProfile = {
-        displayName: this.profile.displayName || '',
+      const finalProfile = {
+        ...this.profile,
+        availableEquipment: profileEquipment(this.profile),
+        equipment: profileEquipment(this.profile).includes('BODYWEIGHT') ? ['Calistenia'] : this.profile.equipment,
         age: this.profile.age ?? null,
-        sex: this.profile.sex || 'male',
-        weight: this.profile.weight || 0,
-        height: this.profile.height || 0,
-        goal: this.profile.goal || 'volumen',
-        fitnessLevel: this.profile.fitnessLevel || 'Intermedio',
-        availableDays: this.profile.availableDays || [],
-        equipment: this.profile.equipment || [],
-        baseGym: this.profile.baseGym || 'Gimnasio de Barrio',
+        onboardingCompleted: true,
       };
-
-      if (this.profile.inbodyData) {
-        finalProfile.inbodyData = {
-          muscleKg: this.profile.inbodyData.muscleKg ?? null,
-          fatPercent: this.profile.inbodyData.fatPercent ?? null,
-          bmr: this.profile.inbodyData.bmr ?? null,
-          waterPercentage: this.profile.inbodyData.waterPercentage ?? null,
-          visceralFat: this.profile.inbodyData.visceralFat ?? null,
-          boneMass: this.profile.inbodyData.boneMass ?? null,
-          segmentalMuscle: this.profile.inbodyData.segmentalMuscle ?? undefined,
-          segmentalFat: this.profile.inbodyData.segmentalFat ?? undefined
-        };
-      }
 
       const validation = UserProfileSchema.safeParse(finalProfile);
       if (!validation.success) {
         console.error('Validation error:', validation.error);
         this.error.set('Datos de perfil inválidos. Revisa el formulario.');
-        this.isSaving.set(false);
         return;
       }
 
       await this.profileService.saveProfile(validation.data);
       this.profileState.refreshProfile();
-      this.router.navigate(['/weekly-plan'], { queryParams: { autoGenerate: 'true' } });
+      await this.router.navigate(['/weekly-plan'], { queryParams: { autoGenerate: 'true' } });
     } catch (err: unknown) {
       console.error('Save profile failed:', err);
       this.error.set('Error al guardar el perfil. Intenta de nuevo.');

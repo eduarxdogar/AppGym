@@ -1,6 +1,7 @@
+import { WorkoutSessionSet } from './workout-session.model';
 import { Ejercicio } from './ejercicio.model';
 
-export interface ActiveSetState {
+export interface ActiveSetState extends WorkoutSessionSet {
   reps: number;
   weight: number;
   completed: boolean;
@@ -26,6 +27,8 @@ export interface Workout {
   // Session persistence
   status?: 'idle' | 'active' | 'completed';
   activeStartTime?: string;           // ISO string when session started
+  activeSessionId?: string;
+  lastSessionId?: string;
   activeSetsState?: Record<number, ActiveSetState[]>; // Persisted sets progress
 }
 

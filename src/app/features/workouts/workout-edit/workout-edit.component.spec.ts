@@ -1,3 +1,4 @@
+import { appTestProviders } from '../../../testing/app-test.providers';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { WorkoutEditComponent } from './workout-edit.component';
@@ -8,6 +9,7 @@ describe('WorkoutEditComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      providers: appTestProviders(),
       imports: [WorkoutEditComponent]
     })
     .compileComponents();

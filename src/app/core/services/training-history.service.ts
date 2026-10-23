@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { WorkoutSession, WorkoutExercise } from '../models/workout-history.model';
 import { StorageService } from './storage.service';
-import { LoggerService } from './logger.service';
+import { sessionVolume, sessionSetCount, sessionCalories, normalizeSession } from '../utils/workout-session.utils';
 
 export interface HistoryStats {
   total: number;
@@ -21,7 +21,6 @@ export interface MuscleDistribution {
 @Injectable({ providedIn: 'root' })
 export class TrainingHistoryService {
   private readonly storageService = inject(StorageService);
-  private readonly logger = inject(LoggerService);
 
   // Recupera el historial almacenado en Firestore
   getHistory(): Observable<WorkoutSession[]> {
@@ -30,37 +29,10 @@ export class TrainingHistoryService {
 
   // Agrega una sesión finalizada al historial
   async addSession(session: WorkoutSession): Promise<void> {
-    // Ensure calories are calculated before saving
-    if (!session.calories) {
-        let durationMin = 0;
-        if (session.duration) {
-            durationMin = this.parseDurationToMinutes(session.duration);
-        } else if (session.endTime && session.startTime) {
-             const diff = new Date(session.endTime).getTime() - new Date(session.startTime).getTime();
-             durationMin = diff / 1000 / 60;
-        }
-        const calculated = Math.round((durationMin * 5) + ((session.totalVolume || 0) * 0.0005));
-        this.logger.log('Calculated Calories in Service:', calculated, 'DurationMin:', durationMin, 'Volume:', session.totalVolume);
-        session.calories = calculated;
-    } else {
-        this.logger.log('Calories already present:', session.calories);
-    }
-    await this.storageService.saveHistory(session);
-  }
-
-  private parseDurationToMinutes(durationStr: string): number {
-      if (!durationStr) return 0;
-      const parts = durationStr.split(':').map(Number);
-      if (parts.some(Number.isNaN)) return 0;
-
-      if (parts.length === 3) {
-          // HH:MM:SS
-          return (parts[0] * 60) + parts[1] + (parts[2] / 60);
-      } else if (parts.length === 2) {
-          // MM:SS
-          return parts[0] + (parts[1] / 60);
-      }
-      return 0; // Unknown format
+    const normalized = normalizeSession(session);
+    normalized.totalVolume = sessionVolume(normalized);
+    normalized.calories = sessionCalories(normalized);
+    await this.storageService.saveHistory(normalized);
   }
 
   // --- STATS LOGIC ---
@@ -137,46 +109,9 @@ export class TrainingHistoryService {
       return 0;
   }
 
-  private calculateSessionVolume(session: WorkoutSession): number {
-      if (session.totalVolume) return session.totalVolume;
-      if (!session.exercises) return 0;
-      let vol = 0;
-      for (const ex of session.exercises as WorkoutExercise[]) {
-          if (!ex.sets) continue;
-          for (const s of ex.sets) {
-              if (s.completed) vol += ((s.weight || 0) * (s.reps || 0));
-          }
-      }
-      return vol;
-  }
-
-  private calculateSessionSets(session: WorkoutSession): number {
-      if (!session.exercises) return 0;
-      let count = 0;
-      for (const ex of session.exercises as WorkoutExercise[]) {
-          if (!ex.sets) continue;
-          for (const s of ex.sets) {
-              if (s.completed) count++;
-          }
-      }
-      return count;
-  }
-
-  private calculateSessionCalories(session: WorkoutSession): number {
-      if (session.calories !== undefined && session.calories !== null) {
-          return session.calories;
-      }
-      let durationMin = 45; 
-      if (session.duration) {
-          durationMin = this.parseDurationToMinutes(session.duration);
-      } else if (session.startTime && session.endTime) {
-          const diff = new Date(session.endTime).getTime() - new Date(session.startTime).getTime();
-          durationMin = diff / 1000 / 60;
-      }
-
-      const vol = session.totalVolume || 0;
-      return Math.round((durationMin * 5) + (vol * 0.0005));
-  }
+  private calculateSessionVolume(session: WorkoutSession): number { return sessionVolume(session); }
+  private calculateSessionSets(session: WorkoutSession): number { return sessionSetCount(session); }
+  private calculateSessionCalories(session: WorkoutSession): number { return sessionCalories(session); }
 
   getMuscleDistribution(): Observable<MuscleDistribution[]> {
       return this.storageService.getHistory().pipe(

@@ -1,16 +1,20 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, doc, setDoc, deleteDoc } from '@angular/fire/firestore';
+import { Firestore, doc, setDoc, writeBatch } from '@angular/fire/firestore';
 import { AdminUserRow } from '../models/admin-users.models';
+import { uidFromProfilePath } from './admin-user-identity';
 
 @Injectable({ providedIn: 'root' })
 export class AdminUsersCommands {
   private readonly firestore = inject(Firestore);
 
-  async hardDeleteAccount(uid: string): Promise<void> {
-    const profileRef = doc(this.firestore, `users/${uid}/profile/data`);
-    await deleteDoc(profileRef);
+  async hardDeleteAccount(profilePath: string): Promise<void> {
+    const uid = uidFromProfilePath(profilePath);
+    const profileRef = doc(this.firestore, profilePath);
     const userRef = doc(this.firestore, `users/${uid}`);
-    await deleteDoc(userRef);
+    const batch = writeBatch(this.firestore);
+    batch.delete(profileRef);
+    batch.delete(userRef);
+    await batch.commit();
   }
 
   async seedTestData(user: AdminUserRow): Promise<void> {

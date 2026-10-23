@@ -3,13 +3,13 @@ import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@a
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { TrainerAiService } from '../../core/services/ai/trainer-ai.service';
-import { UserProfile } from '../../core/models/user-profile.model';
 import { UserProfileStateService } from '../../core/services/user-profile-state.service';
 import { Workout } from '../../core/models/workout.model';
 import { WorkoutService } from '../../core/services/workout.service';
 import { RecoveryService } from '../../core/services/recovery.service';
 import { ProfessionalBodyMapComponent } from '../../shared/components/professional-body-map/professional-body-map.component';
 import { MatIconModule } from '@angular/material/icon';
+import { aiErrorMessage } from '../../core/utils/ai-error-message';
 
 @Component({
   selector: 'app-generator',
@@ -68,25 +68,13 @@ export class GeneratorComponent {
     this.generatedWorkout.set(null);
     this.errorMessage.set(null);
 
-    // Convert Map to plain object record for AI
-    const fatigueRecord: Record<string, number> = {};
-    this.recoveryStatus().forEach((val, key) => {
-        fatigueRecord[key] = val.percentage;
-    });
-
-    // Create profile with REAL data
-    const profile: UserProfile = {
-        ...userProfile,
-        fatigueLevels: fatigueRecord
-    };
-
     // Call AI Service
     try {
-        const workout = await this.aiService.generateWorkout(this.userPrompt(), profile);
+        const workout = await this.aiService.generateWorkout(this.userPrompt(), userProfile);
         this.generatedWorkout.set(workout);
     } catch (err) {
         console.error(err);
-        this.errorMessage.set('Ocurrió un error generando la rutina. Por favor intenta de nuevo.');
+        this.errorMessage.set(aiErrorMessage(err, 'Ocurrió un error generando la rutina. Por favor intenta de nuevo.'));
     } finally {
         this.isLoading.set(false);
     }

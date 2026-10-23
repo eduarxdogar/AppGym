@@ -54,7 +54,7 @@ export class AdminUsersStore {
     this.deletingUid.set(user.uid);
 
     try {
-      await this.commands.hardDeleteAccount(user.uid);
+      await this.commands.hardDeleteAccount(user.profilePath);
       this.users.update(list => list.filter(u => u.uid !== user.uid));
       this.toastService.showSuccess(`Usuario "${user.displayName || user.uid}" eliminado permanentemente.`);
     } catch (err: any) {
