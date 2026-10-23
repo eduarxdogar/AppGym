@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { BaseAiService } from './base-ai.service';
 import { ToastService } from '../toast.service';
-import { WeeklyDietPlanSchema, NutritionLabelSchema, WeeklyDietPlan } from '../../../features/nutrition/schemas/nutrition.schema';
+import { DayDietPlanSchema, WeeklyDietPlanSchema, NutritionLabelSchema, WeeklyDietPlan } from '../../../features/nutrition/schemas/nutrition.schema';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +11,7 @@ export class NutritionAiService {
   private readonly toastService = inject(ToastService);
 
   /**
-   * Generates a WeeklyDietPlan using Gemini.
+   * Generates two bounded daily plans through the server's text provider chain.
    */
   async generateDietPlan(
     profileData: {
@@ -36,7 +36,6 @@ export class NutritionAiService {
 
     // ── Sponsored supplement rule ─────────────────────────────────────────────
     let seelegRule = '';
-    let mealSchemaExtensions = '';
 
     if (useSeelegSupplements) {
       seelegRule = `
@@ -49,10 +48,6 @@ Para ESA comida específica y solo esa, agrega en el JSON los campos:
   "isSponsored": true,
   "sponsorBrand": "Seeleg"
 El resto de las comidas NO deben tener esos campos.`;
-      
-      mealSchemaExtensions = `
-        "isSponsored": true, // Opcional, SOLO en la comida patrocinada
-        "sponsorBrand": "Seeleg" // Opcional, SOLO en la comida patrocinada`;
     }
 
     const prompt = `Eres un Nutricionista Deportivo de élite especializado en cronobiología y rendimiento deportivo. Genera un plan de alimentación para ${profileData.goal}.
@@ -67,10 +62,8 @@ Datos del usuario:
 - Presupuesto / Supermercado (MUY IMPORTANTE para las sugerencias de alimentos): ${profileData.budgetTier}
 
 INSTRUCCIONES DE AYUNO: ${fastingNote}
-${seelegRule ? `${seelegRule}\n` : ''}
-IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta (2 planes base):
+IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido para UN día con esta estructura exacta:
 {
-  "trainingDay": {
     "totalCalories": number,
     "macros": { "protein": number, "carbs": number, "fats": number },
     "meals": [
@@ -80,33 +73,51 @@ IMPORTANTE: Responde EXCLUSIVAMENTE con JSON válido con esta estructura exacta 
         "mainDish": { "item": string, "amount": string, "calories": number, "protein": number, "carbs": number, "fats": number },
         "alternatives": [
           { "item": string, "amount": string, "calories": number, "protein": number, "carbs": number, "fats": number }
-        ]${mealSchemaExtensions}
+        ]
       }
     ]
-  },
-  "restDay": {
-    "totalCalories": number,
-    "macros": { "protein": number, "carbs": number, "fats": number },
-    "meals": [
-      {
-        "name": string,
-        "time": string,
-        "mainDish": { "item": string, "amount": string, "calories": number, "protein": number, "carbs": number, "fats": number },
-        "alternatives": [
-           { "item": string, "amount": string, "calories": number, "protein": number, "carbs": number, "fats": number }
-        ]${mealSchemaExtensions}
-      }
-    ]
-  }
 }
 
-NOTA: El día de descanso debe tener ~15-20% menos calorías, priorizando proteína y grasas saludables sobre carbohidratos. El array alternatives de cada comida debe contener exactamente 3 opciones equivalentes en macros.`;
+El array alternatives de cada comida debe contener exactamente 3 opciones equivalentes en macros.
+Usa nombres y cantidades concisos, sin párrafos. No devuelvas trainingDay/restDay anidados ni el otro día.`;
 
     try {
-      const resultText = await this.baseAi.generateContent(prompt, true, undefined, undefined, undefined, useSeelegSupplements);
-      const text = this.baseAi.cleanJson(resultText);
-      
-      const parsedData = JSON.parse(text);
+      if (!Number.isFinite(targetCalories) || targetCalories <= 0 || !Number.isInteger(profileData.mealsPerDay)
+        || profileData.mealsPerDay < 1 || profileData.mealsPerDay > 6) throw new Error('Objetivo nutricional inválido.');
+      // Bound output size as well as time: at most two meals per request, with
+      // one in-flight request per day. Never expose a partially generated plan.
+      const plans = await Promise.all((['trainingDay', 'restDay'] as const).map(async day => {
+        const training = day === 'trainingDay';
+        const calories = training ? targetCalories : Math.round(targetCalories * 0.825);
+        const combined: WeeklyDietPlan['trainingDay'] = { totalCalories: 0, macros: { protein: 0, carbs: 0, fats: 0 }, meals: [] };
+        for (let start = 0; start < profileData.mealsPerDay; start += 2) {
+          const count = Math.min(2, profileData.mealsPerDay - start);
+          const sponsored = training && start === 0 && useSeelegSupplements;
+          const portionCalories = Math.round(calories * (start + count) / profileData.mealsPerDay)
+            - Math.round(calories * start / profileData.mealsPerDay);
+          const dayPrompt = prompt + `\nDÍA SOLICITADO: ${training ? 'entrenamiento' : 'descanso'}. Objetivo total del día: ${calories} kcal.
+En ESTA RESPUESTA genera SOLO las comidas ${start + 1} a ${start + count} de ${profileData.mealsPerDay}.
+Genera exactamente ${count} comidas; el totalCalories de ESTA PARTE debe ser ${portionCalories} kcal.
+Distribuye sus horarios según su posición dentro del día y la ventana de alimentación, sin repetir las otras comidas.
+${training ? '' : 'Prioriza proteína y grasas saludables; reduce carbohidratos.'}
+${sponsored ? seelegRule + '\nEn la única comida patrocinada añade isSponsored:true y sponsorBrand:"Seeleg".' : 'No incluyas patrocinio ni suplementos de marca.'}`;
+          const text = await this.baseAi.generateContent(dayPrompt, true, undefined, undefined, undefined, sponsored);
+          const partResult = DayDietPlanSchema.safeParse(JSON.parse(this.baseAi.cleanJson(text)));
+          if (!partResult.success) {
+            this.toastService.showError('La IA devolvió datos malformados. Por favor, intenta de nuevo.');
+            throw new Error('Invalid JSON structure returned by AI');
+          }
+          const part = partResult.data;
+          if (part.meals.length !== count || part.meals.some(meal => meal.alternatives.length !== 3)) {
+            throw new Error('La IA devolvió un número de comidas o alternativas inválido.');
+          }
+          combined.meals.push(...part.meals);
+          combined.totalCalories += part.totalCalories;
+          for (const macro of ['protein', 'carbs', 'fats'] as const) combined.macros[macro] += part.macros[macro];
+        }
+        return combined;
+      }));
+      const parsedData = { trainingDay: plans[0], restDay: plans[1] };
       const validation = WeeklyDietPlanSchema.safeParse(parsedData);
       
       if (!validation.success) {

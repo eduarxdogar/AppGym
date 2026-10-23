@@ -54,6 +54,15 @@ común, contexto de fatiga/equipo y notas breves. Así cada respuesta cabe en el
 plazo del proveedor. Se conservan orden y días disponibles; si falla un día no se
 publica una semana parcial. Una rutina debe tener entre uno y siete días.
 
+Nutrición solicita partes de hasta dos comidas, con un máximo de dos peticiones
+simultáneas (una por día base: entrenamiento/descanso),
+conservando el contrato WeeklyDietPlan y la ventana de ayuno. Descanso apunta a
+17,5% menos calorías. La opción Seeleg se envía únicamente para el día de
+entrenamiento y su primera parte, evitando duplicar la comida patrocinada.
+Cada parte valida comidas y tres alternativas, y se suman calorías/macros para
+reconstruir cada día. Se validan ambos resultados juntos; un fallo no expone un
+plan parcial. Esto también cubre el máximo de seis comidas de la interfaz.
+
 ## Verificación reproducible
 
 ```powershell
